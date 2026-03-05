@@ -17,8 +17,12 @@ class Vacancy extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'employer_id', 'title', 'category', 'description', 'requirements',
-        'responsibilities', 'salary_min', 'salary_max', 'salary_type',
+        'employer_id', 'language',
+        'title_uz', 'title_ru', 'category',
+        'description_uz', 'description_ru',
+        'requirements_uz', 'requirements_ru',
+        'responsibilities_uz', 'responsibilities_ru',
+        'salary_min', 'salary_max', 'salary_type',
         'work_type', 'experience_required', 'city', 'district',
         'latitude', 'longitude', 'contact_phone', 'contact_method',
         'views_count', 'applications_count', 'status', 'is_top', 'is_urgent',
@@ -104,9 +108,43 @@ class Vacancy extends Model
     public function scopeSearch($query, string $keyword)
     {
         return $query->whereRaw(
-            "MATCH(title, description) AGAINST(? IN BOOLEAN MODE)",
+            "MATCH(title_uz, title_ru, description_uz, description_ru) AGAINST(? IN BOOLEAN MODE)",
             [$keyword]
         );
+    }
+
+    // ── Bilingual helpers ──
+
+    public function title(string $lang = 'uz'): string
+    {
+        if ($lang === 'ru') {
+            return $this->title_ru ?: $this->title_uz ?: '';
+        }
+        return $this->title_uz ?: $this->title_ru ?: '';
+    }
+
+    public function description(string $lang = 'uz'): string
+    {
+        if ($lang === 'ru') {
+            return $this->description_ru ?: $this->description_uz ?: '';
+        }
+        return $this->description_uz ?: $this->description_ru ?: '';
+    }
+
+    public function requirements(string $lang = 'uz'): ?string
+    {
+        if ($lang === 'ru') {
+            return $this->requirements_ru ?: $this->requirements_uz;
+        }
+        return $this->requirements_uz ?: $this->requirements_ru;
+    }
+
+    public function responsibilities(string $lang = 'uz'): ?string
+    {
+        if ($lang === 'ru') {
+            return $this->responsibilities_ru ?: $this->responsibilities_uz;
+        }
+        return $this->responsibilities_uz ?: $this->responsibilities_ru;
     }
 
     // ── Helpers ──

@@ -37,7 +37,10 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     // Vacancies
     Route::apiResource('vacancies', Api\VacancyController::class)
         ->names('api.vacancies')
-        ->middleware('throttle:vacancy-create')->only(['store']);
+        ->except(['store']);
+    Route::post('vacancies', [Api\VacancyController::class, 'store'])
+        ->name('api.vacancies.store')
+        ->middleware('throttle:vacancy-create');
     Route::get('/vacancies/nearby', [Api\VacancyController::class, 'nearby']);
     Route::get('/vacancies/recommended', [Api\VacancyController::class, 'recommended']);
 
@@ -107,16 +110,32 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
 |--------------------------------------------------------------------------
 */
 
-Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->group(function () {
+// Recruiter Auth (no auth required)
+Route::prefix('recruiter')->middleware('throttle:recruiter')->group(function () {
     Route::post('/login', [Recruiter\AuthController::class, 'login']);
     Route::post('/register', [Recruiter\AuthController::class, 'register']);
+    Route::post('/send-otp', [Recruiter\AuthController::class, 'sendOtp']);
+    Route::post('/verify-otp', [Recruiter\AuthController::class, 'verifyOtp']);
+    Route::get('/telegram-bot-info', [Recruiter\AuthController::class, 'telegramBotInfo']);
+    Route::post('/telegram-login', [Recruiter\AuthController::class, 'telegramLogin']);
+});
+
+Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->group(function () {
     Route::get('/me', [Recruiter\AuthController::class, 'me']);
+
+    // Company management
+    Route::get('/companies', [Recruiter\CompanyController::class, 'index']);
+    Route::post('/companies', [Recruiter\CompanyController::class, 'store']);
+    Route::put('/companies/{company}', [Recruiter\CompanyController::class, 'update']);
+    Route::delete('/companies/{company}', [Recruiter\CompanyController::class, 'destroy']);
+    Route::post('/companies/{company}/switch', [Recruiter\CompanyController::class, 'switch']);
 
     Route::get('/dashboard', [Recruiter\DashboardController::class, 'index']);
     Route::get('/dashboard/recent-apps', [Recruiter\DashboardController::class, 'recentApplications']);
     Route::get('/dashboard/activity-chart', [Recruiter\DashboardController::class, 'activityChart']);
 
     Route::apiResource('/vacancies', Recruiter\VacancyController::class)->names('recruiter.vacancies');
+    Route::post('/vacancies/translate', [Recruiter\VacancyController::class, 'translate'])->name('recruiter.vacancies.translate');
 
     // Questionnaire management
     Route::post('/vacancies/{vacancy}/questionnaire', [Recruiter\QuestionnaireController::class, 'store']);

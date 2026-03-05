@@ -31,7 +31,7 @@ class ApplicationResource extends Resource
             ->schema([
                 Forms\Components\Select::make('vacancy_id')
                     ->label('Vakansiya')
-                    ->relationship('vacancy', 'title')
+                    ->relationship('vacancy', 'title_uz')
                     ->disabled(),
                 Forms\Components\Select::make('worker_id')
                     ->label('Ishchi')
@@ -54,7 +54,7 @@ class ApplicationResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('vacancy.title')
+                Tables\Columns\TextColumn::make('vacancy.title_uz')
                     ->label('Vakansiya')
                     ->searchable()
                     ->limit(30),

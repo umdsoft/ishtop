@@ -5,15 +5,18 @@ namespace App\Models;
 use App\Enums\Language;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
 
@@ -33,6 +36,7 @@ class User extends Authenticatable
         'referral_code',
         'referred_by',
         'balance',
+        'active_employer_id',
     ];
 
     protected $hidden = [
@@ -53,6 +57,15 @@ class User extends Authenticatable
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (!$user->referral_code) {
+                $user->referral_code = static::generateReferralCode();
+            }
+        });
+    }
+
     // ── Relationships ──
 
     public function workerProfile(): HasOne
@@ -60,9 +73,14 @@ class User extends Authenticatable
         return $this->hasOne(WorkerProfile::class);
     }
 
-    public function employerProfile(): HasOne
+    public function employerProfile(): BelongsTo
     {
-        return $this->hasOne(EmployerProfile::class);
+        return $this->belongsTo(EmployerProfile::class, 'active_employer_id');
+    }
+
+    public function employerProfiles(): HasMany
+    {
+        return $this->hasMany(EmployerProfile::class);
     }
 
     public function referrer(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -110,6 +128,17 @@ class User extends Authenticatable
         return $this->hasMany(TalentPoolEntry::class, 'recruiter_user_id');
     }
 
+    // ── Filament ──
+
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return match ($panel->getId()) {
+            'admin' => $this->hasRole('admin'),
+            'recruiter' => $this->employerProfiles()->exists(),
+            default => false,
+        };
+    }
+
     // ── Helpers ──
 
     public function getFullNameAttribute(): string
@@ -124,7 +153,17 @@ class User extends Authenticatable
 
     public function isEmployer(): bool
     {
-        return $this->employerProfile()->exists();
+        return $this->employerProfiles()->exists();
+    }
+
+    public function switchEmployer(string $employerId): bool
+    {
+        $profile = $this->employerProfiles()->where('id', $employerId)->first();
+        if (!$profile) {
+            return false;
+        }
+        $this->update(['active_employer_id' => $profile->id]);
+        return true;
     }
 
     public function activeSubscription(): ?Subscription

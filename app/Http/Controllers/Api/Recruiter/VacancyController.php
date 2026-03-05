@@ -4,13 +4,17 @@ namespace App\Http\Controllers\Api\Recruiter;
 
 use App\Http\Controllers\Controller;
 use App\Models\Vacancy;
+use App\Services\AiService;
 use App\Services\VacancyService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VacancyController extends Controller
 {
-    public function __construct(private VacancyService $vacancyService) {}
+    public function __construct(
+        private VacancyService $vacancyService,
+        private AiService $aiService,
+    ) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -32,11 +36,16 @@ class VacancyController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:300',
+            'language' => 'nullable|string|in:uz,ru',
+            'title_uz' => 'required_without:title_ru|nullable|string|max:300',
+            'title_ru' => 'required_without:title_uz|nullable|string|max:300',
             'category' => 'required|string|max:50',
-            'description' => 'required|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'description_uz' => 'required_without:description_ru|nullable|string',
+            'description_ru' => 'required_without:description_uz|nullable|string',
+            'requirements_uz' => 'nullable|string',
+            'requirements_ru' => 'nullable|string',
+            'responsibilities_uz' => 'nullable|string',
+            'responsibilities_ru' => 'nullable|string',
             'work_type' => 'required|string',
             'city' => 'nullable|string',
             'district' => 'nullable|string',
@@ -81,11 +90,16 @@ class VacancyController extends Controller
             ->firstOrFail();
 
         $validated = $request->validate([
-            'title' => 'sometimes|string|max:300',
+            'language' => 'nullable|string|in:uz,ru',
+            'title_uz' => 'sometimes|string|max:300',
+            'title_ru' => 'nullable|string|max:300',
             'category' => 'sometimes|string|max:50',
-            'description' => 'sometimes|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'description_uz' => 'sometimes|string',
+            'description_ru' => 'nullable|string',
+            'requirements_uz' => 'nullable|string',
+            'requirements_ru' => 'nullable|string',
+            'responsibilities_uz' => 'nullable|string',
+            'responsibilities_ru' => 'nullable|string',
             'work_type' => 'sometimes|string',
             'city' => 'nullable|string',
             'district' => 'nullable|string',
@@ -113,5 +127,44 @@ class VacancyController extends Controller
         $vacancyModel->delete();
 
         return response()->json(['message' => 'Vakansiya o\'chirildi']);
+    }
+
+    public function translate(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'from' => 'required|string|in:uz,ru',
+            'to' => 'required|string|in:uz,ru',
+            'title' => 'nullable|string|max:300',
+            'description' => 'nullable|string',
+            'requirements' => 'nullable|string',
+            'responsibilities' => 'nullable|string',
+        ]);
+
+        $from = $validated['from'];
+        $to = $validated['to'];
+
+        if ($from === $to) {
+            return response()->json(['message' => 'Manba va maqsad til bir xil bo\'lmasligi kerak'], 422);
+        }
+
+        // Collect non-empty fields to translate
+        $fields = [];
+        foreach (['title', 'description', 'requirements', 'responsibilities'] as $field) {
+            if (!empty($validated[$field])) {
+                $fields[$field] = $validated[$field];
+            }
+        }
+
+        if (empty($fields)) {
+            return response()->json(['message' => 'Tarjima qilish uchun matn kerak'], 422);
+        }
+
+        $translated = $this->aiService->translateVacancy($fields, $from, $to);
+
+        if (empty($translated)) {
+            return response()->json(['message' => 'Tarjima xatoligi. Qaytadan urinib ko\'ring.'], 500);
+        }
+
+        return response()->json(['translated' => $translated]);
     }
 }

@@ -17,7 +17,7 @@
         <!-- Title and Badges -->
         <div class="flex items-start justify-between gap-2 mb-1">
           <h3 class="font-semibold text-base line-clamp-2 flex-1">
-            {{ vacancy.title }}
+            {{ vacancy.title_uz || vacancy.title_ru }}
           </h3>
           <div class="flex gap-1">
             <span v-if="vacancy.is_top" class="badge bg-yellow-100 text-yellow-800">TOP</span>

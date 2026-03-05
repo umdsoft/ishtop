@@ -13,6 +13,7 @@ class DatabaseSeeder extends Seeder
             CitySeeder::class,
             SettingSeeder::class,
             MessageTemplateSeeder::class,
+            AdminSeeder::class,
         ]);
     }
 }

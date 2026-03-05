@@ -44,7 +44,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, useSlots } from 'vue';
+
+const slots = useSlots();
 
 const props = defineProps({
   modelValue: {
@@ -111,10 +113,10 @@ const inputClasses = computed(() => {
   classes.push(sizeClasses[props.size]);
 
   // Icon padding
-  if (props.$slots['icon-left']) {
+  if (slots['icon-left']) {
     classes.push('pl-10');
   }
-  if (props.$slots['icon-right']) {
+  if (slots['icon-right']) {
     classes.push('pr-10');
   }
 

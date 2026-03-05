@@ -46,11 +46,16 @@ class VacancyController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'title' => 'required|string|max:300',
+            'language' => 'nullable|string|in:uz,ru',
+            'title_uz' => 'required_without:title_ru|nullable|string|max:300',
+            'title_ru' => 'required_without:title_uz|nullable|string|max:300',
             'category' => 'required|string|max:50',
-            'description' => 'required|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'description_uz' => 'required_without:description_ru|nullable|string',
+            'description_ru' => 'required_without:description_uz|nullable|string',
+            'requirements_uz' => 'nullable|string',
+            'requirements_ru' => 'nullable|string',
+            'responsibilities_uz' => 'nullable|string',
+            'responsibilities_ru' => 'nullable|string',
             'work_type' => 'required|string',
             'city' => 'nullable|string',
             'district' => 'nullable|string',
@@ -77,11 +82,16 @@ class VacancyController extends Controller
     public function update(Request $request, Vacancy $vacancy): JsonResponse
     {
         $validated = $request->validate([
-            'title' => 'sometimes|string|max:300',
+            'language' => 'nullable|string|in:uz,ru',
+            'title_uz' => 'sometimes|string|max:300',
+            'title_ru' => 'nullable|string|max:300',
             'category' => 'sometimes|string|max:50',
-            'description' => 'sometimes|string',
-            'requirements' => 'nullable|string',
-            'responsibilities' => 'nullable|string',
+            'description_uz' => 'sometimes|string',
+            'description_ru' => 'nullable|string',
+            'requirements_uz' => 'nullable|string',
+            'requirements_ru' => 'nullable|string',
+            'responsibilities_uz' => 'nullable|string',
+            'responsibilities_ru' => 'nullable|string',
             'work_type' => 'sometimes|string',
             'city' => 'nullable|string',
             'salary_min' => 'nullable|integer',

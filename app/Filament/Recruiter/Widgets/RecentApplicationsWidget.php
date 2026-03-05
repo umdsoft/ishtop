@@ -23,7 +23,7 @@ class RecentApplicationsWidget extends BaseWidget
                     ->limit(10)
             )
             ->columns([
-                Tables\Columns\TextColumn::make('vacancy.title')->label('Vakansiya')->limit(25),
+                Tables\Columns\TextColumn::make('vacancy.title_uz')->label('Vakansiya')->limit(25),
                 Tables\Columns\TextColumn::make('worker.full_name')->label('Nomzod'),
                 Tables\Columns\TextColumn::make('stage')->label('Bosqich')->badge(),
                 Tables\Columns\TextColumn::make('questionnaire_score')->label('Ball')->suffix('%'),

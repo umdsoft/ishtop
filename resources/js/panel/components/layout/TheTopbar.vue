@@ -84,6 +84,9 @@
               <div class="px-4 py-3 border-b border-surface-200 dark:border-surface-800">
                 <p class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ user?.first_name }} {{ user?.last_name }}</p>
                 <p class="text-xs text-surface-500 dark:text-surface-400">{{ user?.email }}</p>
+                <p v-if="activeCompany" class="text-xs text-brand-600 dark:text-brand-400 mt-0.5">
+                  {{ activeCompany.company_name }}
+                </p>
               </div>
 
               <router-link
@@ -155,6 +158,7 @@ const showUserMenu = ref(false);
 const unreadCount = ref(0); // TODO: Connect to real-time notifications
 
 const user = computed(() => authStore.user);
+const activeCompany = computed(() => authStore.activeCompany);
 const userInitials = computed(() => {
   if (!user.value) return 'U';
   const first = user.value.first_name?.[0] || '';

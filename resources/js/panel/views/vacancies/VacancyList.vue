@@ -117,9 +117,17 @@
         @row-click="handleRowClick"
       >
         <template #cell-title="{ row }">
-          <div>
-            <p class="font-medium text-surface-900 dark:text-surface-100">{{ row.title }}</p>
-            <p class="text-sm text-surface-500 dark:text-surface-400">{{ row.company_name }}</p>
+          <div class="flex items-center gap-2">
+            <div>
+              <p class="font-medium text-surface-900 dark:text-surface-100">{{ row.title_uz || row.title_ru }}</p>
+              <p class="text-sm text-surface-500 dark:text-surface-400">{{ row.company_name }}</p>
+            </div>
+            <span
+              v-if="row.language"
+              class="shrink-0 px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400"
+            >
+              {{ row.language }}
+            </span>
           </div>
         </template>
 
@@ -269,7 +277,9 @@ const categories = ref([
 const vacancies = ref([
   {
     id: 1,
-    title: 'Senior PHP Developer',
+    title_uz: 'Senior PHP Developer',
+    title_ru: null,
+    language: 'uz',
     company_name: 'TechCorp',
     status: 'active',
     employment_type: 'full_time',
@@ -281,7 +291,9 @@ const vacancies = ref([
   },
   {
     id: 2,
-    title: 'Ofitsiant',
+    title_uz: 'Ofitsiant',
+    title_ru: 'Официант',
+    language: 'uz',
     company_name: 'Grand Hotel',
     status: 'active',
     employment_type: 'part_time',
@@ -293,7 +305,9 @@ const vacancies = ref([
   },
   {
     id: 3,
-    title: 'Savdo bo\'limi menejeri',
+    title_uz: 'Savdo bo\'limi menejeri',
+    title_ru: null,
+    language: 'uz',
     company_name: 'FoodChain',
     status: 'pending',
     employment_type: 'full_time',
@@ -350,7 +364,8 @@ const filteredVacancies = computed(() => {
   if (filters.value.search) {
     const search = filters.value.search.toLowerCase();
     result = result.filter(v =>
-      v.title.toLowerCase().includes(search) ||
+      (v.title_uz || '').toLowerCase().includes(search) ||
+      (v.title_ru || '').toLowerCase().includes(search) ||
       v.company_name.toLowerCase().includes(search)
     );
   }

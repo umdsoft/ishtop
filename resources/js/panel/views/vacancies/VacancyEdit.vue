@@ -25,6 +25,38 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- Main Form -->
           <div class="lg:col-span-2 space-y-6">
+            <!-- Language Selector -->
+            <div class="flex items-center gap-3 p-4 bg-surface-50 dark:bg-surface-800/50 rounded-xl border border-surface-200 dark:border-surface-700">
+              <LanguageIcon class="h-5 w-5 text-surface-500 dark:text-surface-400" />
+              <span class="text-sm font-medium text-surface-700 dark:text-surface-300">E'lon tili:</span>
+              <div class="flex rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
+                <button
+                  type="button"
+                  :class="[
+                    'px-4 py-1.5 text-sm font-medium transition-colors',
+                    form.language === 'uz'
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-surface-0 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700'
+                  ]"
+                  @click="form.language = 'uz'"
+                >
+                  O'zbekcha
+                </button>
+                <button
+                  type="button"
+                  :class="[
+                    'px-4 py-1.5 text-sm font-medium transition-colors',
+                    form.language === 'ru'
+                      ? 'bg-brand-500 text-white'
+                      : 'bg-surface-0 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-100 dark:hover:bg-surface-700'
+                  ]"
+                  @click="form.language = 'ru'"
+                >
+                  Ruscha
+                </button>
+              </div>
+            </div>
+
             <!-- Basic Information -->
             <AppCard>
               <template #header>
@@ -34,7 +66,7 @@
               <div class="space-y-4">
                 <AppInput
                   v-model="form.title"
-                  label="Vakansiya nomi"
+                  :label="form.language === 'uz' ? 'Vakansiya nomi' : 'Название вакансии'"
                   placeholder="Senior PHP Developer"
                   required
                   :error="errors.title"
@@ -87,8 +119,8 @@
 
                 <AppTextarea
                   v-model="form.description"
-                  label="Tavsif"
-                  placeholder="Vakansiya haqida batafsil ma'lumot..."
+                  :label="form.language === 'uz' ? 'Tavsif' : 'Описание'"
+                  :placeholder="form.language === 'uz' ? 'Vakansiya haqida batafsil ma\'lumot...' : 'Подробная информация о вакансии...'"
                   :rows="6"
                   :maxlength="2000"
                   required
@@ -187,19 +219,19 @@
               <div class="space-y-4">
                 <AppTextarea
                   v-model="form.requirements"
-                  label="Talablar"
-                  placeholder="- Kamida 3 yillik tajriba&#10;- PHP va Laravel bilishi&#10;- MySQL bilishi"
+                  :label="form.language === 'uz' ? 'Talablar' : 'Требования'"
+                  :placeholder="form.language === 'uz' ? '- Kamida 3 yillik tajriba\n- PHP va Laravel bilishi\n- MySQL bilishi' : '- Минимум 3 года опыта\n- Знание PHP и Laravel\n- Знание MySQL'"
                   :rows="5"
-                  hint="Har bir talabni yangi qatordan boshlang"
+                  :hint="form.language === 'uz' ? 'Har bir talabni yangi qatordan boshlang' : 'Каждое требование с новой строки'"
                   :error="errors.requirements"
                 />
 
                 <AppTextarea
                   v-model="form.responsibilities"
-                  label="Mas'uliyatlar"
-                  placeholder="- Backend dasturlash&#10;- API yaratish&#10;- Database optimallashtirish"
+                  :label="form.language === 'uz' ? 'Mas\'uliyatlar' : 'Обязанности'"
+                  :placeholder="form.language === 'uz' ? '- Backend dasturlash\n- API yaratish\n- Database optimallashtirish' : '- Backend разработка\n- Создание API\n- Оптимизация базы данных'"
                   :rows="5"
-                  hint="Har bir mas'uliyatni yangi qatordan boshlang"
+                  :hint="form.language === 'uz' ? 'Har bir mas\'uliyatni yangi qatordan boshlang' : 'Каждую обязанность с новой строки'"
                   :error="errors.responsibilities"
                 />
 
@@ -210,6 +242,72 @@
                   :rows="4"
                   hint="Har bir imtiyozni yangi qatordan boshlang"
                   :error="errors.benefits"
+                />
+              </div>
+            </AppCard>
+
+            <!-- Translation Section -->
+            <AppCard>
+              <button
+                type="button"
+                class="w-full flex items-center justify-between py-1"
+                @click="showTranslation = !showTranslation"
+              >
+                <div class="flex items-center gap-3">
+                  <LanguageIcon class="h-5 w-5 text-brand-500" />
+                  <div class="text-left">
+                    <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">{{ translationLabel }}</h2>
+                    <p class="text-xs text-surface-500 dark:text-surface-400">Ixtiyoriy — tarjimani keyinroq ham qo'shish mumkin</p>
+                  </div>
+                </div>
+                <ChevronDownIcon
+                  :class="['h-5 w-5 text-surface-400 transition-transform duration-200', showTranslation ? 'rotate-180' : '']"
+                />
+              </button>
+
+              <div v-if="showTranslation" class="mt-4 space-y-4 pt-4 border-t border-surface-200 dark:border-surface-700">
+                <!-- AI Translate Button -->
+                <button
+                  type="button"
+                  :disabled="translating || (!form.title && !form.description)"
+                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-sm hover:shadow-md"
+                  @click="handleAiTranslate"
+                >
+                  <SparklesIcon v-if="!translating" class="h-4 w-4" />
+                  <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  {{ translating ? 'Tarjima qilinmoqda...' : 'AI bilan tarjima qilish' }}
+                </button>
+
+                <AppInput
+                  v-model="form.title_translation"
+                  :label="form.language === 'uz' ? 'Название вакансии' : 'Vakansiya nomi'"
+                  :placeholder="form.language === 'uz' ? 'Senior PHP Developer' : 'Senior PHP Developer'"
+                  :error="errors.title_translation"
+                />
+
+                <AppTextarea
+                  v-model="form.description_translation"
+                  :label="form.language === 'uz' ? 'Описание' : 'Tavsif'"
+                  :placeholder="form.language === 'uz' ? 'Подробная информация о вакансии...' : 'Vakansiya haqida batafsil ma\'lumot...'"
+                  :rows="5"
+                  :error="errors.description_translation"
+                />
+
+                <AppTextarea
+                  v-model="form.requirements_translation"
+                  :label="form.language === 'uz' ? 'Требования' : 'Talablar'"
+                  :rows="4"
+                  :error="errors.requirements_translation"
+                />
+
+                <AppTextarea
+                  v-model="form.responsibilities_translation"
+                  :label="form.language === 'uz' ? 'Обязанности' : 'Mas\'uliyatlar'"
+                  :rows="4"
+                  :error="errors.responsibilities_translation"
                 />
               </div>
             </AppCard>
@@ -357,8 +455,9 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import axios from 'axios';
 import { toast } from 'vue-sonner';
-import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, ChevronDownIcon, LanguageIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppInput from '../../components/ui/AppInput.vue';
@@ -367,6 +466,7 @@ import AppSelect from '../../components/ui/AppSelect.vue';
 import AppCheckbox from '../../components/ui/AppCheckbox.vue';
 import AppDatePicker from '../../components/ui/AppDatePicker.vue';
 import AppLoadingSpinner from '../../components/ui/AppLoadingSpinner.vue';
+import { regions, districts } from '../../data/regions.js';
 
 const route = useRoute();
 const router = useRouter();
@@ -375,6 +475,7 @@ const vacancy = ref(null);
 const loadingVacancy = ref(true);
 
 const form = ref({
+  language: 'uz',
   title: '',
   category_id: null,
   region_id: null,
@@ -398,6 +499,17 @@ const form = ref({
   is_featured: false,
   auto_reject_unqualified: false,
   require_questionnaire: true,
+  // Translation fields
+  title_translation: '',
+  description_translation: '',
+  requirements_translation: '',
+  responsibilities_translation: '',
+});
+
+const showTranslation = ref(false);
+const translating = ref(false);
+const translationLabel = computed(() => {
+  return form.value.language === 'uz' ? 'Rus tiliga tarjima' : "O'zbek tiliga tarjima";
 });
 
 const errors = ref({});
@@ -414,21 +526,7 @@ const categories = ref([
   { id: 8, name: 'Sog\'liqni saqlash' },
 ]);
 
-const regions = ref([
-  { id: 1, name: 'Toshkent shahri' },
-  { id: 2, name: 'Toshkent viloyati' },
-  { id: 3, name: 'Samarqand' },
-  { id: 4, name: 'Buxoro' },
-  { id: 5, name: 'Farg\'ona' },
-]);
-
-const districts = ref([
-  { id: 1, region_id: 1, name: 'Yunusobod' },
-  { id: 2, region_id: 1, name: 'Chilonzor' },
-  { id: 3, region_id: 1, name: 'Yashnobod' },
-  { id: 4, region_id: 2, name: 'Ohangaron' },
-  { id: 5, region_id: 2, name: 'Chirchiq' },
-]);
+// regions va districts are imported from ../../data/regions.js
 
 const employmentTypes = [
   { value: 'full_time', label: 'To\'liq ish kuni' },
@@ -452,8 +550,11 @@ const statusOptions = [
 ];
 
 const filteredDistricts = computed(() => {
-  if (!form.value.region_id) return [];
-  return districts.value.filter(d => d.region_id === form.value.region_id);
+  const regionId = form.value.region_id && typeof form.value.region_id === 'object'
+    ? form.value.region_id.id
+    : form.value.region_id;
+  if (!regionId) return [];
+  return districts.filter(d => d.region_id === regionId);
 });
 
 const minDeadline = computed(() => {
@@ -470,52 +571,104 @@ async function loadVacancy() {
   loadingVacancy.value = true;
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const response = await axios.get(`/api/recruiter/vacancies/${route.params.id}`);
+    vacancy.value = response.data.vacancy;
 
-    // Mock data
-    vacancy.value = {
-      id: route.params.id,
-      title: 'Senior PHP Developer',
-      category_id: 1,
-      region_id: 1,
-      district_id: 1,
-      address: 'Amir Temur ko\'chasi, 10',
-      description: 'Biz Laravel asosida katta loyihalar ustida ishlaydigan tajribali PHP dasturchini qidiramiz.',
-      employment_type: 'full_time',
-      experience_level: 'senior',
-      salary_negotiable: false,
-      salary_min: 5000000,
-      salary_max: 8000000,
-      max_applicants: 100,
-      deadline: '2024-04-30',
-      requirements: '- 5+ yillik PHP tajriba\n- Laravel framework\n- MySQL',
-      responsibilities: '- Backend dasturlash\n- API yaratish',
-      benefits: '- Bepul tushlik\n- Sog\'liqni saqlash',
-      contact_name: 'Umidbek Karimov',
-      contact_phone: '+998901234567',
-      contact_email: 'hr@techcorp.uz',
-      status: 'active',
-      is_featured: true,
-      auto_reject_unqualified: false,
-      require_questionnaire: true,
-      applications_count: 45,
-      views_count: 234,
-      created_at: '2024-02-20',
-    };
+    const v = vacancy.value;
+    const lang = v.language || 'uz';
+    const otherLang = lang === 'uz' ? 'ru' : 'uz';
 
-    // Populate form
-    Object.keys(form.value).forEach(key => {
-      if (vacancy.value[key] !== undefined) {
-        form.value[key] = vacancy.value[key];
-      }
-    });
+    // Map bilingual fields to primary/translation
+    form.value.language = lang;
+    form.value.title = v[`title_${lang}`] || v.title_uz || '';
+    form.value.description = v[`description_${lang}`] || v.description_uz || '';
+    form.value.requirements = v[`requirements_${lang}`] || v.requirements_uz || '';
+    form.value.responsibilities = v[`responsibilities_${lang}`] || v.responsibilities_uz || '';
+    form.value.title_translation = v[`title_${otherLang}`] || '';
+    form.value.description_translation = v[`description_${otherLang}`] || '';
+    form.value.requirements_translation = v[`requirements_${otherLang}`] || '';
+    form.value.responsibilities_translation = v[`responsibilities_${otherLang}`] || '';
+
+    // Show translation section if translations exist
+    if (form.value.title_translation || form.value.description_translation) {
+      showTranslation.value = true;
+    }
+
+    // Non-bilingual fields
+    form.value.address = v.address || '';
+    form.value.salary_negotiable = v.salary_type === 'negotiable';
+    form.value.salary_min = v.salary_min;
+    form.value.salary_max = v.salary_max;
+    form.value.max_applicants = v.max_applicants || 0;
+    form.value.deadline = v.expires_at ? v.expires_at.split('T')[0] : null;
+    form.value.benefits = v.benefits || '';
+    form.value.contact_name = v.contact_name || '';
+    form.value.contact_phone = v.contact_phone || '';
+    form.value.contact_email = v.contact_email || '';
+    form.value.is_featured = v.is_featured || false;
+    form.value.auto_reject_unqualified = v.auto_reject_unqualified || false;
+    form.value.require_questionnaire = v.require_questionnaire ?? true;
+
+    // Map raw string values to option objects for AppSelect
+    form.value.employment_type = employmentTypes.find(t => t.value === v.work_type) || employmentTypes[0];
+    form.value.experience_level = experienceLevels.find(t => t.value === v.experience_required) || experienceLevels[2];
+    form.value.status = statusOptions.find(t => t.value === v.status) || statusOptions[0];
+    form.value.category_id = categories.value.find(c => c.id === v.category_id) || null;
+    form.value.region_id = regions.find(r => r.id === v.region_id) || null;
+    form.value.district_id = districts.find(d => d.id === v.district_id) || null;
   } catch (error) {
     toast.error('Vakansiya yuklanmadi');
     router.push('/dashboard/vacancies');
   } finally {
     loadingVacancy.value = false;
   }
+}
+
+function getFormData() {
+  const data = { ...form.value };
+  const lang = data.language || 'uz';
+  const otherLang = lang === 'uz' ? 'ru' : 'uz';
+
+  // Map primary content and translation to _uz/_ru fields
+  data[`title_${lang}`] = data.title;
+  data[`description_${lang}`] = data.description;
+  data[`requirements_${lang}`] = data.requirements || null;
+  data[`responsibilities_${lang}`] = data.responsibilities || null;
+  data[`title_${otherLang}`] = data.title_translation || null;
+  data[`description_${otherLang}`] = data.description_translation || null;
+  data[`requirements_${otherLang}`] = data.requirements_translation || null;
+  data[`responsibilities_${otherLang}`] = data.responsibilities_translation || null;
+
+  // Clean up non-API fields
+  delete data.title;
+  delete data.description;
+  delete data.requirements;
+  delete data.responsibilities;
+  delete data.title_translation;
+  delete data.description_translation;
+  delete data.requirements_translation;
+  delete data.responsibilities_translation;
+
+  // Extract .value from option objects for AppSelect fields
+  if (data.employment_type && typeof data.employment_type === 'object') {
+    data.employment_type = data.employment_type.value;
+  }
+  if (data.experience_level && typeof data.experience_level === 'object') {
+    data.experience_level = data.experience_level.value;
+  }
+  if (data.status && typeof data.status === 'object') {
+    data.status = data.status.value;
+  }
+  if (data.category_id && typeof data.category_id === 'object') {
+    data.category_id = data.category_id.id;
+  }
+  if (data.region_id && typeof data.region_id === 'object') {
+    data.region_id = data.region_id.id;
+  }
+  if (data.district_id && typeof data.district_id === 'object') {
+    data.district_id = data.district_id.id;
+  }
+  return data;
 }
 
 async function handleSubmit() {
@@ -529,15 +682,52 @@ async function handleSubmit() {
   }
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    const data = getFormData();
+    await axios.put(`/api/recruiter/vacancies/${route.params.id}`, data);
 
     toast.success('O\'zgarishlar saqlandi!');
     router.push('/dashboard/vacancies');
   } catch (error) {
-    toast.error('Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors || {};
+    }
+    toast.error(error.response?.data?.message || 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleAiTranslate() {
+  if (!form.value.title && !form.value.description) {
+    toast.error('Tarjima qilish uchun avval asosiy matnni yozing');
+    return;
+  }
+
+  translating.value = true;
+  try {
+    const from = form.value.language || 'uz';
+    const to = from === 'uz' ? 'ru' : 'uz';
+
+    const { data } = await axios.post('/api/recruiter/vacancies/translate', {
+      from,
+      to,
+      title: form.value.title || null,
+      description: form.value.description || null,
+      requirements: form.value.requirements || null,
+      responsibilities: form.value.responsibilities || null,
+    });
+
+    if (data.translated) {
+      if (data.translated.title) form.value.title_translation = data.translated.title;
+      if (data.translated.description) form.value.description_translation = data.translated.description;
+      if (data.translated.requirements) form.value.requirements_translation = data.translated.requirements;
+      if (data.translated.responsibilities) form.value.responsibilities_translation = data.translated.responsibilities;
+      toast.success('Tarjima muvaffaqiyatli bajarildi!');
+    }
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Tarjima xatoligi. Qaytadan urinib ko\'ring.');
+  } finally {
+    translating.value = false;
   }
 }
 

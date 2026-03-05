@@ -54,7 +54,7 @@ class VacancyService
     {
         return Vacancy::where('status', VacancyStatus::ACTIVE)
             ->where('expires_at', '<', now())
-            ->update(['status' => VacancyStatus::EXPIRED->value]);
+            ->update(['status' => VacancyStatus::EXPIRED]);
     }
 
     public function incrementViews(Vacancy $vacancy): void

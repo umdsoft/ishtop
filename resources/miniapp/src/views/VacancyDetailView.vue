@@ -10,7 +10,7 @@
           class="w-16 h-16 rounded-lg object-cover"
         />
         <div class="flex-1">
-          <h1 class="text-xl font-bold mb-1">{{ vacancy.title }}</h1>
+          <h1 class="text-xl font-bold mb-1">{{ vacancy.title_uz || vacancy.title_ru }}</h1>
           <p class="text-tg-hint">{{ vacancy.employer?.company_name }}</p>
         </div>
       </div>
@@ -39,19 +39,19 @@
     <!-- Description -->
     <div class="p-4">
       <h2 class="text-lg font-semibold mb-2">Tavsif</h2>
-      <div class="text-tg-text whitespace-pre-line">{{ vacancy.description }}</div>
+      <div class="text-tg-text whitespace-pre-line">{{ vacancy.description_uz || vacancy.description_ru }}</div>
     </div>
 
     <!-- Requirements -->
-    <div v-if="vacancy.requirements" class="p-4 bg-tg-secondary-bg">
+    <div v-if="vacancy.requirements_uz || vacancy.requirements_ru" class="p-4 bg-tg-secondary-bg">
       <h2 class="text-lg font-semibold mb-2">Talablar</h2>
-      <div class="text-tg-text whitespace-pre-line">{{ vacancy.requirements }}</div>
+      <div class="text-tg-text whitespace-pre-line">{{ vacancy.requirements_uz || vacancy.requirements_ru }}</div>
     </div>
 
     <!-- Responsibilities -->
-    <div v-if="vacancy.responsibilities" class="p-4">
+    <div v-if="vacancy.responsibilities_uz || vacancy.responsibilities_ru" class="p-4">
       <h2 class="text-lg font-semibold mb-2">Mas'uliyatlar</h2>
-      <div class="text-tg-text whitespace-pre-line">{{ vacancy.responsibilities }}</div>
+      <div class="text-tg-text whitespace-pre-line">{{ vacancy.responsibilities_uz || vacancy.responsibilities_ru }}</div>
     </div>
 
     <!-- Company Info -->
@@ -229,7 +229,7 @@ async function handleSave() {
 
 function handleShare() {
   const url = `https://t.me/ishtop_bot/app?startapp=vacancy_${vacancy.value.id}`
-  const text = `${vacancy.value.title} - ${vacancy.value.employer?.company_name}`
+  const text = `${vacancy.value.title_uz || vacancy.value.title_ru} - ${vacancy.value.employer?.company_name}`
   telegram.shareUrl(url, text)
 }
 

@@ -67,7 +67,13 @@ class ScoringService
         return round($finalScore, 2);
     }
 
-    private function scoreAnswer(Question $q, ResponseAnswer $a): float
+    public function isKnockoutFailed(Question $question, ResponseAnswer $answer): bool
+    {
+        $score = $this->scoreAnswer($question, $answer);
+        return $question->is_knockout && $score === 0.0;
+    }
+
+    public function scoreAnswer(Question $q, ResponseAnswer $a): float
     {
         return match ($q->type) {
             QuestionType::KNOCKOUT => $this->scoreKnockout($q, $a),

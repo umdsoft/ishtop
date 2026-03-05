@@ -108,7 +108,7 @@ const routes = [
       {
         path: 'questionnaires',
         name: 'questionnaires',
-        component: () => import('../views/questionnaire/QuestionnaireBuilder.vue'),
+        component: () => import('../views/questionnaire/QuestionnaireList.vue'),
         meta: { title: 'Savolnomalar' },
       },
       {
@@ -116,6 +116,12 @@ const routes = [
         name: 'questionnaire-templates',
         component: () => import('../views/questionnaire/QuestionnaireTemplates.vue'),
         meta: { title: 'Savolnoma shablonlari' },
+      },
+      {
+        path: 'questionnaires/:vacancyId',
+        name: 'questionnaire-builder',
+        component: () => import('../views/questionnaire/QuestionnaireBuilder.vue'),
+        meta: { title: 'Savolnoma yaratish' },
       },
 
       // Messages
@@ -220,8 +226,13 @@ const router = createRouter({
 });
 
 // Navigation guards
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore();
+
+  // Wait for auth initialization (token restore + user fetch)
+  if (!authStore.initialized) {
+    await authStore.initialize();
+  }
 
   // Set page title
   if (to.meta.title) {

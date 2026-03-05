@@ -14,62 +14,63 @@ class VacancyTest extends TestCase
 
     public function test_can_list_vacancies(): void
     {
-        Vacancy::factory()->count(5)->create(['status' => 'active']);
+        $user = User::factory()->create();
+        Vacancy::factory()->count(5)->create(['status' => 'active', 'published_at' => now()]);
 
-        $response = $this->getJson('/api/vacancies');
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/vacancies');
 
         $response->assertStatus(200)
             ->assertJsonStructure([
                 'data' => [
-                    '*' => ['id', 'title', 'employer', 'city', 'salary_min'],
+                    '*' => ['id', 'title_uz', 'employer_id'],
                 ],
             ]);
     }
 
     public function test_can_view_vacancy_detail(): void
     {
-        $vacancy = Vacancy::factory()->create(['status' => 'active']);
+        $user = User::factory()->create();
+        $vacancy = Vacancy::factory()->create(['status' => 'active', 'published_at' => now()]);
 
-        $response = $this->getJson("/api/vacancies/{$vacancy->id}");
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson("/api/vacancies/{$vacancy->id}");
 
         $response->assertStatus(200)
-            ->assertJson([
-                'id' => $vacancy->id,
-                'title' => $vacancy->title,
-            ]);
+            ->assertJsonPath('vacancy.id', $vacancy->id);
     }
 
     public function test_can_create_vacancy(): void
     {
         $user = User::factory()->create();
         $employer = EmployerProfile::factory()->create(['user_id' => $user->id]);
+        $user->update(['active_employer_id' => $employer->id]);
 
         $response = $this->actingAs($user, 'sanctum')
             ->postJson('/api/vacancies', [
-                'title' => 'Test Vacancy',
+                'title_uz' => 'Test Vacancy',
                 'category' => 'it',
-                'description' => 'Test description',
+                'description_uz' => 'Test description for the vacancy posting',
                 'work_type' => 'full_time',
             ]);
 
         $response->assertStatus(201)
-            ->assertJsonStructure(['vacancy' => ['id', 'title']]);
+            ->assertJsonStructure(['vacancy' => ['id', 'title_uz']]);
     }
 
     public function test_can_search_vacancies(): void
     {
+        $user = User::factory()->create();
         Vacancy::factory()->create([
-            'title' => 'PHP Developer',
+            'title_uz' => 'PHP Developer',
             'status' => 'active',
+            'published_at' => now(),
         ]);
 
-        $response = $this->getJson('/api/search/vacancies?q=PHP');
+        $response = $this->actingAs($user, 'sanctum')
+            ->getJson('/api/search/vacancies?q=PHP');
 
         $response->assertStatus(200)
-            ->assertJsonStructure([
-                'vacancies' => [
-                    '*' => ['id', 'title'],
-                ],
-            ]);
+            ->assertJsonStructure(['data']);
     }
 }

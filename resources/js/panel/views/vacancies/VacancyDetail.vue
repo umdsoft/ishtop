@@ -18,7 +18,7 @@
           </button>
           <div class="flex-1">
             <div class="flex items-center gap-3">
-              <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ vacancy.title }}</h1>
+              <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ vacancy.title_uz || vacancy.title_ru }}</h1>
               <AppBadge :variant="getStatusVariant(vacancy.status)">
                 {{ getStatusLabel(vacancy.status) }}
               </AppBadge>
@@ -114,7 +114,7 @@
                     Maksimal: {{ vacancy.questionnaire.total_score }} ball
                   </p>
                 </div>
-                <AppButton variant="outline">
+                <AppButton variant="outline" @click="$router.push(`/dashboard/questionnaires/${vacancy.id}`)">
                   <template #icon-left>
                     <PencilIcon class="h-5 w-5" />
                   </template>
@@ -186,7 +186,7 @@
             <p class="text-surface-600 dark:text-surface-400 mb-4">
               Ushbu vakansiya uchun hali savolnoma yaratilmagan
             </p>
-            <AppButton variant="primary">
+            <AppButton variant="primary" @click="$router.push(`/dashboard/questionnaires/${vacancy.id}`)">
               Savolnoma yaratish
             </AppButton>
           </div>
@@ -408,7 +408,9 @@ async function loadVacancy() {
     // Mock data
     vacancy.value = {
       id: route.params.id,
-      title: 'Senior PHP Developer',
+      title_uz: 'Senior PHP Developer',
+      title_ru: null,
+      language: 'uz',
       company_name: 'TechCorp',
       status: 'active',
       created_at: '2024-02-20',

@@ -11,11 +11,16 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null);
   const token = ref(localStorage.getItem('ishtop-token') || null);
   const loading = ref(false);
+  const initialized = ref(false);
+  const companies = ref([]);
+  const activeCompany = ref(null);
 
   // Getters
   const isAuthenticated = computed(() => !!token.value && !!user.value);
   const isEmployer = computed(() => user.value?.role === 'employer');
   const isRecruiter = computed(() => user.value?.role === 'recruiter');
+  const activeCompanyId = computed(() => user.value?.active_employer_id || null);
+  const hasMultipleCompanies = computed(() => companies.value.length > 1);
 
   // Actions
   async function fetchUser() {
@@ -23,12 +28,14 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       loading.value = true;
-      const response = await axios.get('/api/user', {
+      const response = await axios.get('/api/recruiter/me', {
         headers: {
           Authorization: `Bearer ${token.value}`,
         },
       });
-      user.value = response.data;
+      user.value = response.data.user;
+      companies.value = response.data.companies || [];
+      activeCompany.value = response.data.employer || null;
     } catch (error) {
       console.error('Failed to fetch user:', error);
       if (error.response?.status === 401) {
@@ -42,15 +49,16 @@ export const useAuthStore = defineStore('auth', () => {
   async function login(credentials) {
     try {
       loading.value = true;
-      const response = await axios.post('/api/auth/login', credentials);
+      const response = await axios.post('/api/recruiter/login', credentials);
 
       token.value = response.data.token;
       user.value = response.data.user;
 
       localStorage.setItem('ishtop-token', token.value);
-
-      // Set axios default header
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
+
+      // Fetch full user data including companies
+      await fetchUser();
 
       return { success: true };
     } catch (error) {
@@ -66,7 +74,7 @@ export const useAuthStore = defineStore('auth', () => {
   async function register(data) {
     try {
       loading.value = true;
-      const response = await axios.post('/api/auth/register', data);
+      const response = await axios.post('/api/recruiter/register', data);
 
       token.value = response.data.token;
       user.value = response.data.user;
@@ -74,12 +82,59 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('ishtop-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
+      // Fetch full user data including companies
+      await fetchUser();
+
       return { success: true };
     } catch (error) {
       return {
         success: false,
         message: error.response?.data?.message || 'Registration failed',
         errors: error.response?.data?.errors || {},
+      };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function sendOtp(phone) {
+    try {
+      loading.value = true;
+      const response = await axios.post('/api/recruiter/send-otp', { phone });
+      return {
+        success: true,
+        message: response.data.message,
+        code: response.data.code, // only in dev mode
+      };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Kod yuborib bo\'lmadi',
+      };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function verifyOtp(phone, code) {
+    try {
+      loading.value = true;
+      const response = await axios.post('/api/recruiter/verify-otp', { phone, code });
+
+      token.value = response.data.token;
+      user.value = response.data.user;
+
+      localStorage.setItem('ishtop-token', token.value);
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
+
+      // Fetch full user data including companies
+      await fetchUser();
+
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Kod noto\'g\'ri',
       };
     } finally {
       loading.value = false;
@@ -99,6 +154,9 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.setItem('ishtop-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
+      // Fetch full user data including companies
+      await fetchUser();
+
       return { success: true };
     } catch (error) {
       return {
@@ -110,31 +168,72 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function switchCompany(companyId) {
+    try {
+      loading.value = true;
+      const response = await axios.post(`/api/recruiter/companies/${companyId}/switch`);
+      activeCompany.value = response.data.active_employer;
+      if (user.value) {
+        user.value.active_employer_id = companyId;
+      }
+      // Refresh full state
+      await fetchUser();
+      return { success: true };
+    } catch (error) {
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Almashtirib bo\'lmadi',
+      };
+    } finally {
+      loading.value = false;
+    }
+  }
+
+  async function fetchCompanies() {
+    try {
+      const response = await axios.get('/api/recruiter/companies');
+      companies.value = response.data.companies;
+      return companies.value;
+    } catch (error) {
+      console.error('Failed to fetch companies:', error);
+      return [];
+    }
+  }
+
   function logout() {
     token.value = null;
     user.value = null;
+    companies.value = [];
+    activeCompany.value = null;
     localStorage.removeItem('ishtop-token');
     delete axios.defaults.headers.common['Authorization'];
   }
 
-  // Initialize axios interceptor
-  function initializeAxiosInterceptor() {
+  // Initialize auth state and axios interceptor
+  async function initialize() {
+    // Auth endpoints that should NOT trigger auto-logout on 401
+    const authEndpoints = ['/api/recruiter/login', '/api/recruiter/register', '/api/recruiter/send-otp', '/api/recruiter/verify-otp', '/api/auth/telegram'];
+
     axios.interceptors.response.use(
       (response) => response,
       (error) => {
-        if (error.response?.status === 401) {
+        const requestUrl = error.config?.url || '';
+        const isAuthEndpoint = authEndpoints.some(ep => requestUrl.includes(ep));
+
+        if (error.response?.status === 401 && !isAuthEndpoint) {
           logout();
-          window.location.href = '/auth/login';
         }
         return Promise.reject(error);
       }
     );
 
-    // Set initial token if exists
+    // Restore session from saved token
     if (token.value) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
-      fetchUser();
+      await fetchUser();
     }
+
+    initialized.value = true;
   }
 
   return {
@@ -142,18 +241,27 @@ export const useAuthStore = defineStore('auth', () => {
     user,
     token,
     loading,
+    initialized,
+    companies,
+    activeCompany,
 
     // Getters
     isAuthenticated,
     isEmployer,
     isRecruiter,
+    activeCompanyId,
+    hasMultipleCompanies,
 
     // Actions
+    initialize,
     fetchUser,
     login,
     register,
+    sendOtp,
+    verifyOtp,
     loginWithTelegram,
     logout,
-    initializeAxiosInterceptor,
+    switchCompany,
+    fetchCompanies,
   };
 });

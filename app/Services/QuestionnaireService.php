@@ -19,7 +19,7 @@ class QuestionnaireService
     {
         $questionnaire = Questionnaire::create([
             'vacancy_id' => $vacancy->id,
-            'title' => $data['title'] ?? $vacancy->title . ' — Savolnoma',
+            'title' => $data['title'] ?? $vacancy->title() . ' — Savolnoma',
             'description' => $data['description'] ?? null,
             'is_required' => $data['is_required'] ?? true,
             'time_limit_minutes' => $data['time_limit_minutes'] ?? null,

@@ -1,6 +1,6 @@
 <template>
   <AppModal
-    :open="open"
+    :show="open"
     size="sm"
     :closable="!loading"
     @close="handleCancel"

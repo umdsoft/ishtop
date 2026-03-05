@@ -390,10 +390,11 @@ class PostVacancyConversation extends Conversation
 
         $vacancy = $service->create([
             'employer_id' => $this->employerId,
-            'title' => $this->data['title'],
+            'language' => $this->lang,
+            "title_{$this->lang}" => $this->data['title'],
             'category' => $this->data['category'],
-            'description' => $this->data['description'],
-            'requirements' => $this->data['requirements'] ?? null,
+            "description_{$this->lang}" => $this->data['description'],
+            "requirements_{$this->lang}" => $this->data['requirements'] ?? null,
             'salary_min' => $this->data['salary_min'] ?? null,
             'salary_max' => $this->data['salary_max'] ?? null,
             'salary_type' => $this->data['salary_type'] ?? 'negotiable',

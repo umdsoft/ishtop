@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(php -v:*)",
+      "Bash(composer --version:*)",
+      "Bash(mysql:*)",
+      "Bash(/c/xampp/mysql/bin/mysql:*)",
+      "Bash(/c/xampp/mysql/bin/mysqld:*)",
+      "Bash(composer install:*)",
+      "Bash(php --ini:*)",
+      "Bash(php:*)",
+      "Bash(composer update:*)",
+      "Bash(npm install:*)",
+      "Bash(test:*)",
+      "Bash(npm run build:*)",
+      "Bash(composer check-platform-reqs:*)",
+      "Bash(npx concurrently:*)",
+      "Bash(grep:*)",
+      "Bash(composer require:*)",
+      "Bash(npx vite build)"
+    ]
+  }
+}

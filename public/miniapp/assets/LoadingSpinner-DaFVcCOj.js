@@ -1,0 +1,1 @@
+import{o as s,a as c,b as a}from"./vendor-T2qdPn3a.js";const i=(t,e)=>{const n=t.__vccOpts||t;for(const[o,r]of e)n[o]=r;return n},d={},l={class:"flex items-center justify-center py-8"};function _(t,e){return s(),c("div",l,[...e[0]||(e[0]=[a("div",{class:"animate-spin rounded-full h-8 w-8 border-b-2 border-tg-button"},null,-1)])])}const p=i(d,[["render",_]]);export{p as L,i as _};

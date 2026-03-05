@@ -32,6 +32,72 @@
       </button>
     </div>
 
+    <!-- Company Switcher -->
+    <div v-if="!sidebarCollapsed" class="px-3 py-3 border-b border-surface-200 dark:border-surface-800">
+      <div class="relative company-switcher">
+        <button
+          class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg bg-surface-50 dark:bg-surface-800 hover:bg-surface-100 dark:hover:bg-surface-700 transition-colors text-left"
+          @click="showCompanySwitcher = !showCompanySwitcher"
+        >
+          <div class="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-400 text-sm font-bold shrink-0">
+            {{ activeCompanyInitial }}
+          </div>
+          <div class="flex-1 min-w-0">
+            <p class="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
+              {{ activeCompany?.company_name || 'Kompaniya tanlang' }}
+            </p>
+            <p v-if="activeCompany?.industry" class="text-xs text-surface-500 dark:text-surface-400 truncate">
+              {{ activeCompany.industry }}
+            </p>
+          </div>
+          <ChevronUpDownIcon class="w-4 h-4 text-surface-400 shrink-0" />
+        </button>
+
+        <!-- Dropdown -->
+        <div
+          v-if="showCompanySwitcher"
+          class="absolute left-0 right-0 top-full mt-1 bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-lg shadow-xl z-50 py-1 max-h-64 overflow-y-auto"
+        >
+          <button
+            v-for="company in companies"
+            :key="company.id"
+            class="w-full flex items-center gap-3 px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors text-left"
+            :class="{ 'bg-brand-50 dark:bg-brand-950/20': company.id === activeCompany?.id }"
+            @click="handleSwitchCompany(company.id)"
+          >
+            <div class="w-6 h-6 rounded bg-surface-200 dark:bg-surface-700 flex items-center justify-center text-xs font-bold shrink-0">
+              {{ company.company_name?.[0]?.toUpperCase() || 'K' }}
+            </div>
+            <span class="text-sm text-surface-700 dark:text-surface-300 truncate flex-1">
+              {{ company.company_name }}
+            </span>
+            <CheckIcon v-if="company.id === activeCompany?.id" class="w-4 h-4 text-brand-500 shrink-0" />
+          </button>
+
+          <hr class="my-1 border-surface-200 dark:border-surface-800" />
+
+          <router-link
+            to="/dashboard/settings/company"
+            class="flex items-center gap-3 px-3 py-2 hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors text-sm text-brand-600 dark:text-brand-400"
+            @click="showCompanySwitcher = false"
+          >
+            <PlusIcon class="w-4 h-4" />
+            Yangi kompaniya qo'shish
+          </router-link>
+        </div>
+      </div>
+    </div>
+
+    <!-- Collapsed: company initial only -->
+    <div v-if="sidebarCollapsed" class="px-3 py-3 border-b border-surface-200 dark:border-surface-800 flex justify-center">
+      <div
+        class="w-8 h-8 rounded-lg bg-brand-100 dark:bg-brand-900 flex items-center justify-center text-brand-600 dark:text-brand-400 text-sm font-bold cursor-pointer"
+        :title="activeCompany?.company_name"
+      >
+        {{ activeCompanyInitial }}
+      </div>
+    </div>
+
     <!-- Navigation -->
     <nav class="flex-1 overflow-y-auto px-3 py-4 space-y-1">
       <SidebarLink
@@ -50,13 +116,6 @@
         to="/dashboard/vacancies"
         :icon="BriefcaseIcon"
         :label="$t('sidebar.vacancies')"
-        :collapsed="sidebarCollapsed"
-      />
-
-      <SidebarLink
-        to="/dashboard/vacancies/create"
-        :icon="PlusCircleIcon"
-        :label="$t('sidebar.newVacancy')"
         :collapsed="sidebarCollapsed"
       />
 
@@ -166,13 +225,14 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useUIStore } from '../../stores/ui';
+import { useAuthStore } from '../../stores/auth';
+import { toast } from 'vue-sonner';
 import SidebarLink from './SidebarLink.vue';
 import {
   HomeIcon,
   BriefcaseIcon,
-  PlusCircleIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
   ChatBubbleLeftRightIcon,
@@ -185,14 +245,50 @@ import {
   SunIcon,
   GlobeAltIcon,
   XMarkIcon,
+  CheckIcon,
+  ChevronUpDownIcon,
+  PlusIcon,
 } from '@heroicons/vue/24/outline';
 
 const uiStore = useUIStore();
+const authStore = useAuthStore();
 
 const sidebarCollapsed = computed(() => uiStore.sidebarCollapsed);
 const sidebarMobileOpen = computed(() => uiStore.sidebarMobileOpen);
 const isDark = computed(() => uiStore.isDark);
 const locale = computed(() => uiStore.locale);
+
+// Company switcher
+const showCompanySwitcher = ref(false);
+const companies = computed(() => authStore.companies);
+const activeCompany = computed(() => authStore.activeCompany);
+const activeCompanyInitial = computed(() => {
+  return activeCompany.value?.company_name?.[0]?.toUpperCase() || 'K';
+});
+
+async function handleSwitchCompany(companyId) {
+  if (companyId === activeCompany.value?.id) {
+    showCompanySwitcher.value = false;
+    return;
+  }
+  const result = await authStore.switchCompany(companyId);
+  showCompanySwitcher.value = false;
+  if (result.success) {
+    toast.success('Kompaniya almashtirildi');
+  } else {
+    toast.error(result.message);
+  }
+}
+
+// Close dropdown on click outside
+function handleClickOutside(event) {
+  if (showCompanySwitcher.value && !event.target.closest('.company-switcher')) {
+    showCompanySwitcher.value = false;
+  }
+}
+
+onMounted(() => document.addEventListener('click', handleClickOutside));
+onUnmounted(() => document.removeEventListener('click', handleClickOutside));
 
 function closeMobileSidebar() {
   uiStore.closeMobileSidebar();
