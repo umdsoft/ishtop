@@ -1,0 +1,1 @@
+<template><div class="p-6"><h1 class="text-2xl font-bold">TalentPool</h1><p class="text-surface-600 dark:text-surface-400 mt-2">This page will be implemented soon</p></div></template><script setup>//Placeholder</script>

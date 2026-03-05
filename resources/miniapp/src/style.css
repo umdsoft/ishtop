@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#app {
+  min-height: 100vh;
+  padding-bottom: 70px;
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-tg-button text-tg-button-text px-4 py-2 rounded-lg font-medium active:opacity-80 transition-opacity;
+  }
+
+  .btn-secondary {
+    @apply bg-tg-secondary-bg text-tg-text px-4 py-2 rounded-lg font-medium active:opacity-80 transition-opacity;
+  }
+
+  .card {
+    @apply bg-tg-secondary-bg rounded-xl p-4 shadow-sm;
+  }
+
+  .input {
+    @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-tg-button;
+  }
+}

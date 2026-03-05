@@ -1,0 +1,139 @@
+<?php
+
+namespace App\Models;
+
+use App\Enums\VacancyStatus;
+use App\Enums\WorkType;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
+class Vacancy extends Model
+{
+    use HasFactory, HasUuids, SoftDeletes;
+
+    protected $fillable = [
+        'employer_id', 'title', 'category', 'description', 'requirements',
+        'responsibilities', 'salary_min', 'salary_max', 'salary_type',
+        'work_type', 'experience_required', 'city', 'district',
+        'latitude', 'longitude', 'contact_phone', 'contact_method',
+        'views_count', 'applications_count', 'status', 'is_top', 'is_urgent',
+        'top_until', 'urgent_until', 'has_questionnaire',
+        'published_at', 'expires_at',
+    ];
+
+    protected function casts(): array
+    {
+        return [
+            'salary_min' => 'integer',
+            'salary_max' => 'integer',
+            'views_count' => 'integer',
+            'applications_count' => 'integer',
+            'is_top' => 'boolean',
+            'is_urgent' => 'boolean',
+            'has_questionnaire' => 'boolean',
+            'top_until' => 'datetime',
+            'urgent_until' => 'datetime',
+            'published_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'latitude' => 'decimal:7',
+            'longitude' => 'decimal:7',
+            'status' => VacancyStatus::class,
+            'work_type' => WorkType::class,
+        ];
+    }
+
+    public function employer(): BelongsTo
+    {
+        return $this->belongsTo(EmployerProfile::class, 'employer_id');
+    }
+
+    public function applications(): HasMany
+    {
+        return $this->hasMany(Application::class);
+    }
+
+    public function questionnaire(): HasOne
+    {
+        return $this->hasOne(Questionnaire::class);
+    }
+
+    public function interviewSlots(): HasMany
+    {
+        return $this->hasMany(InterviewSlot::class);
+    }
+
+    // ── Scopes ──
+
+    public function scopeActive($query)
+    {
+        return $query->where('status', VacancyStatus::ACTIVE);
+    }
+
+    public function scopeInCategory($query, string $category)
+    {
+        return $query->where('category', $category);
+    }
+
+    public function scopeInCity($query, string $city)
+    {
+        return $query->where('city', $city);
+    }
+
+    public function scopeSalaryRange($query, ?int $min, ?int $max)
+    {
+        if ($min) $query->where('salary_max', '>=', $min);
+        if ($max) $query->where('salary_min', '<=', $max);
+        return $query;
+    }
+
+    public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 10)
+    {
+        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        return $query
+            ->whereNotNull('latitude')
+            ->whereNotNull('longitude')
+            ->whereRaw("{$haversine} <= ?", [$lat, $lng, $lat, $radiusKm])
+            ->selectRaw("*, {$haversine} as distance_km", [$lat, $lng, $lat]);
+    }
+
+    public function scopeSearch($query, string $keyword)
+    {
+        return $query->whereRaw(
+            "MATCH(title, description) AGAINST(? IN BOOLEAN MODE)",
+            [$keyword]
+        );
+    }
+
+    // ── Helpers ──
+
+    public function isActive(): bool
+    {
+        return $this->status === VacancyStatus::ACTIVE;
+    }
+
+    public function isExpired(): bool
+    {
+        return $this->expires_at && $this->expires_at->isPast();
+    }
+
+    public function isTopActive(): bool
+    {
+        return $this->is_top && $this->top_until && $this->top_until->isFuture();
+    }
+
+    public function salaryFormatted(): string
+    {
+        if ($this->salary_type === 'negotiable') return 'Kelishiladi';
+        if ($this->salary_min && $this->salary_max) {
+            return number_format($this->salary_min) . ' - ' . number_format($this->salary_max) . " so'm";
+        }
+        if ($this->salary_min) return 'dan ' . number_format($this->salary_min) . " so'm";
+        if ($this->salary_max) return 'gacha ' . number_format($this->salary_max) . " so'm";
+        return 'Kelishiladi';
+    }
+}
