@@ -6,6 +6,8 @@ use App\Enums\VacancyStatus;
 use App\Enums\WorkType;
 use App\Filament\Admin\Resources\VacancyResource\Pages;
 use App\Models\Vacancy;
+use App\Jobs\NotifyMatchingWorkersJob;
+use App\Services\TelegramNotificationService;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\Resource;
@@ -192,6 +194,8 @@ class VacancyResource extends Resource
                             'status' => VacancyStatus::ACTIVE,
                             'published_at' => now(),
                         ]);
+                        app(TelegramNotificationService::class)->notifyVacancyModerated($record, true);
+                        NotifyMatchingWorkersJob::dispatch($record);
                     }),
                 Tables\Actions\Action::make('reject')
                     ->label('Rad etish')
@@ -203,6 +207,7 @@ class VacancyResource extends Resource
                         $record->update([
                             'status' => VacancyStatus::CLOSED,
                         ]);
+                        app(TelegramNotificationService::class)->notifyVacancyModerated($record, false);
                     }),
                 Tables\Actions\DeleteAction::make(),
             ])

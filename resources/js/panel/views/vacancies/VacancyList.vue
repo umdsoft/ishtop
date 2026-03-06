@@ -1,20 +1,58 @@
 <template>
   <div>
+    <!-- Limit Warning Banner -->
+    <div
+      v-if="subscription && !subscription.can_create_vacancy"
+      class="mb-6 p-4 rounded-xl border border-amber-300 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-950/40"
+    >
+      <div class="flex items-start gap-3">
+        <div class="shrink-0 mt-0.5 w-8 h-8 rounded-lg bg-amber-100 dark:bg-amber-500/20 flex items-center justify-center">
+          <ExclamationTriangleIcon class="h-5 w-5 text-amber-600 dark:text-amber-400" />
+        </div>
+        <div class="flex-1">
+          <p class="text-sm font-semibold text-amber-800 dark:text-amber-300">
+            Vakansiya limiti tugadi
+          </p>
+          <p class="text-sm text-amber-700 dark:text-amber-200/70 mt-1">
+            {{ getPlanLabel(subscription.plan) }} rejada maksimum {{ subscription.limits?.max_vacancies }} ta faol vakansiya yaratish mumkin.
+            Ko'proq vakansiya yaratish uchun obunangizni yangilang.
+          </p>
+          <router-link
+            to="/dashboard/settings/billing"
+            class="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm font-medium text-white bg-brand-600 hover:bg-brand-500 rounded-lg transition-colors"
+          >
+            <ArrowUpCircleIcon class="h-4 w-4" />
+            Obunani yangilash
+          </router-link>
+        </div>
+      </div>
+    </div>
+
     <!-- Header -->
     <div class="mb-6">
       <div class="flex items-center justify-between mb-4">
         <div>
           <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">Vakansiyalar</h1>
-          <p class="text-surface-600 dark:text-surface-400 mt-1">Barcha vakansiyalaringizni boshqaring</p>
+          <p class="text-surface-600 dark:text-surface-400 mt-1">
+            Barcha vakansiyalaringizni boshqaring
+            <span v-if="subscription && subscription.remaining_vacancies !== null" class="text-surface-500">
+              &middot; {{ subscription.remaining_vacancies }} ta vakansiya qoldi
+            </span>
+          </p>
         </div>
-        <router-link to="/dashboard/vacancies/create">
-          <AppButton variant="primary">
-            <template #icon-left>
-              <PlusIcon class="h-5 w-5" />
-            </template>
-            Yangi vakansiya
-          </AppButton>
-        </router-link>
+        <div class="flex items-center gap-3">
+          <router-link to="/dashboard/vacancies/create">
+            <AppButton
+              variant="primary"
+              :disabled="subscription && !subscription.can_create_vacancy"
+            >
+              <template #icon-left>
+                <PlusIcon class="h-5 w-5" />
+              </template>
+              Yangi vakansiya
+            </AppButton>
+          </router-link>
+        </div>
       </div>
 
       <!-- Filters -->
@@ -24,7 +62,7 @@
             <AppSearchInput
               v-model="filters.search"
               placeholder="Vakansiya qidirish..."
-              @search="handleSearch"
+              @search="fetchVacancies"
             />
 
             <AppSelect
@@ -33,23 +71,26 @@
               label-key="label"
               value-key="value"
               placeholder="Status"
+              @update:model-value="fetchVacancies"
             />
 
             <AppSelect
-              v-model="filters.employment_type"
-              :options="employmentTypeOptions"
+              v-model="filters.work_type"
+              :options="workTypeOptions"
               label-key="label"
               value-key="value"
               placeholder="Bandlik turi"
+              @update:model-value="fetchVacancies"
             />
 
             <AppSelect
-              v-model="filters.category_id"
-              :options="categories"
-              label-key="name"
-              value-key="id"
+              v-model="filters.category"
+              :options="categoryOptions"
+              label-key="label"
+              value-key="value"
               placeholder="Kategoriya"
               searchable
+              @update:model-value="fetchVacancies"
             />
           </div>
         </div>
@@ -57,7 +98,7 @@
     </div>
 
     <!-- Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <AppCard>
         <div class="flex items-center justify-between">
           <div>
@@ -89,7 +130,7 @@
             <p class="text-2xl font-bold text-surface-900 dark:text-surface-100 mt-1">{{ stats.closed }}</p>
           </div>
           <div class="w-12 h-12 rounded-lg bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
-            <BriefcaseIcon class="h-6 w-6 text-surface-600 dark:text-surface-400" />
+            <ArchiveBoxIcon class="h-6 w-6 text-surface-600 dark:text-surface-400" />
           </div>
         </div>
       </AppCard>
@@ -107,11 +148,16 @@
       </AppCard>
     </div>
 
+    <!-- Loading State -->
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <AppLoadingSpinner size="lg" text="Vakansiyalar yuklanmoqda..." />
+    </div>
+
     <!-- Vacancies Table -->
-    <AppCard no-padding>
+    <AppCard v-else no-padding>
       <AppTable
         :columns="columns"
-        :data="filteredVacancies"
+        :data="vacancies"
         :hoverable="true"
         :clickable="true"
         @row-click="handleRowClick"
@@ -120,7 +166,7 @@
           <div class="flex items-center gap-2">
             <div>
               <p class="font-medium text-surface-900 dark:text-surface-100">{{ row.title_uz || row.title_ru }}</p>
-              <p class="text-sm text-surface-500 dark:text-surface-400">{{ row.company_name }}</p>
+              <p class="text-sm text-surface-500 dark:text-surface-400">{{ row.employer?.company_name || '' }}</p>
             </div>
             <span
               v-if="row.language"
@@ -132,20 +178,34 @@
         </template>
 
         <template #cell-status="{ row }">
-          <AppBadge :variant="getStatusVariant(row.status)">
-            {{ getStatusLabel(row.status) }}
-          </AppBadge>
+          <div class="flex items-center gap-2">
+            <AppBadge :variant="getStatusVariant(row.status)">
+              {{ getStatusLabel(row.status) }}
+            </AppBadge>
+            <button
+              v-if="['active', 'paused', 'draft', 'pending'].includes(row.status)"
+              class="relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none"
+              :class="row.status === 'active' ? 'bg-success-500' : 'bg-surface-600'"
+              :title="row.status === 'active' ? 'To\'xtatish' : 'Faollashtirish'"
+              @click.stop="toggleVacancyStatus(row)"
+            >
+              <span
+                class="pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                :class="row.status === 'active' ? 'translate-x-4' : 'translate-x-0'"
+              />
+            </button>
+          </div>
         </template>
 
-        <template #cell-employment_type="{ row }">
+        <template #cell-work_type="{ row }">
           <span class="text-sm text-surface-700 dark:text-surface-300">
-            {{ getEmploymentTypeLabel(row.employment_type) }}
+            {{ getWorkTypeLabel(row.work_type) }}
           </span>
         </template>
 
         <template #cell-salary="{ row }">
           <span class="text-sm text-surface-700 dark:text-surface-300">
-            {{ formatSalary(row.salary_min, row.salary_max) }}
+            {{ formatSalary(row.salary_min, row.salary_max, row.salary_type) }}
           </span>
         </template>
 
@@ -167,7 +227,7 @@
         </template>
 
         <template #cell-actions="{ row }">
-          <div class="flex items-center gap-2" @click.stop>
+          <div class="flex items-center gap-1" @click.stop>
             <AppTooltip content="Ko'rish" position="top">
               <button
                 class="p-1.5 rounded-md hover:bg-surface-100 dark:hover:bg-surface-800 text-surface-600 dark:text-surface-400 transition-colors"
@@ -207,11 +267,12 @@
         </template>
       </AppTable>
 
-      <div v-if="filteredVacancies.length > 0" class="px-6 py-4 border-t border-surface-200 dark:border-surface-700">
+      <div v-if="vacancies.length > 0" class="px-6 py-4 border-t border-surface-200 dark:border-surface-700">
         <AppPagination
           v-model:current-page="currentPage"
           :total="totalVacancies"
           :per-page="perPage"
+          @update:current-page="fetchVacancies"
         />
       </div>
     </AppCard>
@@ -232,9 +293,10 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
+import axios from 'axios';
 import {
   PlusIcon,
   EyeIcon,
@@ -242,8 +304,10 @@ import {
   TrashIcon,
   CheckCircleIcon,
   ClockIcon,
-  BriefcaseIcon,
+  ArchiveBoxIcon,
   UsersIcon,
+  ExclamationTriangleIcon,
+  ArrowUpCircleIcon,
 } from '@heroicons/vue/24/outline';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
@@ -255,88 +319,41 @@ import AppTooltip from '../../components/ui/AppTooltip.vue';
 import AppPagination from '../../components/ui/AppPagination.vue';
 import AppEmptyState from '../../components/ui/AppEmptyState.vue';
 import AppConfirmDialog from '../../components/ui/AppConfirmDialog.vue';
+import AppLoadingSpinner from '../../components/ui/AppLoadingSpinner.vue';
 
 const router = useRouter();
 
-// Mock data (replace with API calls)
+const loading = ref(false);
+const vacancies = ref([]);
+const subscription = ref(null);
 const stats = ref({
-  active: 12,
-  pending: 3,
-  closed: 24,
-  total_applications: 487,
+  active: 0,
+  pending: 0,
+  closed: 0,
+  total_applications: 0,
 });
-
-const categories = ref([
-  { id: 1, name: 'IT va Texnologiya' },
-  { id: 2, name: 'Savdo va Marketing' },
-  { id: 3, name: 'Moliya va Buxgalteriya' },
-  { id: 4, name: 'Qurilish' },
-  { id: 5, name: 'Ovqatlanish' },
-]);
-
-const vacancies = ref([
-  {
-    id: 1,
-    title_uz: 'Senior PHP Developer',
-    title_ru: null,
-    language: 'uz',
-    company_name: 'TechCorp',
-    status: 'active',
-    employment_type: 'full_time',
-    salary_min: 5000000,
-    salary_max: 8000000,
-    applications_count: 45,
-    new_applications_count: 3,
-    created_at: '2024-02-20',
-  },
-  {
-    id: 2,
-    title_uz: 'Ofitsiant',
-    title_ru: 'Официант',
-    language: 'uz',
-    company_name: 'Grand Hotel',
-    status: 'active',
-    employment_type: 'part_time',
-    salary_min: 2000000,
-    salary_max: 3000000,
-    applications_count: 78,
-    new_applications_count: 12,
-    created_at: '2024-02-18',
-  },
-  {
-    id: 3,
-    title_uz: 'Savdo bo\'limi menejeri',
-    title_ru: null,
-    language: 'uz',
-    company_name: 'FoodChain',
-    status: 'pending',
-    employment_type: 'full_time',
-    salary_min: 4000000,
-    salary_max: 6000000,
-    applications_count: 23,
-    new_applications_count: 0,
-    created_at: '2024-02-15',
-  },
-]);
 
 const filters = ref({
   search: '',
   status: null,
-  employment_type: null,
-  category_id: null,
+  work_type: null,
+  category: null,
 });
 
 const currentPage = ref(1);
-const perPage = ref(10);
+const perPage = ref(15);
+const totalVacancies = ref(0);
 
 const statusOptions = [
   { label: 'Barcha statuslar', value: null },
   { label: 'Faol', value: 'active' },
   { label: 'Kutilmoqda', value: 'pending' },
+  { label: 'To\'xtatilgan', value: 'paused' },
   { label: 'Yopilgan', value: 'closed' },
+  { label: 'Qoralama', value: 'draft' },
 ];
 
-const employmentTypeOptions = [
+const workTypeOptions = [
   { label: 'Barcha turlar', value: null },
   { label: 'To\'liq ish kuni', value: 'full_time' },
   { label: 'Yarim ish kuni', value: 'part_time' },
@@ -344,10 +361,23 @@ const employmentTypeOptions = [
   { label: 'Freelance', value: 'freelance' },
 ];
 
+const categoryOptions = [
+  { label: 'Barcha kategoriyalar', value: null },
+  { label: 'IT va Texnologiya', value: 'it' },
+  { label: 'Savdo va Marketing', value: 'sales' },
+  { label: 'Moliya va Buxgalteriya', value: 'finance' },
+  { label: 'Qurilish', value: 'construction' },
+  { label: 'Ovqatlanish', value: 'food' },
+  { label: 'Ta\'lim', value: 'education' },
+  { label: 'Tibbiyot', value: 'medicine' },
+  { label: 'Transport va Logistika', value: 'transport' },
+  { label: 'Boshqa', value: 'other' },
+];
+
 const columns = [
   { key: 'title', label: 'Vakansiya', sortable: true },
   { key: 'status', label: 'Status', sortable: true },
-  { key: 'employment_type', label: 'Bandlik turi', sortable: false },
+  { key: 'work_type', label: 'Bandlik turi', sortable: false },
   { key: 'salary', label: 'Maosh', sortable: false },
   { key: 'applications_count', label: 'Arizalar', sortable: true },
   { key: 'created_at', label: 'Yaratilgan', sortable: true },
@@ -358,36 +388,82 @@ const showDeleteDialog = ref(false);
 const deleteLoading = ref(false);
 const vacancyToDelete = ref(null);
 
-const filteredVacancies = computed(() => {
-  let result = vacancies.value;
-
-  if (filters.value.search) {
-    const search = filters.value.search.toLowerCase();
-    result = result.filter(v =>
-      (v.title_uz || '').toLowerCase().includes(search) ||
-      (v.title_ru || '').toLowerCase().includes(search) ||
-      v.company_name.toLowerCase().includes(search)
-    );
-  }
-
-  if (filters.value.status) {
-    result = result.filter(v => v.status === filters.value.status);
-  }
-
-  if (filters.value.employment_type) {
-    result = result.filter(v => v.employment_type === filters.value.employment_type);
-  }
-
-  return result;
+onMounted(() => {
+  fetchVacancies();
 });
 
-const totalVacancies = computed(() => filteredVacancies.value.length);
+async function fetchVacancies() {
+  loading.value = true;
+
+  try {
+    const params = {
+      page: currentPage.value,
+      per_page: perPage.value,
+    };
+
+    // Get raw values from select objects
+    const statusVal = filters.value.status;
+    const workTypeVal = filters.value.work_type;
+    const categoryVal = filters.value.category;
+
+    if (filters.value.search) params.search = filters.value.search;
+    if (statusVal?.value) params.status = statusVal.value;
+    if (workTypeVal?.value) params.work_type = workTypeVal.value;
+    if (categoryVal?.value) params.category = categoryVal.value;
+
+    const { data } = await axios.get('/api/recruiter/vacancies', { params });
+
+    vacancies.value = data.vacancies?.data || [];
+    totalVacancies.value = data.vacancies?.total || 0;
+    if (data.stats) {
+      stats.value = data.stats;
+    }
+    if (data.subscription) {
+      subscription.value = data.subscription;
+    }
+  } catch (error) {
+    console.error('Failed to fetch vacancies:', error);
+    toast.error('Vakansiyalarni yuklashda xatolik');
+  } finally {
+    loading.value = false;
+  }
+}
+
+async function toggleVacancyStatus(vacancy) {
+  const wasActive = vacancy.status === 'active';
+  const action = wasActive ? 'to\'xtatish' : 'faollashtirish';
+
+  try {
+    const { data } = await axios.put(`/api/recruiter/vacancies/${vacancy.id}/toggle-status`);
+
+    // Update local data
+    const idx = vacancies.value.findIndex(v => v.id === vacancy.id);
+    if (idx !== -1) {
+      vacancies.value[idx].status = data.vacancy.status;
+    }
+
+    // Refresh stats
+    fetchVacancies();
+
+    toast.success(wasActive ? 'Vakansiya to\'xtatildi' : 'Vakansiya faollashtirildi');
+  } catch (error) {
+    console.error('Failed to toggle status:', error);
+    if (error.response?.data?.limit_reached) {
+      toast.error(error.response.data.message);
+    } else {
+      toast.error(`Statusni ${action}da xatolik`);
+    }
+  }
+}
 
 function getStatusVariant(status) {
   const variants = {
     active: 'success',
     pending: 'warning',
+    paused: 'info',
     closed: 'default',
+    expired: 'default',
+    draft: 'default',
   };
   return variants[status] || 'default';
 }
@@ -396,40 +472,36 @@ function getStatusLabel(status) {
   const labels = {
     active: 'Faol',
     pending: 'Kutilmoqda',
+    paused: 'To\'xtatilgan',
     closed: 'Yopilgan',
+    expired: 'Muddati tugagan',
+    draft: 'Qoralama',
   };
   return labels[status] || status;
 }
 
-function getEmploymentTypeLabel(type) {
+function getWorkTypeLabel(type) {
   const labels = {
     full_time: 'To\'liq ish kuni',
     part_time: 'Yarim ish kuni',
     remote: 'Masofaviy',
     freelance: 'Freelance',
   };
-  return labels[type] || type;
+  return labels[type] || type || '—';
 }
 
-function formatSalary(min, max) {
-  if (!min && !max) return 'Kelishiladi';
+function formatSalary(min, max, type) {
+  if (type === 'negotiable' || (!min && !max)) return 'Kelishiladi';
 
-  const formatNumber = (num) => {
-    return new Intl.NumberFormat('uz-UZ').format(num);
-  };
+  const fmt = (num) => new Intl.NumberFormat('uz-UZ').format(num);
 
-  if (min && max) {
-    return `${formatNumber(min)} - ${formatNumber(max)} so'm`;
-  }
-
-  if (min) {
-    return `${formatNumber(min)}+ so'm`;
-  }
-
-  return `${formatNumber(max)} so'm gacha`;
+  if (min && max) return `${fmt(min)} - ${fmt(max)} so'm`;
+  if (min) return `${fmt(min)}+ so'm`;
+  return `${fmt(max)} so'm gacha`;
 }
 
 function formatDate(date) {
+  if (!date) return '—';
   return new Date(date).toLocaleDateString('uz-UZ', {
     year: 'numeric',
     month: 'short',
@@ -437,9 +509,15 @@ function formatDate(date) {
   });
 }
 
-function handleSearch(query) {
-  // Debounced search already handled by AppSearchInput
-  console.log('Searching:', query);
+function getPlanLabel(plan) {
+  const labels = {
+    free: 'Bepul',
+    business: 'Biznes',
+    recruiter_pro: 'Recruiter Pro',
+    agency: 'Agency',
+    corporate: 'Korporativ',
+  };
+  return labels[plan] || plan;
 }
 
 function handleRowClick(row) {
@@ -462,15 +540,21 @@ function deleteVacancy(id) {
 async function confirmDelete() {
   deleteLoading.value = true;
 
-  // Simulate API call
-  await new Promise(resolve => setTimeout(resolve, 1000));
+  try {
+    await axios.delete(`/api/recruiter/vacancies/${vacancyToDelete.value}`);
+    vacancies.value = vacancies.value.filter(v => v.id !== vacancyToDelete.value);
+    totalVacancies.value--;
+    toast.success('Vakansiya muvaffaqiyatli o\'chirildi');
 
-  vacancies.value = vacancies.value.filter(v => v.id !== vacancyToDelete.value);
-
-  deleteLoading.value = false;
-  showDeleteDialog.value = false;
-  vacancyToDelete.value = null;
-
-  toast.success('Vakansiya muvaffaqiyatli o\'chirildi');
+    // Refresh stats
+    fetchVacancies();
+  } catch (error) {
+    console.error('Failed to delete vacancy:', error);
+    toast.error('Vakansiyani o\'chirishda xatolik');
+  } finally {
+    deleteLoading.value = false;
+    showDeleteDialog.value = false;
+    vacancyToDelete.value = null;
+  }
 }
 </script>

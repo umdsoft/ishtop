@@ -1,49 +1,66 @@
 <template>
-  <div class="card cursor-pointer hover:shadow-md transition-shadow" @click="handleClick">
-    <div class="flex items-start gap-3">
+  <div
+    class="vacancy-card rounded-xl px-3.5 py-3 cursor-pointer active:scale-[0.98] transition-transform"
+    style="background-color: var(--tg-theme-secondary-bg-color);"
+    @click="handleClick"
+  >
+    <div class="flex items-center gap-3">
       <!-- Company Logo -->
       <img
         v-if="vacancy.employer?.logo_url"
         :src="vacancy.employer.logo_url"
         :alt="vacancy.employer.company_name"
-        class="w-12 h-12 rounded-lg object-cover"
+        class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
       />
-      <div v-else class="w-12 h-12 rounded-lg bg-gray-200 flex items-center justify-center">
-        <span class="text-xl">{{ getInitial(vacancy.employer?.company_name) }}</span>
+      <div
+        v-else
+        class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+        style="background-color: rgba(var(--tg-button-rgb, 59,130,246), 0.1);"
+      >
+        <span class="text-sm font-bold" style="color: var(--tg-theme-button-color);">
+          {{ getInitial(vacancy.employer?.company_name) }}
+        </span>
       </div>
 
-      <!-- Vacancy Info -->
+      <!-- Content -->
       <div class="flex-1 min-w-0">
-        <!-- Title and Badges -->
-        <div class="flex items-start justify-between gap-2 mb-1">
-          <h3 class="font-semibold text-base line-clamp-2 flex-1">
-            {{ vacancy.title_uz || vacancy.title_ru }}
+        <!-- Row 1: Title + badges -->
+        <div class="flex items-center gap-1.5">
+          <h3 class="font-semibold text-[14px] leading-tight truncate flex-1" style="color: var(--tg-theme-text-color);">
+            {{ vacancy.title_uz || vacancy.title_ru || vacancy.title }}
           </h3>
-          <div class="flex gap-1">
-            <span v-if="vacancy.is_top" class="badge bg-yellow-100 text-yellow-800">TOP</span>
-            <span v-if="vacancy.is_urgent" class="badge bg-red-100 text-red-800">Tez</span>
-          </div>
+          <span v-if="vacancy.is_top" class="badge-top">TOP</span>
+          <span v-if="vacancy.is_urgent" class="badge-urgent">!</span>
         </div>
 
-        <!-- Company Name -->
-        <p class="text-sm text-tg-hint mb-2">{{ vacancy.employer?.company_name }}</p>
-
-        <!-- Salary -->
-        <p v-if="vacancy.salary_min || vacancy.salary_max" class="text-sm font-medium text-green-600 mb-2">
-          {{ formatSalary(vacancy) }}
-        </p>
-
-        <!-- Location and Work Type -->
-        <div class="flex flex-wrap gap-2 text-xs text-tg-hint">
-          <span v-if="vacancy.city">📍 {{ vacancy.city }}</span>
-          <span v-if="vacancy.work_type">💼 {{ workTypeLabel(vacancy.work_type) }}</span>
-          <span v-if="vacancy.experience_required">⏱ {{ experienceLabel(vacancy.experience_required) }}</span>
+        <!-- Row 2: Company + salary -->
+        <div class="flex items-center gap-1 mt-0.5 text-[12px]">
+          <span class="truncate" style="color: var(--tg-theme-hint-color);">{{ vacancy.employer?.company_name }}</span>
+          <span v-if="vacancy.salary_min || vacancy.salary_max" style="color: var(--tg-theme-hint-color);">·</span>
+          <span v-if="vacancy.salary_min || vacancy.salary_max" class="flex-shrink-0 font-semibold" style="color: var(--tg-theme-button-color);">
+            {{ formatSalary(vacancy) }}
+          </span>
         </div>
 
-        <!-- Views and Date -->
-        <div class="flex items-center justify-between mt-2 text-xs text-tg-hint">
-          <span>👁 {{ vacancy.views_count }} ko'rildi</span>
-          <span>{{ timeAgo(vacancy.created_at) }}</span>
+        <!-- Row 3: Meta info -->
+        <div class="flex items-center gap-2.5 mt-1 text-[11px]" style="color: var(--tg-theme-hint-color);">
+          <span v-if="vacancy.city" class="flex items-center gap-0.5 truncate">
+            <svg class="w-2.5 h-2.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            {{ vacancy.city }}
+          </span>
+          <span v-if="vacancy.work_type" class="flex items-center gap-0.5 flex-shrink-0">
+            {{ t(`work_type.${vacancy.work_type}`) }}
+          </span>
+          <span class="flex items-center gap-0.5 flex-shrink-0 ml-auto">
+            <svg class="w-2.5 h-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+            </svg>
+            {{ vacancy.applications_count || 0 }}
+          </span>
+          <span class="flex-shrink-0">{{ timeAgo(vacancy.created_at) }}</span>
         </div>
       </div>
     </div>
@@ -53,6 +70,7 @@
 <script setup>
 import { useRouter } from 'vue-router'
 import { useTelegram } from '@/composables/useTelegram'
+import { useLocale } from '@/composables/useLocale'
 
 const props = defineProps({
   vacancy: {
@@ -63,6 +81,7 @@ const props = defineProps({
 
 const router = useRouter()
 const telegram = useTelegram()
+const { t } = useLocale()
 
 function handleClick() {
   telegram.hapticFeedback('soft')
@@ -74,55 +93,54 @@ function getInitial(name) {
 }
 
 function formatSalary(vacancy) {
+  const fmt = (n) => new Intl.NumberFormat('uz-UZ').format(n)
   if (vacancy.salary_min && vacancy.salary_max) {
-    return `${formatNumber(vacancy.salary_min)} - ${formatNumber(vacancy.salary_max)} so'm`
+    return `${fmt(vacancy.salary_min)} - ${fmt(vacancy.salary_max)}`
   } else if (vacancy.salary_min) {
-    return `${formatNumber(vacancy.salary_min)} so'm dan`
+    return `${fmt(vacancy.salary_min)}+`
   } else if (vacancy.salary_max) {
-    return `${formatNumber(vacancy.salary_max)} so'm gacha`
+    return `${fmt(vacancy.salary_max)} gacha`
   }
-  return 'Kelishuv asosida'
-}
-
-function formatNumber(num) {
-  return new Intl.NumberFormat('uz-UZ').format(num)
-}
-
-function workTypeLabel(type) {
-  const labels = {
-    full_time: 'To\'liq kun',
-    part_time: 'Yarim kun',
-    remote: 'Masofaviy',
-    temporary: 'Vaqtinchalik',
-  }
-  return labels[type] || type
-}
-
-function experienceLabel(exp) {
-  const labels = {
-    no_experience: 'Tajriba kerak emas',
-    '0-1': '0-1 yil',
-    '1-3': '1-3 yil',
-    '3-5': '3-5 yil',
-    '5+': '5+ yil',
-  }
-  return labels[exp] || exp
+  return ''
 }
 
 function timeAgo(date) {
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
 
-  if (seconds < 60) return 'Hozirgina'
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} daqiqa oldin`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} soat oldin`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} kun oldin`
+  if (seconds < 60) return t('time.just_now')
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} ${t('time.minutes_ago')}`
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${t('time.hours_ago')}`
+  if (seconds < 604800) return `${Math.floor(seconds / 86400)} ${t('time.days_ago')}`
 
   return new Date(date).toLocaleDateString('uz-UZ')
 }
 </script>
 
 <style scoped>
-.badge {
-  @apply px-2 py-0.5 text-xs font-medium rounded;
+.badge-top {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 800;
+  border-radius: 4px;
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #f59e0b;
+  letter-spacing: 0.5px;
+  flex-shrink: 0;
+}
+
+.badge-urgent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  font-size: 10px;
+  font-weight: 800;
+  border-radius: 4px;
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  flex-shrink: 0;
 }
 </style>

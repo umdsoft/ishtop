@@ -4,26 +4,57 @@ namespace App\Telegram\Keyboards;
 
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
+use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class MainMenuKeyboard
 {
-    public static function make(): InlineKeyboardMarkup
+    public static function make(string $lang = 'uz'): InlineKeyboardMarkup
     {
-        return InlineKeyboardMarkup::make()
+        $isRu = $lang === 'ru';
+
+        $keyboard = InlineKeyboardMarkup::make()
             ->addRow(
-                InlineKeyboardButton::make('🔍 Ish qidirish', callback_data: 'menu:search'),
-                InlineKeyboardButton::make('📝 Rezume', callback_data: 'menu:resume'),
+                InlineKeyboardButton::make(
+                    $isRu ? '🔍 Поиск работы' : '🔍 Ish qidirish',
+                    callback_data: 'menu:search'
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '📝 Резюме' : '📝 Rezume',
+                    callback_data: 'menu:resume'
+                ),
             )
             ->addRow(
-                InlineKeyboardButton::make('📢 E\'lon berish', callback_data: 'menu:post'),
-                InlineKeyboardButton::make('📋 Arizalarim', callback_data: 'menu:apps'),
-            )
-            ->addRow(
-                InlineKeyboardButton::make('🌐 Mini App', url: 'https://t.me/IshTopBot/app'),
-            )
-            ->addRow(
-                InlineKeyboardButton::make('⚙️ Sozlamalar', callback_data: 'menu:settings'),
-                InlineKeyboardButton::make('❓ Yordam', callback_data: 'menu:help'),
+                InlineKeyboardButton::make(
+                    $isRu ? '📢 Дать объявление' : "📢 E'lon berish",
+                    callback_data: 'menu:post'
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '📋 Мои заявки' : '📋 Arizalarim',
+                    callback_data: 'menu:apps'
+                ),
             );
+
+        $appUrl = config('app.url');
+        if (!str_contains($appUrl, 'localhost')) {
+            $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    '🌐 Mini App',
+                    web_app: new WebAppInfo($appUrl . '/miniapp')
+                ),
+            );
+        }
+
+        $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '⚙️ Настройки' : '⚙️ Sozlamalar',
+                    callback_data: 'menu:settings'
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '❓ Помощь' : '❓ Yordam',
+                    callback_data: 'menu:help'
+                ),
+            );
+
+        return $keyboard;
     }
 }

@@ -125,7 +125,7 @@
       </div>
 
       <SidebarLink
-        to="/dashboard/talent-pool"
+        to="/dashboard/candidates"
         :icon="UsersIcon"
         :label="$t('sidebar.talentPool')"
         :collapsed="sidebarCollapsed"
@@ -136,24 +136,20 @@
         :icon="ClipboardDocumentListIcon"
         :label="$t('sidebar.questionnaires')"
         :collapsed="sidebarCollapsed"
+        exact
+      />
+
+      <SidebarLink
+        to="/dashboard/questionnaires/templates"
+        :icon="DocumentDuplicateIcon"
+        :label="$t('sidebar.questionnaireTemplates')"
+        :collapsed="sidebarCollapsed"
       />
 
       <SidebarLink
         to="/dashboard/messages/templates"
         :icon="ChatBubbleLeftRightIcon"
         :label="$t('sidebar.messageTemplates')"
-        :collapsed="sidebarCollapsed"
-      />
-
-      <!-- Reklama Section -->
-      <div v-if="!sidebarCollapsed" class="px-3 pt-4 pb-2 text-xs font-semibold text-surface-400 dark:text-surface-500 uppercase tracking-wider">
-        Reklama
-      </div>
-
-      <SidebarLink
-        to="/dashboard/banners"
-        :icon="RectangleStackIcon"
-        :label="$t('sidebar.banners')"
         :collapsed="sidebarCollapsed"
       />
 
@@ -235,8 +231,9 @@ import {
   BriefcaseIcon,
   UsersIcon,
   ClipboardDocumentListIcon,
+  DocumentDuplicateIcon,
   ChatBubbleLeftRightIcon,
-  RectangleStackIcon,
+
   ChartBarIcon,
   UserCircleIcon,
   BuildingOfficeIcon,

@@ -42,10 +42,10 @@
     "dashboard": "Главная",
     "vacancies": "Вакансии",
     "newVacancy": "Новая вакансия",
-    "talentPool": "Talent Pool",
-    "questionnaires": "Шаблоны анкет",
+    "talentPool": "Кандидаты",
+    "questionnaires": "Анкеты",
+    "questionnaireTemplates": "Шаблоны анкет",
     "messageTemplates": "Шаблоны сообщений",
-    "banners": "Баннеры",
     "analytics": "Статистика",
     "settings": "Настройки",
     "profile": "Профиль",
@@ -104,6 +104,6 @@
     "addNote": "Добавить заметку",
     "sendMessage": "Отправить сообщение",
     "moveToStage": "Переместить на этап",
-    "saveToPool": "Сохранить в Talent Pool"
+    "saveToPool": "Сохранить в кандидаты"
   }
 }

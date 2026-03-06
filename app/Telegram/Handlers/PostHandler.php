@@ -12,10 +12,6 @@ use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 
-/**
- * PostHandler
- * Handles /post command and vacancy management
- */
 class PostHandler
 {
     public function __invoke(Nutgram $bot): void
@@ -31,13 +27,72 @@ class PostHandler
         $employer = $user->employerProfile;
 
         if (!$employer) {
-            // No employer profile yet
             $this->showEmployerPrompt($bot, $lang);
             return;
         }
 
-        // Show vacancy list
         $this->showVacancyList($bot, $employer, $lang);
+    }
+
+    public function handleCallback(Nutgram $bot): void
+    {
+        $data = $bot->callbackQuery()->data ?? '';
+        $bot->answerCallbackQuery();
+
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+        if (!$user) {
+            $bot->sendMessage(text: 'Avval /start buyrug\'ini yuboring.');
+            return;
+        }
+
+        $lang = $user->language?->value ?? 'uz';
+
+        if ($data === 'post:create') {
+            (new PostVacancyConversation())->begin($bot);
+            return;
+        }
+
+        if ($data === 'post:back') {
+            $this->__invoke($bot);
+            return;
+        }
+
+        if (str_starts_with($data, 'post:view:')) {
+            $vacancyId = str_replace('post:view:', '', $data);
+            $vacancy = Vacancy::find($vacancyId);
+            if ($vacancy) {
+                $this->showVacancyDetails($bot, $vacancy, $lang);
+            }
+            return;
+        }
+
+        if (str_starts_with($data, 'post:pause:')) {
+            $vacancyId = str_replace('post:pause:', '', $data);
+            $vacancy = Vacancy::find($vacancyId);
+            if ($vacancy) {
+                $vacancy->update(['status' => VacancyStatus::PAUSED]);
+                $bot->answerCallbackQuery(
+                    text: $lang === 'ru' ? '⏸ Вакансия приостановлена' : '⏸ Vakansiya to\'xtatildi',
+                    show_alert: true
+                );
+                $this->showVacancyDetails($bot, $vacancy->fresh(), $lang);
+            }
+            return;
+        }
+
+        if (str_starts_with($data, 'post:activate:')) {
+            $vacancyId = str_replace('post:activate:', '', $data);
+            $vacancy = Vacancy::find($vacancyId);
+            if ($vacancy) {
+                $vacancy->update(['status' => VacancyStatus::ACTIVE]);
+                $bot->answerCallbackQuery(
+                    text: $lang === 'ru' ? '▶️ Вакансия активирована' : '▶️ Vakansiya faollashtirildi',
+                    show_alert: true
+                );
+                $this->showVacancyDetails($bot, $vacancy->fresh(), $lang);
+            }
+            return;
+        }
     }
 
     protected function showEmployerPrompt(Nutgram $bot, string $lang): void
@@ -48,7 +103,7 @@ class PostHandler
 
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make(
@@ -63,11 +118,6 @@ class PostHandler
                     )
                 ),
         );
-
-        $bot->onCallbackQueryData('post:create', function (Nutgram $bot) {
-            $bot->answerCallbackQuery();
-            PostVacancyConversation::begin($bot);
-        });
     }
 
     protected function showVacancyList(Nutgram $bot, EmployerProfile $employer, string $lang): void
@@ -88,7 +138,7 @@ class PostHandler
 
             $bot->sendMessage(
                 text: $text,
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
                 reply_markup: InlineKeyboardMarkup::make()
                     ->addRow(
                         InlineKeyboardButton::make(
@@ -103,12 +153,6 @@ class PostHandler
                         )
                     ),
             );
-
-            $bot->onCallbackQueryData('post:create', function (Nutgram $bot) {
-                $bot->answerCallbackQuery();
-                PostVacancyConversation::begin($bot);
-            });
-
             return;
         }
 
@@ -149,7 +193,6 @@ class PostHandler
                 )
             );
 
-        // Add first 5 vacancies as buttons
         foreach ($vacancies->take(5) as $vacancy) {
             $keyboard->addRow(
                 InlineKeyboardButton::make(
@@ -159,12 +202,17 @@ class PostHandler
             );
         }
 
+        $recruiterUrl = config('app.url') . '/recruiter';
+        if (!str_contains($recruiterUrl, 'localhost')) {
+            $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    '🌐 ' . ($lang === 'ru' ? 'Открыть панель' : 'Panelni ochish'),
+                    url: $recruiterUrl
+                )
+            );
+        }
+
         $keyboard->addRow(
-            InlineKeyboardButton::make(
-                '🌐 ' . ($lang === 'ru' ? 'Открыть панель' : 'Panelni ochish'),
-                url: env('APP_URL') . '/recruiter'
-            )
-        )->addRow(
             InlineKeyboardButton::make(
                 '◀️ ' . ($lang === 'ru' ? 'Назад' : 'Orqaga'),
                 callback_data: 'menu:back'
@@ -173,22 +221,9 @@ class PostHandler
 
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
-
-        $bot->onCallbackQueryData('post:create', function (Nutgram $bot) {
-            $bot->answerCallbackQuery();
-            PostVacancyConversation::begin($bot);
-        });
-
-        // Handle view vacancy
-        foreach ($vacancies as $vacancy) {
-            $bot->onCallbackQueryData('post:view:' . $vacancy->id, function (Nutgram $bot) use ($vacancy, $lang) {
-                $bot->answerCallbackQuery();
-                $this->showVacancyDetails($bot, $vacancy, $lang);
-            });
-        }
     }
 
     protected function showVacancyDetails(Nutgram $bot, Vacancy $vacancy, string $lang): void
@@ -215,9 +250,11 @@ class PostHandler
         if ($vacancy->salary_type === 'negotiable') {
             $salary = $lang === 'ru' ? 'Договорная' : 'Kelishiladi';
         } elseif ($vacancy->salary_min && $vacancy->salary_max) {
-            $salary = number_format($vacancy->salary_min) . ' - ' . number_format($vacancy->salary_max) . " so'm";
+            $currency = $lang === 'ru' ? 'сум' : "so'm";
+            $salary = number_format($vacancy->salary_min) . ' - ' . number_format($vacancy->salary_max) . " {$currency}";
         } elseif ($vacancy->salary_min) {
-            $salary = number_format($vacancy->salary_min) . "+ so'm";
+            $currency = $lang === 'ru' ? 'сум' : "so'm";
+            $salary = number_format($vacancy->salary_min) . "+ {$currency}";
         }
 
         $text = "{$statusIcon} *{$vacancy->title}*\n\n"
@@ -248,12 +285,17 @@ class PostHandler
             );
         }
 
+        $vacancyUrl = config('app.url') . '/recruiter/vacancies/' . $vacancy->id;
+        if (!str_contains($vacancyUrl, 'localhost')) {
+            $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    '📊 ' . ($lang === 'ru' ? 'Заявки' : 'Arizalar'),
+                    url: $vacancyUrl
+                )
+            );
+        }
+
         $keyboard->addRow(
-            InlineKeyboardButton::make(
-                '📊 ' . ($lang === 'ru' ? 'Заявки' : 'Arizalar'),
-                url: env('APP_URL') . '/recruiter/vacancies/' . $vacancy->id
-            )
-        )->addRow(
             InlineKeyboardButton::make(
                 '◀️ ' . ($lang === 'ru' ? 'Назад' : 'Orqaga'),
                 callback_data: 'post:back'
@@ -262,31 +304,8 @@ class PostHandler
 
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
-
-        $bot->onCallbackQueryData('post:pause:' . $vacancy->id, function (Nutgram $bot) use ($vacancy, $lang) {
-            $vacancy->update(['status' => VacancyStatus::PAUSED]);
-            $bot->answerCallbackQuery(
-                text: $lang === 'ru' ? '⏸ Вакансия приостановлена' : '⏸ Vakansiya to\'xtatildi',
-                show_alert: true
-            );
-            $this->showVacancyDetails($bot, $vacancy->fresh(), $lang);
-        });
-
-        $bot->onCallbackQueryData('post:activate:' . $vacancy->id, function (Nutgram $bot) use ($vacancy, $lang) {
-            $vacancy->update(['status' => VacancyStatus::ACTIVE]);
-            $bot->answerCallbackQuery(
-                text: $lang === 'ru' ? '▶️ Вакансия активирована' : '▶️ Vakansiya faollashtirildi',
-                show_alert: true
-            );
-            $this->showVacancyDetails($bot, $vacancy->fresh(), $lang);
-        });
-
-        $bot->onCallbackQueryData('post:back', function (Nutgram $bot) {
-            $bot->answerCallbackQuery();
-            $this->__invoke($bot);
-        });
     }
 }

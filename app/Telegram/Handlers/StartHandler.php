@@ -3,6 +3,7 @@
 namespace App\Telegram\Handlers;
 
 use App\Models\User;
+use App\Models\Vacancy;
 use App\Telegram\Conversations\RegistrationConversation;
 use App\Telegram\Keyboards\MainMenuKeyboard;
 use SergiX44\Nutgram\Nutgram;
@@ -14,28 +15,57 @@ class StartHandler
 {
     public function __invoke(Nutgram $bot): void
     {
-        $telegramUser = $bot->user();
-        $user = User::where('telegram_id', $telegramUser->id)->first();
+        $tgUser = $bot->user();
 
-        if ($user && $user->is_verified) {
-            $user->update(['last_active_at' => now()]);
+        // 1. Telegram ma'lumotlarini darhol saqlash/yangilash
+        $user = User::updateOrCreate(
+            ['telegram_id' => $tgUser->id],
+            [
+                'first_name'     => $tgUser->first_name,
+                'last_name'      => $tgUser->last_name,
+                'username'       => $tgUser->username,
+                'last_active_at' => now(),
+            ]
+        );
+
+        // Yangi yaratilgan user uchun tilni Telegram'dan o'rnatish
+        if ($user->wasRecentlyCreated) {
+            $lang = in_array($tgUser->language_code, ['uz', 'ru']) ? $tgUser->language_code : 'uz';
+            $user->update(['language' => $lang]);
+        }
+
+        // 2. Deep link payload'ni tekshirish
+        $payload = $this->extractPayload($bot);
+
+        // 3. Agar tasdiqlangan — deep link yoki welcome
+        if ($user->is_verified) {
+            $userLang = $user->language?->value ?? 'uz';
+
+            // Deep link: vacancy
+            if ($payload && str_starts_with($payload, 'v_')) {
+                $vacancyId = substr($payload, 2);
+                $this->showVacancyDeepLink($bot, $vacancyId, $userLang);
+                return;
+            }
+
+            // Oddiy welcome
+            $welcome = $userLang === 'ru'
+                ? "👋 Здравствуйте, {$user->first_name}!\n\n*IshTop* — Найди работу не выходя из Telegram!\n\n📌 /menu — Главное меню"
+                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*IshTop* — Telegramdan chiqmay ish top!\n\n📌 /menu — Bosh menyu";
 
             $bot->sendMessage(
-                text: "👋 Assalomu alaykum, {$user->first_name}!\n\n*IshTop* — Telegramdan chiqmay ish top!\n\n📌 /menu — Bosh menyu",
-                parse_mode: ParseMode::MARKDOWN,
-                reply_markup: MainMenuKeyboard::make(),
+                text: $welcome,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
+                reply_markup: MainMenuKeyboard::make($userLang),
             );
             return;
         }
 
-        $referralCode = null;
-        $payload = $bot->message()->text ?? '';
-        if (preg_match('/\/start\s+ref_(\w+)/', $payload, $matches)) {
-            $referralCode = $matches[1];
-        }
-
+        // 4. Ro'yxatdan o'tmagan — RegistrationConversation boshlash
         $conversation = new RegistrationConversation();
-        $conversation->referralCode = $referralCode;
+        $conversation->referralCode = $payload && str_starts_with($payload, 'ref_')
+            ? substr($payload, 4)
+            : null;
         $conversation->begin($bot);
     }
 
@@ -44,17 +74,15 @@ class StartHandler
         $cb = $bot->callbackQuery();
         $lang = str_replace('lang:', '', $cb->data);
 
-        $telegramUser = $bot->user();
-        $user = User::where('telegram_id', $telegramUser->id)->first();
+        $user = User::where('telegram_id', $bot->user()->id)->first();
 
         if ($user) {
             $user->update(['language' => $lang]);
-
             $bot->answerCallbackQuery();
 
             $msg = $lang === 'ru'
                 ? '✅ Язык изменён на Русский'
-                : "✅ Til O\'zbekchaga o\'zgartirildi";
+                : "✅ Til O'zbekchaga o'zgartirildi";
 
             $bot->editMessageText(
                 text: $msg,
@@ -64,6 +92,89 @@ class StartHandler
         }
 
         $bot->answerCallbackQuery();
-        $bot->sendMessage(text: "Avval /start buyrug\'ini yuboring.");
+        $bot->sendMessage(text: "Avval /start buyrug'ini yuboring.");
+    }
+
+    protected function showVacancyDeepLink(Nutgram $bot, string $vacancyId, string $lang): void
+    {
+        $vacancy = Vacancy::with('employer')->find($vacancyId);
+
+        if (!$vacancy || !$vacancy->isActive()) {
+            $text = $lang === 'ru'
+                ? "❌ Вакансия не найдена или больше не активна.\n\n📌 /menu — Главное меню"
+                : "❌ Vakansiya topilmadi yoki faol emas.\n\n📌 /menu — Bosh menyu";
+
+            $bot->sendMessage(
+                text: $text,
+                reply_markup: MainMenuKeyboard::make($lang),
+            );
+            return;
+        }
+
+        $vacancy->increment('views_count');
+
+        $isRu = $lang === 'ru';
+        $salary = $vacancy->salaryFormatted();
+        $workType = $vacancy->work_type?->label() ?? '-';
+        $company = $vacancy->employer?->company_name ?? '-';
+        $top = $vacancy->isTopActive() ? '🔥 TOP ' : '';
+        $title = $vacancy->title($lang) ?: $vacancy->title;
+
+        $text = "{$top}📌 *{$title}*\n\n";
+        $text .= "🏢 " . ($isRu ? 'Компания' : 'Kompaniya') . ": {$company}\n";
+        $text .= "📂 " . ($isRu ? 'Категория' : 'Kategoriya') . ": {$vacancy->category}\n";
+        $text .= "📍 " . ($isRu ? 'Город' : 'Shahar') . ": {$vacancy->city}\n";
+        $text .= "💰 " . ($isRu ? 'Зарплата' : 'Maosh') . ": {$salary}\n";
+        $text .= "🏢 " . ($isRu ? 'Тип работы' : 'Ish turi') . ": {$workType}\n";
+
+        if ($vacancy->experience_required) {
+            $text .= "⏱ " . ($isRu ? 'Опыт' : 'Tajriba') . ": {$vacancy->experience_required}\n";
+        }
+
+        $desc = $vacancy->description($lang) ?: $vacancy->description_uz;
+        if ($desc) {
+            $text .= "\n📝 *" . ($isRu ? 'Описание' : 'Tavsif') . ":*\n{$desc}\n";
+        }
+
+        if ($vacancy->requirements($lang)) {
+            $text .= "\n📋 *" . ($isRu ? 'Требования' : 'Talablar') . ":*\n" . $vacancy->requirements($lang) . "\n";
+        }
+
+        $viewsLabel = $isRu ? 'Просмотры' : "Ko'rishlar";
+        $appsLabel = $isRu ? 'Заявки' : 'Arizalar';
+        $text .= "\n👁 {$viewsLabel}: {$vacancy->views_count} | 📝 {$appsLabel}: {$vacancy->applications_count}";
+
+        $keyboard = InlineKeyboardMarkup::make()
+            ->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '📝 Подать заявку' : '📝 Ariza berish',
+                    callback_data: "vacancy_apply:{$vacancy->id}"
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '🔗 Поделиться' : '🔗 Ulashish',
+                    switch_inline_query: $title
+                ),
+            )
+            ->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '🔍 Поиск вакансий' : '🔍 Vakansiya qidirish',
+                    callback_data: 'menu:search'
+                ),
+            );
+
+        $bot->sendMessage(
+            text: $text,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
+            reply_markup: $keyboard,
+        );
+    }
+
+    private function extractPayload(Nutgram $bot): ?string
+    {
+        $text = $bot->message()->text ?? '';
+        if (preg_match('/\/start\s+(\S+)/', $text, $matches)) {
+            return $matches[1];
+        }
+        return null;
     }
 }

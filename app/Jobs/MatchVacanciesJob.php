@@ -2,9 +2,9 @@
 
 namespace App\Jobs;
 
-use App\Models\User;
 use App\Models\WorkerProfile;
 use App\Services\MatchingService;
+use App\Services\TelegramNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -15,22 +15,19 @@ class MatchVacanciesJob implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public function handle(MatchingService $matchingService): void
+    public function handle(MatchingService $matchingService, TelegramNotificationService $notificationService): void
     {
         WorkerProfile::active()
             ->with('user')
-            ->chunk(100, function ($workers) use ($matchingService) {
+            ->chunk(100, function ($workers) use ($matchingService, $notificationService) {
                 foreach ($workers as $worker) {
-                    $matches = $matchingService->findMatchesForWorker($worker, 5);
+                    $matches = $matchingService->findMatchesForWorker($worker, 3);
 
-                    if ($matches->isNotEmpty()) {
-                        SendNotificationJob::dispatch(
-                            $worker->user,
-                            'matching',
-                            'Mos vakansiyalar topildi!',
-                            "Sizga mos {$matches->count()} ta yangi vakansiya bor.",
-                            ['vacancy_ids' => $matches->pluck('id')->toArray()],
-                        );
+                    foreach ($matches as $vacancy) {
+                        $score = $matchingService->calculateMatchScore($worker, $vacancy);
+                        if ($score >= 50) {
+                            $notificationService->notifyMatchingVacancy($worker, $vacancy, $score);
+                        }
                     }
                 }
             });

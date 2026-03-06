@@ -16,18 +16,36 @@
           >
             <ArrowLeftIcon class="h-5 w-5 text-surface-600 dark:text-surface-400" />
           </button>
-          <div class="flex-1">
-            <div class="flex items-center gap-3">
-              <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ vacancy.title_uz || vacancy.title_ru }}</h1>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-3 flex-wrap">
+              <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100 truncate">
+                {{ vacancy.title_uz || vacancy.title_ru }}
+              </h1>
               <AppBadge :variant="getStatusVariant(vacancy.status)">
                 {{ getStatusLabel(vacancy.status) }}
               </AppBadge>
+              <span
+                v-if="vacancy.language"
+                class="px-1.5 py-0.5 text-[10px] font-bold uppercase rounded bg-surface-100 dark:bg-surface-700 text-surface-500 dark:text-surface-400"
+              >
+                {{ vacancy.language }}
+              </span>
             </div>
             <p class="text-surface-600 dark:text-surface-400 mt-1">
-              {{ vacancy.company_name }} • {{ formatDate(vacancy.created_at) }}
+              {{ vacancy.employer?.company_name }} &bull; {{ formatDate(vacancy.created_at) }}
             </p>
           </div>
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 shrink-0">
+            <AppButton
+              v-if="['active', 'paused', 'draft'].includes(vacancy.status)"
+              :variant="vacancy.status === 'active' ? 'outline' : 'primary'"
+              @click="toggleStatus"
+            >
+              <template #icon-left>
+                <component :is="vacancy.status === 'active' ? PauseCircleIcon : PlayCircleIcon" class="h-5 w-5" />
+              </template>
+              {{ vacancy.status === 'active' ? 'To\'xtatish' : 'Faollashtirish' }}
+            </AppButton>
             <AppButton
               variant="outline"
               @click="$router.push(`/dashboard/vacancies/${vacancy.id}/edit`)"
@@ -46,7 +64,7 @@
         </div>
 
         <!-- Stats -->
-        <div class="grid grid-cols-4 gap-4">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <AppCard>
             <div class="text-center">
               <p class="text-sm text-surface-600 dark:text-surface-400">Arizalar</p>
@@ -67,15 +85,15 @@
             <div class="text-center">
               <p class="text-sm text-surface-600 dark:text-surface-400">Ko'rilgan</p>
               <p class="text-2xl font-bold text-surface-900 dark:text-surface-100 mt-1">
-                {{ vacancy.views_count }}
+                {{ vacancy.views_count || 0 }}
               </p>
             </div>
           </AppCard>
           <AppCard>
             <div class="text-center">
-              <p class="text-sm text-surface-600 dark:text-surface-400">O'rtacha ball</p>
+              <p class="text-sm text-surface-600 dark:text-surface-400">Konversiya</p>
               <p class="text-2xl font-bold text-success-600 dark:text-success-400 mt-1">
-                {{ vacancy.avg_score || '—' }}
+                {{ conversionRate }}
               </p>
             </div>
           </AppCard>
@@ -86,17 +104,213 @@
       <AppTabs v-model="activeTab" :tabs="tabs" variant="underline">
         <!-- Pipeline Tab -->
         <template #panel-pipeline>
-          <div class="bg-surface-50 dark:bg-surface-900 rounded-lg p-8 text-center">
-            <BriefcaseIcon class="h-16 w-16 mx-auto text-surface-400 dark:text-surface-500 mb-4" />
+          <!-- Stage Filter Pills -->
+          <div class="flex flex-wrap gap-2 mb-4">
+            <button
+              v-for="stage in pipelineStages"
+              :key="stage.key"
+              :class="[
+                'px-3 py-1.5 text-sm font-medium rounded-full border transition-colors',
+                activeStageFilter === stage.key
+                  ? 'bg-brand-50 dark:bg-brand-950/30 border-brand-300 dark:border-brand-700 text-brand-700 dark:text-brand-300'
+                  : 'border-surface-200 dark:border-surface-700 text-surface-600 dark:text-surface-400 hover:bg-surface-50 dark:hover:bg-surface-800',
+              ]"
+              @click="filterByStage(stage.key)"
+            >
+              {{ stage.label }}
+              <span
+                v-if="stageCounts[stage.key]"
+                :class="[
+                  'ml-1.5 px-1.5 py-0.5 text-xs font-bold rounded-full',
+                  activeStageFilter === stage.key
+                    ? 'bg-brand-100 dark:bg-brand-900 text-brand-700 dark:text-brand-300'
+                    : 'bg-surface-100 dark:bg-surface-700 text-surface-600 dark:text-surface-300',
+                ]"
+              >
+                {{ stageCounts[stage.key] }}
+              </span>
+            </button>
+          </div>
+
+          <!-- Applications loading -->
+          <div v-if="applicationsLoading" class="flex items-center justify-center py-12">
+            <AppLoadingSpinner text="Arizalar yuklanmoqda..." />
+          </div>
+
+          <!-- Applications List -->
+          <div v-else-if="applications.length > 0" class="space-y-3">
+            <div
+              v-for="app in applications"
+              :key="app.id"
+              class="flex items-center gap-4 p-4 bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl hover:border-brand-200 dark:hover:border-brand-800 transition-colors cursor-pointer"
+              @click="viewApplication(app)"
+            >
+              <!-- Avatar -->
+              <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 flex items-center justify-center font-semibold text-sm shrink-0">
+                {{ getApplicantInitials(app) }}
+              </div>
+
+              <!-- Info -->
+              <div class="flex-1 min-w-0">
+                <p class="font-medium text-surface-900 dark:text-surface-100 truncate">
+                  {{ getApplicantName(app) }}
+                </p>
+                <div class="flex items-center gap-2 mt-0.5">
+                  <span v-if="app.worker?.specialty" class="text-sm text-surface-500 dark:text-surface-400 truncate">
+                    {{ app.worker.specialty }}
+                  </span>
+                  <span v-if="app.worker?.city" class="text-xs text-surface-400">
+                    &bull; {{ app.worker.city }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Score -->
+              <div v-if="app.questionnaire_score !== null" class="text-center shrink-0">
+                <div
+                  :class="[
+                    'w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold',
+                    getScoreClasses(app),
+                  ]"
+                >
+                  {{ Math.round(app.questionnaire_score) }}
+                </div>
+                <p class="text-[10px] text-surface-400 mt-0.5">ball</p>
+              </div>
+
+              <!-- Stage badge -->
+              <AppBadge :variant="getStageVariant(app.stage)" size="sm">
+                {{ getStageLabel(app.stage) }}
+              </AppBadge>
+
+              <!-- Date -->
+              <span class="text-xs text-surface-400 shrink-0">
+                {{ formatRelativeDate(app.created_at) }}
+              </span>
+            </div>
+
+            <!-- Applications Pagination -->
+            <div v-if="applicationsTotalPages > 1" class="flex justify-center pt-4">
+              <AppPagination
+                v-model:current-page="applicationsPage"
+                :total="applicationsTotal"
+                :per-page="20"
+                @update:current-page="fetchApplications"
+              />
+            </div>
+          </div>
+
+          <!-- Empty -->
+          <div v-else class="bg-surface-50 dark:bg-surface-900 rounded-lg p-8 text-center">
+            <UsersIcon class="h-16 w-16 mx-auto text-surface-400 dark:text-surface-500 mb-4" />
             <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
-              Kanban Pipeline
+              Arizalar yo'q
             </h3>
-            <p class="text-surface-600 dark:text-surface-400 mb-4">
-              Kandidatlarni drag-and-drop bilan boshqaring
+            <p class="text-surface-600 dark:text-surface-400">
+              {{ activeStageFilter ? 'Bu bosqichda arizalar topilmadi' : 'Ushbu vakansiyaga hali arizalar kelmagan' }}
             </p>
-            <p class="text-sm text-surface-500 dark:text-surface-400">
-              Bu funksiya tez orada qo'shiladi
-            </p>
+          </div>
+        </template>
+
+        <!-- Vacancy Info Tab -->
+        <template #panel-info>
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Main Info -->
+            <div class="lg:col-span-2 space-y-6">
+              <AppCard v-if="vacancy.description_uz || vacancy.description_ru">
+                <template #header>
+                  <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">Tavsif</h3>
+                </template>
+                <div class="prose prose-sm dark:prose-invert max-w-none whitespace-pre-line text-surface-700 dark:text-surface-300">
+                  {{ vacancy.description_uz || vacancy.description_ru }}
+                </div>
+              </AppCard>
+
+              <AppCard v-if="vacancy.requirements_uz || vacancy.requirements_ru">
+                <template #header>
+                  <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">Talablar</h3>
+                </template>
+                <div class="prose prose-sm dark:prose-invert max-w-none whitespace-pre-line text-surface-700 dark:text-surface-300">
+                  {{ vacancy.requirements_uz || vacancy.requirements_ru }}
+                </div>
+              </AppCard>
+
+              <AppCard v-if="vacancy.responsibilities_uz || vacancy.responsibilities_ru">
+                <template #header>
+                  <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">Mas'uliyatlar</h3>
+                </template>
+                <div class="prose prose-sm dark:prose-invert max-w-none whitespace-pre-line text-surface-700 dark:text-surface-300">
+                  {{ vacancy.responsibilities_uz || vacancy.responsibilities_ru }}
+                </div>
+              </AppCard>
+            </div>
+
+            <!-- Side Info -->
+            <div class="space-y-4">
+              <AppCard>
+                <template #header>
+                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">Ma'lumotlar</h3>
+                </template>
+                <div class="space-y-3">
+                  <div class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Maosh</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ formatSalary(vacancy.salary_min, vacancy.salary_max, vacancy.salary_type) }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.work_type" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Bandlik turi</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ getWorkTypeLabel(vacancy.work_type) }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.experience_required" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Tajriba</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ vacancy.experience_required }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.city" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Shahar</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ vacancy.city }}{{ vacancy.district ? ', ' + vacancy.district : '' }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.category" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Kategoriya</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ vacancy.category }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.contact_phone" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Telefon</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ vacancy.contact_phone }}
+                    </span>
+                  </div>
+                </div>
+              </AppCard>
+
+              <AppCard v-if="vacancy.published_at || vacancy.expires_at">
+                <template #header>
+                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">Sanalar</h3>
+                </template>
+                <div class="space-y-3">
+                  <div v-if="vacancy.published_at" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Chop etilgan</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ formatDate(vacancy.published_at) }}
+                    </span>
+                  </div>
+                  <div v-if="vacancy.expires_at" class="flex justify-between text-sm">
+                    <span class="text-surface-500 dark:text-surface-400">Muddati</span>
+                    <span class="font-medium text-surface-900 dark:text-surface-100">
+                      {{ formatDate(vacancy.expires_at) }}
+                    </span>
+                  </div>
+                </div>
+              </AppCard>
+            </div>
           </div>
         </template>
 
@@ -110,16 +324,9 @@
                     {{ vacancy.questionnaire.title }}
                   </h3>
                   <p class="text-sm text-surface-600 dark:text-surface-400 mt-1">
-                    {{ vacancy.questionnaire.questions_count }} ta savol •
-                    Maksimal: {{ vacancy.questionnaire.total_score }} ball
+                    {{ vacancy.questionnaire.questions?.length || 0 }} ta savol
                   </p>
                 </div>
-                <AppButton variant="outline" @click="$router.push(`/dashboard/questionnaires/${vacancy.id}`)">
-                  <template #icon-left>
-                    <PencilIcon class="h-5 w-5" />
-                  </template>
-                  Tahrirlash
-                </AppButton>
               </div>
 
               <div class="space-y-4">
@@ -142,7 +349,7 @@
                         </AppBadge>
                       </div>
                       <p class="font-medium text-surface-900 dark:text-surface-100">
-                        {{ question.question }}
+                        {{ question.text_uz || question.text_ru }}
                       </p>
                     </div>
                     <div class="text-right ml-4">
@@ -154,7 +361,7 @@
                   </div>
 
                   <!-- Options for choice questions -->
-                  <div v-if="['single_choice', 'multi_select'].includes(question.type)" class="mt-3 pl-4 space-y-1">
+                  <div v-if="question.options?.length" class="mt-3 pl-4 space-y-1">
                     <div
                       v-for="option in question.options"
                       :key="option.id"
@@ -169,8 +376,8 @@
                           ? 'text-success-700 dark:text-success-400 font-medium'
                           : 'text-surface-700 dark:text-surface-300',
                       ]">
-                        {{ option.text }}
-                        <span v-if="option.is_correct" class="text-xs">({{ option.score }} ball)</span>
+                        {{ option.label_uz || option.label_ru }}
+                        <span v-if="option.is_correct && option.score" class="text-xs">({{ option.score }} ball)</span>
                       </span>
                     </div>
                   </div>
@@ -189,125 +396,6 @@
             <AppButton variant="primary" @click="$router.push(`/dashboard/questionnaires/${vacancy.id}`)">
               Savolnoma yaratish
             </AppButton>
-          </div>
-        </template>
-
-        <!-- Analytics Tab -->
-        <template #panel-analytics>
-          <div class="space-y-6">
-            <!-- Overview Cards -->
-            <div class="grid grid-cols-3 gap-4">
-              <AppCard>
-                <div>
-                  <p class="text-sm text-surface-600 dark:text-surface-400">Jami arizalar</p>
-                  <p class="text-3xl font-bold text-surface-900 dark:text-surface-100 mt-2">
-                    {{ vacancy.applications_count }}
-                  </p>
-                  <div class="flex items-center gap-1 mt-2 text-success-600 dark:text-success-400">
-                    <ArrowTrendingUpIcon class="h-4 w-4" />
-                    <span class="text-sm font-medium">+12%</span>
-                    <span class="text-xs text-surface-500">oxirgi hafta</span>
-                  </div>
-                </div>
-              </AppCard>
-
-              <AppCard>
-                <div>
-                  <p class="text-sm text-surface-600 dark:text-surface-400">Malakali kandidatlar</p>
-                  <p class="text-3xl font-bold text-surface-900 dark:text-surface-100 mt-2">
-                    {{ vacancy.qualified_count || 0 }}
-                  </p>
-                  <div class="mt-2">
-                    <AppProgressBar
-                      :value="(vacancy.qualified_count || 0)"
-                      :max="vacancy.applications_count"
-                      :show-percentage="false"
-                      size="sm"
-                      color="success"
-                    />
-                  </div>
-                </div>
-              </AppCard>
-
-              <AppCard>
-                <div>
-                  <p class="text-sm text-surface-600 dark:text-surface-400">Konversiya</p>
-                  <p class="text-3xl font-bold text-surface-900 dark:text-surface-100 mt-2">
-                    24%
-                  </p>
-                  <p class="text-xs text-surface-500 dark:text-surface-400 mt-2">
-                    Ko'rilgan → Ariza
-                  </p>
-                </div>
-              </AppCard>
-            </div>
-
-            <!-- Charts Placeholder -->
-            <div class="grid grid-cols-2 gap-6">
-              <AppCard>
-                <template #header>
-                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
-                    Arizalar dinamikasi
-                  </h3>
-                </template>
-                <div class="h-64 flex items-center justify-center bg-surface-50 dark:bg-surface-900 rounded-lg">
-                  <p class="text-surface-500 dark:text-surface-400">Chart: Arizalar dinamikasi</p>
-                </div>
-              </AppCard>
-
-              <AppCard>
-                <template #header>
-                  <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
-                    Ball taqsimoti
-                  </h3>
-                </template>
-                <div class="h-64 flex items-center justify-center bg-surface-50 dark:bg-surface-900 rounded-lg">
-                  <p class="text-surface-500 dark:text-surface-400">Chart: Ball taqsimoti</p>
-                </div>
-              </AppCard>
-            </div>
-
-            <!-- Source Breakdown -->
-            <AppCard>
-              <template #header>
-                <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
-                  Manba bo'yicha
-                </h3>
-              </template>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3 flex-1">
-                    <div class="w-10 h-10 rounded-lg bg-brand-100 dark:bg-brand-900/20 flex items-center justify-center">
-                      <span class="text-lg">📱</span>
-                    </div>
-                    <div class="flex-1">
-                      <p class="text-sm font-medium text-surface-900 dark:text-surface-100">Telegram Bot</p>
-                      <AppProgressBar :value="85" :show-percentage="false" size="xs" />
-                    </div>
-                  </div>
-                  <div class="text-right ml-4">
-                    <p class="text-sm font-semibold text-surface-900 dark:text-surface-100">38</p>
-                    <p class="text-xs text-surface-500 dark:text-surface-400">85%</p>
-                  </div>
-                </div>
-
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-3 flex-1">
-                    <div class="w-10 h-10 rounded-lg bg-success-100 dark:bg-success-900/20 flex items-center justify-center">
-                      <span class="text-lg">🔗</span>
-                    </div>
-                    <div class="flex-1">
-                      <p class="text-sm font-medium text-surface-900 dark:text-surface-100">Direct Link</p>
-                      <AppProgressBar :value="15" :show-percentage="false" size="xs" color="success" />
-                    </div>
-                  </div>
-                  <div class="text-right ml-4">
-                    <p class="text-sm font-semibold text-surface-900 dark:text-surface-100">7</p>
-                    <p class="text-xs text-surface-500 dark:text-surface-400">15%</p>
-                  </div>
-                </div>
-              </div>
-            </AppCard>
           </div>
         </template>
       </AppTabs>
@@ -338,15 +426,17 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
+import axios from 'axios';
 import {
   ArrowLeftIcon,
   PencilIcon,
-  BriefcaseIcon,
   ClipboardDocumentListIcon,
-  ArrowTrendingUpIcon,
+  UsersIcon,
+  PlayCircleIcon,
+  PauseCircleIcon,
 } from '@heroicons/vue/24/outline';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
@@ -356,7 +446,7 @@ import AppDropdown from '../../components/ui/AppDropdown.vue';
 import AppLoadingSpinner from '../../components/ui/AppLoadingSpinner.vue';
 import AppEmptyState from '../../components/ui/AppEmptyState.vue';
 import AppConfirmDialog from '../../components/ui/AppConfirmDialog.vue';
-import AppProgressBar from '../../components/ui/AppProgressBar.vue';
+import AppPagination from '../../components/ui/AppPagination.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -366,17 +456,37 @@ const loading = ref(true);
 const activeTab = ref('pipeline');
 const showCloseDialog = ref(false);
 
+// Applications
+const applications = ref([]);
+const applicationsLoading = ref(false);
+const applicationsPage = ref(1);
+const applicationsTotal = ref(0);
+const applicationsTotalPages = ref(0);
+const stageCounts = ref({});
+const activeStageFilter = ref(null);
+
 const tabs = [
-  { key: 'pipeline', label: 'Pipeline' },
+  { key: 'pipeline', label: 'Arizalar' },
+  { key: 'info', label: 'Vakansiya' },
   { key: 'questionnaire', label: 'Savolnoma' },
-  { key: 'analytics', label: 'Analitika' },
 ];
 
-const actionMenuItems = [
+const pipelineStages = [
+  { key: null, label: 'Barchasi' },
+  { key: 'new', label: 'Yangi' },
+  { key: 'reviewed', label: 'Ko\'rilgan' },
+  { key: 'shortlisted', label: 'Tanlangan' },
+  { key: 'interview', label: 'Intervyu' },
+  { key: 'offered', label: 'Taklif' },
+  { key: 'hired', label: 'Qabul qilindi' },
+  { key: 'rejected', label: 'Rad etildi' },
+];
+
+const actionMenuItems = computed(() => [
   {
     label: 'Telegram kanalda e\'lon qilish',
     icon: null,
-    onClick: () => toast.info('Telegram e\'lon funksiyasi'),
+    onClick: () => toast.info('Telegram e\'lon funksiyasi tez orada qo\'shiladi'),
   },
   {
     label: 'Havola nusxalash',
@@ -392,79 +502,148 @@ const actionMenuItems = [
     danger: true,
     onClick: () => showCloseDialog.value = true,
   },
-];
+]);
+
+const conversionRate = computed(() => {
+  if (!vacancy.value?.views_count || !vacancy.value?.applications_count) return '—';
+  const rate = (vacancy.value.applications_count / vacancy.value.views_count) * 100;
+  return rate.toFixed(1) + '%';
+});
 
 onMounted(async () => {
   await loadVacancy();
+});
+
+// Load applications when pipeline tab is active
+watch(activeTab, (tab) => {
+  if (tab === 'pipeline' && applications.value.length === 0) {
+    fetchApplications();
+  }
 });
 
 async function loadVacancy() {
   loading.value = true;
 
   try {
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 800));
+    const { data } = await axios.get(`/api/recruiter/vacancies/${route.params.id}`);
+    vacancy.value = data.vacancy;
+    stageCounts.value = data.stage_counts || {};
 
-    // Mock data
-    vacancy.value = {
-      id: route.params.id,
-      title_uz: 'Senior PHP Developer',
-      title_ru: null,
-      language: 'uz',
-      company_name: 'TechCorp',
-      status: 'active',
-      created_at: '2024-02-20',
-      applications_count: 45,
-      new_applications_count: 8,
-      views_count: 234,
-      avg_score: 7.8,
-      qualified_count: 18,
-      questionnaire: {
-        title: 'PHP Developer Savolnomasi',
-        questions_count: 8,
-        total_score: 100,
-        questions: [
-          {
-            id: 1,
-            type: 'single_choice',
-            question: 'Qancha yillik PHP tajribangiz bor?',
-            weight: 15,
-            is_knockout: true,
-            options: [
-              { id: 1, text: '0-1 yil', is_correct: false, score: 0 },
-              { id: 2, text: '1-3 yil', is_correct: false, score: 5 },
-              { id: 3, text: '3-5 yil', is_correct: true, score: 10 },
-              { id: 4, text: '5+ yil', is_correct: true, score: 15 },
-            ],
-          },
-          {
-            id: 2,
-            type: 'multi_select',
-            question: 'Qaysi frameworklarni bilasiz?',
-            weight: 20,
-            is_knockout: false,
-            options: [
-              { id: 5, text: 'Laravel', is_correct: true, score: 10 },
-              { id: 6, text: 'Symfony', is_correct: true, score: 5 },
-              { id: 7, text: 'CodeIgniter', is_correct: false, score: 0 },
-              { id: 8, text: 'Yii', is_correct: false, score: 0 },
-            ],
-          },
-        ],
-      },
-    };
+    // Auto-load applications
+    await fetchApplications();
   } catch (error) {
+    console.error('Failed to load vacancy:', error);
     vacancy.value = null;
+    if (error.response?.status === 404) {
+      toast.error('Vakansiya topilmadi');
+    } else {
+      toast.error('Vakansiyani yuklashda xatolik');
+    }
   } finally {
     loading.value = false;
   }
+}
+
+async function fetchApplications() {
+  if (!vacancy.value) return;
+
+  applicationsLoading.value = true;
+
+  try {
+    const params = {
+      page: applicationsPage.value,
+      per_page: 20,
+    };
+    if (activeStageFilter.value) {
+      params.stage = activeStageFilter.value;
+    }
+
+    const { data } = await axios.get(`/api/recruiter/vacancies/${vacancy.value.id}/applications`, { params });
+    applications.value = data.applications?.data || [];
+    applicationsTotal.value = data.applications?.total || 0;
+    applicationsTotalPages.value = data.applications?.last_page || 0;
+
+    if (data.stage_counts) {
+      stageCounts.value = data.stage_counts;
+    }
+  } catch (error) {
+    console.error('Failed to fetch applications:', error);
+  } finally {
+    applicationsLoading.value = false;
+  }
+}
+
+function filterByStage(stage) {
+  activeStageFilter.value = stage;
+  applicationsPage.value = 1;
+  fetchApplications();
+}
+
+async function toggleStatus() {
+  try {
+    const { data } = await axios.put(`/api/recruiter/vacancies/${vacancy.value.id}/toggle-status`);
+    const wasActive = vacancy.value.status === 'active';
+    vacancy.value.status = data.vacancy.status;
+    toast.success(wasActive ? 'Vakansiya to\'xtatildi' : 'Vakansiya faollashtirildi');
+  } catch (error) {
+    toast.error('Statusni o\'zgartirishda xatolik');
+  }
+}
+
+function getApplicantName(app) {
+  if (app.worker?.user) {
+    return `${app.worker.user.first_name || ''} ${app.worker.user.last_name || ''}`.trim() || 'Noma\'lum';
+  }
+  return app.worker?.full_name || 'Noma\'lum';
+}
+
+function getApplicantInitials(app) {
+  const name = getApplicantName(app);
+  const parts = name.split(' ');
+  return parts.map(p => p[0]).join('').toUpperCase().slice(0, 2) || 'N';
+}
+
+function getScoreClasses(app) {
+  if (!app.knockout_passed) return 'bg-danger-100 dark:bg-danger-900/20 text-danger-600 dark:text-danger-400';
+  if (app.questionnaire_score >= 80) return 'bg-success-100 dark:bg-success-900/20 text-success-600 dark:text-success-400';
+  if (app.questionnaire_score >= 50) return 'bg-warning-100 dark:bg-warning-900/20 text-warning-600 dark:text-warning-400';
+  return 'bg-danger-100 dark:bg-danger-900/20 text-danger-600 dark:text-danger-400';
+}
+
+function getStageVariant(stage) {
+  const variants = {
+    new: 'info',
+    reviewed: 'warning',
+    shortlisted: 'success',
+    interview: 'primary',
+    offered: 'success',
+    hired: 'success',
+    rejected: 'danger',
+  };
+  return variants[stage] || 'default';
+}
+
+function getStageLabel(stage) {
+  const labels = {
+    new: 'Yangi',
+    reviewed: 'Ko\'rilgan',
+    shortlisted: 'Tanlangan',
+    interview: 'Intervyu',
+    offered: 'Taklif',
+    hired: 'Qabul qilindi',
+    rejected: 'Rad etildi',
+  };
+  return labels[stage] || stage;
 }
 
 function getStatusVariant(status) {
   const variants = {
     active: 'success',
     pending: 'warning',
+    paused: 'info',
     closed: 'default',
+    expired: 'default',
+    draft: 'default',
   };
   return variants[status] || 'default';
 }
@@ -473,9 +652,22 @@ function getStatusLabel(status) {
   const labels = {
     active: 'Faol',
     pending: 'Kutilmoqda',
+    paused: 'To\'xtatilgan',
     closed: 'Yopilgan',
+    expired: 'Muddati tugagan',
+    draft: 'Qoralama',
   };
   return labels[status] || status;
+}
+
+function getWorkTypeLabel(type) {
+  const labels = {
+    full_time: 'To\'liq ish kuni',
+    part_time: 'Yarim ish kuni',
+    remote: 'Masofaviy',
+    freelance: 'Freelance',
+  };
+  return labels[type] || type || '—';
 }
 
 function getQuestionTypeLabel(type) {
@@ -490,7 +682,16 @@ function getQuestionTypeLabel(type) {
   return labels[type] || type;
 }
 
+function formatSalary(min, max, type) {
+  if (type === 'negotiable' || (!min && !max)) return 'Kelishiladi';
+  const fmt = (num) => new Intl.NumberFormat('uz-UZ').format(num);
+  if (min && max) return `${fmt(min)} - ${fmt(max)} so'm`;
+  if (min) return `${fmt(min)}+ so'm`;
+  return `${fmt(max)} so'm gacha`;
+}
+
 function formatDate(date) {
+  if (!date) return '—';
   return new Date(date).toLocaleDateString('uz-UZ', {
     year: 'numeric',
     month: 'long',
@@ -498,9 +699,27 @@ function formatDate(date) {
   });
 }
 
+function formatRelativeDate(date) {
+  if (!date) return '';
+  const now = new Date();
+  const d = new Date(date);
+  const diff = Math.floor((now - d) / 1000);
+
+  if (diff < 60) return 'Hozirgina';
+  if (diff < 3600) return `${Math.floor(diff / 60)} min oldin`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} soat oldin`;
+  if (diff < 604800) return `${Math.floor(diff / 86400)} kun oldin`;
+  return formatDate(date);
+}
+
+function viewApplication(app) {
+  // For now, show toast - in future navigate to application detail
+  toast.info(`${getApplicantName(app)} arizasi`);
+}
+
 async function confirmClose() {
   try {
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await axios.put(`/api/recruiter/vacancies/${vacancy.value.id}`, { status: 'closed' });
     vacancy.value.status = 'closed';
     showCloseDialog.value = false;
     toast.success('Vakansiya yopildi');

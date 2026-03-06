@@ -92,10 +92,10 @@ const routes = [
 
       // Candidates
       {
-        path: 'talent-pool',
-        name: 'talent-pool',
+        path: 'candidates',
+        name: 'candidates',
         component: () => import('../views/candidates/TalentPool.vue'),
-        meta: { title: 'Talent Pool' },
+        meta: { title: 'Nomzodlar' },
       },
       {
         path: 'candidates/compare',
@@ -118,6 +118,18 @@ const routes = [
         meta: { title: 'Savolnoma shablonlari' },
       },
       {
+        path: 'questionnaires/templates/create',
+        name: 'template-create',
+        component: () => import('../views/questionnaire/TemplateBuilder.vue'),
+        meta: { title: 'Shablon yaratish' },
+      },
+      {
+        path: 'questionnaires/templates/:templateId/edit',
+        name: 'template-edit',
+        component: () => import('../views/questionnaire/TemplateBuilder.vue'),
+        meta: { title: 'Shablonni tahrirlash' },
+      },
+      {
         path: 'questionnaires/:vacancyId',
         name: 'questionnaire-builder',
         component: () => import('../views/questionnaire/QuestionnaireBuilder.vue'),
@@ -130,20 +142,6 @@ const routes = [
         name: 'message-templates',
         component: () => import('../views/messages/MessageTemplates.vue'),
         meta: { title: 'Xabar shablonlari' },
-      },
-
-      // Banners
-      {
-        path: 'banners',
-        name: 'banners',
-        component: () => import('../views/banners/BannerList.vue'),
-        meta: { title: 'Bannerlar' },
-      },
-      {
-        path: 'banners/create',
-        name: 'banner-create',
-        component: () => import('../views/banners/BannerCreate.vue'),
-        meta: { title: 'Banner yaratish' },
       },
 
       // Analytics

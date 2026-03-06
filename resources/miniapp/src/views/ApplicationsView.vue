@@ -1,7 +1,7 @@
 <template>
   <div class="applications-view p-4 pb-20">
     <!-- Header -->
-    <h1 class="text-2xl font-bold mb-4">Mening arizalarim</h1>
+    <h1 class="text-2xl font-bold mb-4">{{ t('apps.title') }}</h1>
 
     <!-- Filter Tabs -->
     <div class="flex gap-2 mb-4 overflow-x-auto">
@@ -23,10 +23,10 @@
     <!-- Empty State -->
     <div v-else-if="filteredApplications.length === 0" class="text-center py-12">
       <p class="text-4xl mb-3">📝</p>
-      <p class="text-lg font-medium mb-2">Arizalar yo'q</p>
-      <p class="text-sm text-tg-hint mb-4">Siz hali hech qanday vakansiyaga ariza yubormagansiz</p>
+      <p class="text-lg font-medium mb-2">{{ t('apps.empty_title') }}</p>
+      <p class="text-sm text-tg-hint mb-4">{{ t('apps.empty_hint') }}</p>
       <button class="btn-primary" @click="router.push('/search')">
-        Vakansiya qidirish
+        {{ t('apps.search_btn') }}
       </button>
     </div>
 
@@ -66,12 +66,12 @@
           <div v-if="app.questionnaire_score" class="flex items-center gap-1">
             <span>📊</span>
             <span class="font-medium">{{ app.questionnaire_score }}%</span>
-            <span class="text-tg-hint">ball</span>
+            <span class="text-tg-hint">{{ t('apps.score') }}</span>
           </div>
           <div v-if="app.matching_score" class="flex items-center gap-1">
             <span>🎯</span>
             <span class="font-medium">{{ app.matching_score }}%</span>
-            <span class="text-tg-hint">mos</span>
+            <span class="text-tg-hint">{{ t('apps.match') }}</span>
           </div>
           <div v-if="app.recruiter_rating" class="flex items-center gap-1">
             <span>⭐</span>
@@ -81,8 +81,8 @@
 
         <!-- Timeline -->
         <div class="flex items-center justify-between text-xs text-tg-hint">
-          <span>Yuborilgan: {{ formatDate(app.created_at) }}</span>
-          <span v-if="app.viewed_at">Ko'rilgan ✓</span>
+          <span>{{ t('apps.submitted') }} {{ formatDate(app.created_at) }}</span>
+          <span v-if="app.viewed_at">{{ t('apps.viewed') }} ✓</span>
         </div>
 
         <!-- Rejection Reason -->
@@ -98,11 +98,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTelegram } from '@/composables/useTelegram'
+import { useLocale } from '@/composables/useLocale'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import api from '@/utils/api'
 
 const router = useRouter()
 const telegram = useTelegram()
+const { t } = useLocale()
 
 const applications = ref([])
 const loading = ref(false)
@@ -119,12 +121,12 @@ const tabs = computed(() => {
   }
 
   return [
-    { value: 'all', label: 'Barchasi', count: counts.all },
-    { value: 'new', label: 'Yangi', count: counts.new },
-    { value: 'in_progress', label: 'Jarayonda', count: counts.in_progress },
-    { value: 'offered', label: 'Taklif', count: counts.offered },
-    { value: 'hired', label: 'Ishga qabul', count: counts.hired },
-    { value: 'rejected', label: 'Rad etilgan', count: counts.rejected },
+    { value: 'all', label: t('apps.tab_all'), count: counts.all },
+    { value: 'new', label: t('apps.tab_new'), count: counts.new },
+    { value: 'in_progress', label: t('apps.tab_in_progress'), count: counts.in_progress },
+    { value: 'offered', label: t('apps.tab_offered'), count: counts.offered },
+    { value: 'hired', label: t('apps.tab_hired'), count: counts.hired },
+    { value: 'rejected', label: t('apps.tab_rejected'), count: counts.rejected },
   ]
 })
 
@@ -148,7 +150,7 @@ async function loadApplications() {
     const response = await api.get('/applications/my')
     applications.value = response.data.applications || []
   } catch (error) {
-    telegram.showAlert('Arizalarni yuklashda xatolik')
+    telegram.showAlert(t('apps.load_error'))
   } finally {
     loading.value = false
   }
@@ -160,16 +162,9 @@ function viewApplication(app) {
 }
 
 function getStageLabel(stage) {
-  const labels = {
-    new: 'Yangi',
-    reviewed: 'Ko\'rib chiqildi',
-    shortlisted: 'Tanlangan',
-    interview: 'Intervyu',
-    offered: 'Taklif',
-    hired: 'Ishga qabul',
-    rejected: 'Rad etildi',
-  }
-  return labels[stage] || stage
+  const key = `apps.stage_${stage}`
+  const label = t(key)
+  return label !== key ? label : stage
 }
 
 function getStageClass(stage) {

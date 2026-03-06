@@ -26,11 +26,19 @@ class ProcessPaymentJob implements ShouldQueue
 
         event(new PaymentCompleted($this->payment));
 
+        $lang = $this->payment->user?->language?->value ?? 'uz';
+        $amount = $this->payment->amountFormatted();
+
+        $title = $lang === 'ru' ? 'Оплата успешна!' : 'To\'lov muvaffaqiyatli!';
+        $message = $lang === 'ru'
+            ? "Ваш платёж на сумму {$amount} принят."
+            : "Sizning {$amount} miqdordagi to'lovingiz qabul qilindi.";
+
         SendNotificationJob::dispatch(
             $this->payment->user,
             'payment',
-            'To\'lov muvaffaqiyatli!',
-            "Sizning {$this->payment->amountFormatted()} miqdordagi to'lovingiz qabul qilindi.",
+            $title,
+            $message,
             ['payment_id' => $this->payment->id],
         );
     }

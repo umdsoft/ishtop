@@ -2,6 +2,7 @@
 
 namespace App\Telegram\Handlers;
 
+use App\Enums\ApplicationStage;
 use App\Models\Application;
 use App\Models\Category;
 use App\Models\City;
@@ -53,36 +54,59 @@ class SearchHandler
 
     protected function showMainSearch(Nutgram $bot, bool $edit = false): void
     {
+        $lang = $this->getUserLang($bot);
         $activeCount = Vacancy::active()->count();
 
-        $text = "🔍 *Ish qidirish*\n\n📊 Faol vakansiyalar: {$activeCount}\n\nQuyidagi usullardan birini tanlang:";
+        $text = $lang === 'ru'
+            ? "🔍 *Поиск работы*\n\n📊 Активные вакансии: {$activeCount}\n\nВыберите один из способов:"
+            : "🔍 *Ish qidirish*\n\n📊 Faol vakansiyalar: {$activeCount}\n\nQuyidagi usullardan birini tanlang:";
 
         $keyboard = InlineKeyboardMarkup::make()
             ->addRow(
-                InlineKeyboardButton::make('📂 Kategoriya bo\'yicha', callback_data: 'search:categories'),
-                InlineKeyboardButton::make('📍 Shahar bo\'yicha', callback_data: 'search:cities'),
+                InlineKeyboardButton::make(
+                    $lang === 'ru' ? '📂 По категории' : 'Kategoriya bo\'yicha',
+                    callback_data: 'search:categories'
+                ),
+                InlineKeyboardButton::make(
+                    $lang === 'ru' ? '📍 По городу' : '📍 Shahar bo\'yicha',
+                    callback_data: 'search:cities'
+                ),
             )
             ->addRow(
-                InlineKeyboardButton::make('📋 Barcha vakansiyalar', callback_data: 'search:all'),
-            )
-            ->addRow(
-                InlineKeyboardButton::make('🌐 Mini App da qidirish', url: 'https://t.me/IshTopBot/app'),
-            )
-            ->addRow(
-                InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'menu:back'),
+                InlineKeyboardButton::make(
+                    $lang === 'ru' ? '📋 Все вакансии' : '📋 Barcha vakansiyalar',
+                    callback_data: 'search:all'
+                ),
+            );
+
+        $miniAppUrl = config('app.url') . '/miniapp';
+        if (!str_contains($miniAppUrl, 'localhost')) {
+            $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    $lang === 'ru' ? '🌐 Искать в Mini App' : '🌐 Mini App da qidirish',
+                    url: $miniAppUrl
+                ),
+            );
+        }
+
+        $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+                    callback_data: 'menu:back'
+                ),
             );
 
         if ($edit) {
             $bot->editMessageText(
                 text: $text,
                 message_id: $bot->callbackQuery()->message->message_id,
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
                 reply_markup: $keyboard,
             );
         } else {
             $bot->sendMessage(
                 text: $text,
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
                 reply_markup: $keyboard,
             );
         }
@@ -90,38 +114,45 @@ class SearchHandler
 
     protected function showCategories(Nutgram $bot): void
     {
+        $lang = $this->getUserLang($bot);
         $categories = Category::active()->get();
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
         foreach ($categories as $i => $cat) {
-            $label = ($cat->icon ? $cat->icon . ' ' : '') . $cat->name_uz;
+            $name = $lang === 'ru' ? ($cat->name_ru ?? $cat->name_uz) : $cat->name_uz;
+            $label = ($cat->icon ? $cat->icon . ' ' : '') . $name;
             $row[] = InlineKeyboardButton::make($label, callback_data: 'search_cat:' . $cat->slug);
             if (count($row) === 2 || $i === $categories->count() - 1) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }
         }
-        $keyboard->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'search:main'));
+        $keyboard->addRow(InlineKeyboardButton::make(
+            $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+            callback_data: 'search:main'
+        ));
 
         $bot->editMessageText(
-            text: "📂 *Kategoriyani tanlang:*",
+            text: $lang === 'ru' ? "📂 *Выберите категорию:*" : "📂 *Kategoriyani tanlang:*",
             message_id: $bot->callbackQuery()->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
     }
 
     protected function showCities(Nutgram $bot): void
     {
+        $lang = $this->getUserLang($bot);
         $cities = City::active()->get();
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
         foreach ($cities as $i => $city) {
             $count = Vacancy::active()->where('city', $city->name_uz)->count();
+            $name = $lang === 'ru' ? ($city->name_ru ?? $city->name_uz) : $city->name_uz;
             $row[] = InlineKeyboardButton::make(
-                $city->name_uz . " ({$count})",
+                $name . " ({$count})",
                 callback_data: 'search_city:' . $city->name_uz
             );
             if (count($row) === 2 || $i === $cities->count() - 1) {
@@ -129,12 +160,15 @@ class SearchHandler
                 $row = [];
             }
         }
-        $keyboard->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'search:main'));
+        $keyboard->addRow(InlineKeyboardButton::make(
+            $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+            callback_data: 'search:main'
+        ));
 
         $bot->editMessageText(
-            text: "📍 *Shaharni tanlang:*",
+            text: $lang === 'ru' ? "📍 *Выберите город:*" : "📍 *Shaharni tanlang:*",
             message_id: $bot->callbackQuery()->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
     }
@@ -151,6 +185,7 @@ class SearchHandler
 
     protected function showVacancies(Nutgram $bot, int $page, string $filter, string $value): void
     {
+        $lang = $this->getUserLang($bot);
         $query = Vacancy::active()->with('employer')->latest('published_at');
 
         if ($filter === 'category') {
@@ -170,16 +205,27 @@ class SearchHandler
         $vacancies = $query->skip($offset)->take($this->perPage)->get();
 
         if ($vacancies->isEmpty()) {
+            $text = $lang === 'ru'
+                ? "😔 Вакансии не найдены.\n\n📌 Выберите другой фильтр:"
+                : "😔 Vakansiyalar topilmadi.\n\n📌 Boshqa filtrni tanlang:";
+
             $bot->editMessageText(
-                text: "😔 Vakansiyalar topilmadi.\n\n📌 Boshqa filtrni tanlang:",
+                text: $text,
                 message_id: $bot->callbackQuery()->message->message_id,
                 reply_markup: InlineKeyboardMarkup::make()
-                    ->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'search:main')),
+                    ->addRow(InlineKeyboardButton::make(
+                        $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+                        callback_data: 'search:main'
+                    )),
             );
             return;
         }
 
-        $text = "📋 *Vakansiyalar* ({$total} ta)\nSahifa: {$page}/{$totalPages}\n\n";
+        $countWord = $lang === 'ru' ? 'шт' : 'ta';
+        $pageWord = $lang === 'ru' ? 'Страница' : 'Sahifa';
+        $text = $lang === 'ru'
+            ? "📋 *Вакансии* ({$total} {$countWord})\n{$pageWord}: {$page}/{$totalPages}\n\n"
+            : "📋 *Vakansiyalar* ({$total} {$countWord})\n{$pageWord}: {$page}/{$totalPages}\n\n";
 
         foreach ($vacancies as $i => $v) {
             $num = $offset + $i + 1;
@@ -208,23 +254,27 @@ class SearchHandler
             $keyboard->addRow(...$navRow);
         }
 
-        $keyboard->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'search:main'));
+        $keyboard->addRow(InlineKeyboardButton::make(
+            $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+            callback_data: 'search:main'
+        ));
 
         $bot->editMessageText(
             text: $text,
             message_id: $bot->callbackQuery()->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
     }
 
     protected function showVacancyDetail(Nutgram $bot, string $vacancyId): void
     {
+        $lang = $this->getUserLang($bot);
         $vacancy = Vacancy::with('employer')->find($vacancyId);
 
         if (!$vacancy) {
             $bot->editMessageText(
-                text: '❌ Vakansiya topilmadi.',
+                text: $lang === 'ru' ? '❌ Вакансия не найдена.' : '❌ Vakansiya topilmadi.',
                 message_id: $bot->callbackQuery()->message->message_id,
             );
             return;
@@ -237,50 +287,67 @@ class SearchHandler
         $company = $vacancy->employer?->company_name ?? '-';
         $top = $vacancy->isTopActive() ? '🔥 TOP ' : '';
 
+        $isRu = $lang === 'ru';
+
         $text = "{$top}📌 *{$vacancy->title}*\n\n";
-        $text .= "🏢 Kompaniya: {$company}\n";
-        $text .= "📂 Kategoriya: {$vacancy->category}\n";
-        $text .= "📍 Shahar: {$vacancy->city}\n";
-        $text .= "💰 Maosh: {$salary}\n";
-        $text .= "🏢 Ish turi: {$workType}\n";
+        $text .= "🏢 " . ($isRu ? 'Компания' : 'Kompaniya') . ": {$company}\n";
+        $text .= "📂 " . ($isRu ? 'Категория' : 'Kategoriya') . ": {$vacancy->category}\n";
+        $text .= "📍 " . ($isRu ? 'Город' : 'Shahar') . ": {$vacancy->city}\n";
+        $text .= "💰 " . ($isRu ? 'Зарплата' : 'Maosh') . ": {$salary}\n";
+        $text .= "🏢 " . ($isRu ? 'Тип работы' : 'Ish turi') . ": {$workType}\n";
 
         if ($vacancy->experience_required) {
-            $text .= "⏱ Tajriba: {$vacancy->experience_required}\n";
+            $text .= "⏱ " . ($isRu ? 'Опыт' : 'Tajriba') . ": {$vacancy->experience_required}\n";
         }
 
-        $text .= "\n📝 *Tavsif:*\n{$vacancy->description}\n";
+        $text .= "\n📝 *" . ($isRu ? 'Описание' : 'Tavsif') . ":*\n{$vacancy->description}\n";
 
         if ($vacancy->requirements) {
-            $text .= "\n📋 *Talablar:*\n{$vacancy->requirements}\n";
+            $text .= "\n📋 *" . ($isRu ? 'Требования' : 'Talablar') . ":*\n{$vacancy->requirements}\n";
         }
         if ($vacancy->responsibilities) {
-            $text .= "\n✅ *Vazifalar:*\n{$vacancy->responsibilities}\n";
+            $text .= "\n✅ *" . ($isRu ? 'Обязанности' : 'Vazifalar') . ":*\n{$vacancy->responsibilities}\n";
         }
 
-        $text .= "\n👁 Ko\'rishlar: {$vacancy->views_count} | 📝 Arizalar: {$vacancy->applications_count}";
+        $viewsLabel = $isRu ? 'Просмотры' : "Ko'rishlar";
+        $appsLabel = $isRu ? 'Заявки' : 'Arizalar';
+        $text .= "\n👁 {$viewsLabel}: {$vacancy->views_count} | 📝 {$appsLabel}: {$vacancy->applications_count}";
 
         $keyboard = InlineKeyboardMarkup::make()
             ->addRow(
-                InlineKeyboardButton::make('📝 Ariza berish', callback_data: "vacancy_apply:{$vacancy->id}"),
+                InlineKeyboardButton::make(
+                    $isRu ? '📝 Подать заявку' : '📝 Ariza berish',
+                    callback_data: "vacancy_apply:{$vacancy->id}"
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '🔗 Поделиться' : '🔗 Ulashish',
+                    switch_inline_query: $vacancy->title
+                ),
             )
             ->addRow(
-                InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'search:main'),
+                InlineKeyboardButton::make(
+                    $isRu ? '◀️ Назад' : '◀️ Orqaga',
+                    callback_data: 'search:main'
+                ),
             );
 
         $bot->editMessageText(
             text: $text,
             message_id: $bot->callbackQuery()->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
     }
 
     protected function applyToVacancy(Nutgram $bot, string $vacancyId): void
     {
+        $lang = $this->getUserLang($bot);
+        $isRu = $lang === 'ru';
         $vacancy = Vacancy::find($vacancyId);
+
         if (!$vacancy || !$vacancy->isActive()) {
             $bot->editMessageText(
-                text: '❌ Vakansiya topilmadi yoki faol emas.',
+                text: $isRu ? '❌ Вакансия не найдена или не активна.' : '❌ Vakansiya topilmadi yoki faol emas.',
                 message_id: $bot->callbackQuery()->message->message_id,
             );
             return;
@@ -288,18 +355,28 @@ class SearchHandler
 
         $user = User::where('telegram_id', $bot->user()->id)->first();
         if (!$user) {
-            $bot->sendMessage(text: 'Avval /start buyrug\'ini yuboring.');
+            $bot->sendMessage(text: $isRu ? 'Сначала отправьте /start.' : 'Avval /start buyrug\'ini yuboring.');
             return;
         }
 
         $worker = $user->workerProfile;
         if (!$worker) {
+            $text = $isRu
+                ? "📝 Для подачи заявки сначала создайте резюме.\n\nОтправьте /resume."
+                : "📝 Ariza berish uchun avval rezume yarating.\n\n/resume buyrug'ini yuboring.";
+
             $bot->editMessageText(
-                text: "📝 Ariza berish uchun avval rezume yarating.\n\n/resume buyrug\'ini yuboring.",
+                text: $text,
                 message_id: $bot->callbackQuery()->message->message_id,
                 reply_markup: InlineKeyboardMarkup::make()
-                    ->addRow(InlineKeyboardButton::make('📝 Rezume yaratish', callback_data: 'resume:create'))
-                    ->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: "vacancy_view:{$vacancyId}")),
+                    ->addRow(InlineKeyboardButton::make(
+                        $isRu ? '📝 Создать резюме' : '📝 Rezume yaratish',
+                        callback_data: 'resume:create'
+                    ))
+                    ->addRow(InlineKeyboardButton::make(
+                        $isRu ? '◀️ Назад' : '◀️ Orqaga',
+                        callback_data: "vacancy_view:{$vacancyId}"
+                    )),
             );
             return;
         }
@@ -310,10 +387,13 @@ class SearchHandler
 
         if ($existing) {
             $bot->editMessageText(
-                text: "ℹ️ Siz bu vakansiyaga allaqachon ariza bergansiz.",
+                text: $isRu ? "ℹ️ Вы уже подали заявку на эту вакансию." : "ℹ️ Siz bu vakansiyaga allaqachon ariza bergansiz.",
                 message_id: $bot->callbackQuery()->message->message_id,
                 reply_markup: InlineKeyboardMarkup::make()
-                    ->addRow(InlineKeyboardButton::make('◀️ Orqaga', callback_data: "vacancy_view:{$vacancyId}")),
+                    ->addRow(InlineKeyboardButton::make(
+                        $isRu ? '◀️ Назад' : '◀️ Orqaga',
+                        callback_data: "vacancy_view:{$vacancyId}"
+                    )),
             );
             return;
         }
@@ -321,18 +401,31 @@ class SearchHandler
         Application::create([
             'vacancy_id' => $vacancyId,
             'worker_id' => $worker->id,
-            'stage' => 'new',
+            'stage' => ApplicationStage::NEW,
             'source' => 'telegram',
         ]);
 
         $vacancy->increment('applications_count');
 
+        $text = $isRu
+            ? "✅ *Заявка отправлена!*\n\n📌 {$vacancy->title}\n\nРаботодатель рассмотрит вашу заявку."
+            : "✅ *Ariza yuborildi!*\n\n📌 {$vacancy->title}\n\nIsh beruvchi sizning arizangizni ko'rib chiqadi.";
+
         $bot->editMessageText(
-            text: "✅ *Ariza yuborildi!*\n\n📌 {$vacancy->title}\n\nIsh beruvchi sizning arizangizni ko\'rib chiqadi.",
+            text: $text,
             message_id: $bot->callbackQuery()->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
-                ->addRow(InlineKeyboardButton::make('🔍 Qidiruvga qaytish', callback_data: 'search:main')),
+                ->addRow(InlineKeyboardButton::make(
+                    $isRu ? '🔍 Вернуться к поиску' : '🔍 Qidiruvga qaytish',
+                    callback_data: 'search:main'
+                )),
         );
+    }
+
+    private function getUserLang(Nutgram $bot): string
+    {
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+        return $user?->language?->value ?? 'uz';
     }
 }

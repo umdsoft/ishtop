@@ -171,15 +171,15 @@
           </router-link>
 
           <router-link
-            to="/dashboard/talent-pool"
+            to="/dashboard/candidates"
             class="flex items-center gap-3 p-3 hover:bg-surface-50 dark:hover:bg-surface-800 rounded-lg transition-colors"
           >
             <div class="w-10 h-10 rounded-full bg-success-100 dark:bg-success-900/50 flex items-center justify-center">
               <UsersIcon class="w-5 h-5 text-success-600 dark:text-success-400" />
             </div>
             <div class="flex-1">
-              <p class="font-medium text-surface-900 dark:text-surface-100">Talent Pool</p>
-              <p class="text-xs text-surface-500 dark:text-surface-400">Saqlangan nomzodlar</p>
+              <p class="font-medium text-surface-900 dark:text-surface-100">Nomzodlar</p>
+              <p class="text-xs text-surface-500 dark:text-surface-400">Tavsiya etilgan nomzodlar</p>
             </div>
           </router-link>
 

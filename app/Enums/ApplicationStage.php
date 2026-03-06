@@ -11,6 +11,7 @@ enum ApplicationStage: string
     case OFFERED = 'offered';
     case HIRED = 'hired';
     case REJECTED = 'rejected';
+    case WITHDRAWN = 'withdrawn';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum ApplicationStage: string
             self::OFFERED => 'Taklif',
             self::HIRED => 'Qabul qilindi',
             self::REJECTED => 'Rad etildi',
+            self::WITHDRAWN => 'Bekor qilingan',
         };
     }
 
@@ -35,6 +37,7 @@ enum ApplicationStage: string
             self::OFFERED => 'success',
             self::HIRED => 'success',
             self::REJECTED => 'danger',
+            self::WITHDRAWN => 'gray',
         };
     }
 
@@ -48,6 +51,7 @@ enum ApplicationStage: string
             self::OFFERED => 5,
             self::HIRED => 6,
             self::REJECTED => 7,
+            self::WITHDRAWN => 8,
         };
     }
 }

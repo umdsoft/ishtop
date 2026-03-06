@@ -47,15 +47,20 @@ class HelpHandler
                 . "📞 Yordam: @IshTopSupport";
         }
 
+        $botUsername = config('nutgram.bot_username', 'ishtop_bot');
+
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
-                    InlineKeyboardButton::make('🌐 Mini App', url: 'https://t.me/IshTopBot/app'),
+                    InlineKeyboardButton::make('🌐 Mini App', url: "https://t.me/{$botUsername}/app"),
                 )
                 ->addRow(
-                    InlineKeyboardButton::make('◀️ Orqaga', callback_data: 'menu:back'),
+                    InlineKeyboardButton::make(
+                        $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+                        callback_data: 'menu:back'
+                    ),
                 ),
         );
     }

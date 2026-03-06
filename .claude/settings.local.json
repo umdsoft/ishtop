@@ -18,7 +18,14 @@
       "Bash(npx concurrently:*)",
       "Bash(grep:*)",
       "Bash(composer require:*)",
-      "Bash(npx vite build)"
+      "Bash(npx vite build)",
+      "Bash(cat:*)",
+      "Bash(composer show:*)",
+      "Bash(where:*)",
+      "Bash(curl:*)",
+      "Bash(tasklist:*)",
+      "Bash(wmic process:*)",
+      "Bash(taskkill:*)"
     ]
   }
 }

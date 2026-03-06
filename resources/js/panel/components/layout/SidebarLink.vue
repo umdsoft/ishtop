@@ -72,11 +72,19 @@ const props = defineProps({
     type: Boolean,
     default: false,
   },
+  exact: {
+    type: Boolean,
+    default: false,
+  },
 });
 
 const route = useRoute();
 
 const isActive = computed(() => {
+  // Exact match for dashboard home to prevent it staying active on child routes
+  if (props.to === '/dashboard' || props.exact) {
+    return route.path === props.to;
+  }
   return route.path === props.to || route.path.startsWith(props.to + '/');
 });
 </script>

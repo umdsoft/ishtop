@@ -44,6 +44,30 @@ const routes = [
     component: () => import('@/views/QuestionnaireView.vue'),
     meta: { title: 'Savolnoma', requiresAuth: true },
   },
+  {
+    path: '/saved',
+    name: 'saved',
+    component: () => import('@/views/SavedView.vue'),
+    meta: { title: 'Saqlangan', requiresAuth: true },
+  },
+  {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('@/views/NotificationsView.vue'),
+    meta: { title: 'Bildirishnomalar', requiresAuth: true },
+  },
+  {
+    path: '/profile/worker/edit',
+    name: 'edit-worker',
+    component: () => import('@/views/EditWorkerProfileView.vue'),
+    meta: { title: 'Profil tahrirlash', requiresAuth: true },
+  },
+  {
+    path: '/profile/employer/edit',
+    name: 'edit-employer',
+    component: () => import('@/views/EditEmployerProfileView.vue'),
+    meta: { title: 'Profil tahrirlash', requiresAuth: true },
+  },
 ]
 
 const router = createRouter({
@@ -52,7 +76,7 @@ const router = createRouter({
 })
 
 // Navigation guard
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   // Update Telegram WebApp header color
@@ -60,13 +84,14 @@ router.beforeEach((to, from, next) => {
     window.Telegram.WebApp.setHeaderColor('bg_color')
   }
 
-  // Check authentication
+  // Wait for auth to complete before checking
+  if (to.meta.requiresAuth && !authStore.authAttempted) {
+    await authStore.authReady
+  }
+
+  // If still not authenticated after auth attempt, redirect to home
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    // Show alert and stay on current page
-    if (window.Telegram?.WebApp) {
-      window.Telegram.WebApp.showAlert('Bu sahifani ko\'rish uchun tizimga kirish kerak')
-    }
-    next(false)
+    next({ name: 'home' })
     return
   }
 
@@ -82,6 +107,21 @@ router.afterEach((to) => {
 
   // Scroll to top
   window.scrollTo(0, 0)
+
+  // Global BackButton — show on all pages except home
+  const tg = window.Telegram?.WebApp
+  if (tg?.BackButton) {
+    if (to.name !== 'home') {
+      tg.BackButton.show()
+      tg.BackButton.offClick()
+      tg.BackButton.onClick(() => {
+        router.back()
+      })
+    } else {
+      tg.BackButton.hide()
+      tg.BackButton.offClick()
+    }
+  }
 })
 
 export default router

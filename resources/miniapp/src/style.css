@@ -8,6 +8,10 @@
   box-sizing: border-box;
 }
 
+:root {
+  --separator-color: rgba(128, 128, 128, 0.15);
+}
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--tg-theme-bg-color, #ffffff);
@@ -18,23 +22,69 @@ body {
 
 #app {
   min-height: 100vh;
-  padding-bottom: 70px;
+  padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Line clamp utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Native select styling */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23999' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 32px !important;
+}
+
+select option {
+  background-color: var(--tg-theme-bg-color, #ffffff);
+  color: var(--tg-theme-text-color, #000000);
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-tg-button text-tg-button-text px-4 py-2 rounded-lg font-medium active:opacity-80 transition-opacity;
+    @apply px-4 py-2.5 rounded-xl font-medium active:scale-[0.97] transition-transform;
+    background-color: var(--tg-theme-button-color, #3b82f6);
+    color: var(--tg-theme-button-text-color, #ffffff);
   }
 
   .btn-secondary {
-    @apply bg-tg-secondary-bg text-tg-text px-4 py-2 rounded-lg font-medium active:opacity-80 transition-opacity;
+    @apply px-4 py-2.5 rounded-xl font-medium active:scale-[0.97] transition-transform;
+    background-color: var(--tg-theme-secondary-bg-color, #f0f0f0);
+    color: var(--tg-theme-text-color, #000000);
   }
 
   .card {
-    @apply bg-tg-secondary-bg rounded-xl p-4 shadow-sm;
+    @apply rounded-2xl p-4;
+    background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
   }
 
   .input {
-    @apply w-full px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-tg-button;
+    @apply w-full px-4 py-2.5 rounded-xl outline-none transition-all;
+    background-color: var(--tg-theme-secondary-bg-color, #f5f5f5);
+    color: var(--tg-theme-text-color, #000000);
+    border: 1.5px solid var(--separator-color);
+  }
+
+  .input:focus {
+    border-color: var(--tg-theme-button-color, #3b82f6);
+  }
+
+  .input::placeholder {
+    color: var(--tg-theme-hint-color, #999999);
   }
 }

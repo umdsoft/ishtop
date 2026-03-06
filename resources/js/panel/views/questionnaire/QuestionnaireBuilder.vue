@@ -36,11 +36,17 @@
                 {{ questionnaire ? 'Savolnomani tahrirlash' : 'Savolnoma yaratish' }}
               </h1>
               <p class="text-surface-600 dark:text-surface-400 mt-0.5">
-                {{ vacancy.title }}
+                {{ vacancy.title_uz || vacancy.title_ru }}
               </p>
             </div>
           </div>
           <div v-if="questionnaire" class="flex items-center gap-3">
+            <AppButton v-if="questions.length > 0" variant="outline" @click="showSaveTemplateModal = true">
+              <template #icon-left>
+                <DocumentDuplicateIcon class="h-5 w-5" />
+              </template>
+              Shablon sifatida saqlash
+            </AppButton>
             <AppButton variant="outline" @click="showPreview = true">
               <template #icon-left>
                 <EyeIcon class="h-5 w-5" />
@@ -80,11 +86,47 @@
       </div>
 
       <!-- Create Questionnaire Form (if none exists) -->
-      <div v-if="!questionnaire">
+      <div v-if="!questionnaire" class="space-y-6">
+        <!-- Templates Section -->
+        <AppCard v-if="templates.length > 0">
+          <template #header>
+            <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+              Shablondan yaratish
+            </h2>
+          </template>
+
+          <p class="text-sm text-surface-600 dark:text-surface-400 mb-4">
+            Tayyor shablonni tanlang va tezda savolnoma yarating
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              v-for="tpl in templates"
+              :key="tpl.id"
+              class="text-left p-4 rounded-lg border border-surface-200 dark:border-surface-700 hover:border-brand-400 dark:hover:border-brand-600 hover:bg-surface-50 dark:hover:bg-surface-800 transition-all"
+              :disabled="applyingTemplate"
+              @click="applyTemplate(tpl)"
+            >
+              <div class="flex items-start justify-between mb-1">
+                <h4 class="text-sm font-semibold text-surface-900 dark:text-surface-100">
+                  {{ tpl.name }}
+                </h4>
+                <AppBadge v-if="tpl.is_public" size="sm" variant="info">Umumiy</AppBadge>
+              </div>
+              <div class="flex items-center gap-3 text-xs text-surface-500 dark:text-surface-400">
+                <span>{{ tpl.questions_data?.length || 0 }} ta savol</span>
+                <span v-if="tpl.category">{{ tpl.category }}</span>
+                <span>{{ tpl.usage_count || 0 }}x ishlatilgan</span>
+              </div>
+            </button>
+          </div>
+        </AppCard>
+
+        <!-- Manual Create -->
         <AppCard>
           <template #header>
             <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
-              Savolnoma sozlamalari
+              {{ templates.length > 0 ? 'Yoki noldan yarating' : 'Savolnoma sozlamalari' }}
             </h2>
           </template>
 
@@ -92,7 +134,7 @@
             <AppInput
               v-model="createForm.title"
               label="Sarlavha"
-              :placeholder="`${vacancy.title} — Savolnoma`"
+              :placeholder="`${vacancy.title_uz || vacancy.title_ru} — Savolnoma`"
               required
             />
             <div class="grid grid-cols-2 gap-4">
@@ -147,7 +189,7 @@
               </div>
             </template>
 
-            <div v-if="questions.length > 0" class="space-y-3">
+            <div v-if="questions.length > 0" class="space-y-4">
               <draggable
                 v-model="questions"
                 item-key="id"
@@ -157,100 +199,57 @@
                 @end="handleReorder"
               >
                 <template #item="{ element, index }">
-                  <div class="p-4 bg-surface-50 dark:bg-surface-900 rounded-lg">
-                    <div class="flex items-start gap-3">
-                      <!-- Drag Handle -->
-                      <button class="drag-handle p-1 mt-1 cursor-move text-surface-400 hover:text-surface-600 dark:hover:text-surface-300">
-                        <Bars3Icon class="h-5 w-5" />
-                      </button>
-
-                      <!-- Content -->
-                      <div class="flex-1 min-w-0">
-                        <div class="flex items-start justify-between mb-2">
-                          <div class="flex-1 min-w-0">
-                            <div class="flex items-center gap-2 mb-1 flex-wrap">
-                              <span class="text-sm font-medium text-surface-500 dark:text-surface-400">
-                                Savol {{ index + 1 }}
-                              </span>
-                              <AppBadge size="sm" variant="primary">
-                                {{ getQuestionTypeLabel(element.type) }}
-                              </AppBadge>
-                              <AppBadge v-if="element.is_knockout" size="sm" variant="danger">
-                                Knockout
-                              </AppBadge>
-                            </div>
-                            <p class="font-medium text-surface-900 dark:text-surface-100">
-                              {{ element.text_uz }}
-                            </p>
-                          </div>
-                          <div class="flex items-center gap-2 ml-4 flex-shrink-0">
-                            <div class="text-right">
-                              <p class="text-xs text-surface-600 dark:text-surface-400">Og'irlik</p>
-                              <p class="font-semibold text-surface-900 dark:text-surface-100">
-                                {{ element.weight }}
-                              </p>
-                            </div>
-                            <AppDropdown
-                              :items="getQuestionActions(element)"
-                            >
-                              <template #trigger>
-                                <button class="p-2 rounded hover:bg-surface-100 dark:hover:bg-surface-800">
-                                  <EllipsisVerticalIcon class="h-5 w-5 text-surface-600" />
-                                </button>
-                              </template>
-                            </AppDropdown>
-                          </div>
-                        </div>
-
-                        <!-- Options preview -->
-                        <div v-if="hasTypeOptions(element.type) && element.options?.length" class="mt-2 pl-4 space-y-1">
-                          <div
-                            v-for="option in element.options.slice(0, 4)"
-                            :key="option.id"
-                            class="flex items-center gap-2 text-sm"
-                          >
-                            <div :class="[
-                              'w-1.5 h-1.5 rounded-full flex-shrink-0',
-                              option.is_correct ? 'bg-success-500' : 'bg-surface-400',
-                            ]" />
-                            <span :class="[
-                              option.is_correct
-                                ? 'text-success-700 dark:text-success-400 font-medium'
-                                : 'text-surface-700 dark:text-surface-300',
-                            ]">
-                              {{ option.label_uz }}
-                              <span v-if="option.score_value" class="text-xs text-surface-500">({{ option.score_value }} ball)</span>
-                            </span>
-                          </div>
-                          <p v-if="element.options.length > 4" class="text-xs text-surface-500 dark:text-surface-400 pl-3.5">
-                            +{{ element.options.length - 4 }} ta ko'proq
-                          </p>
-                        </div>
-
-                        <!-- Number range preview -->
-                        <div v-if="element.type === 'number_range' && element.correct_answer" class="mt-2 text-sm text-surface-600 dark:text-surface-400">
-                          Oraliq: {{ element.correct_answer.min }} — {{ element.correct_answer.max }}
-                        </div>
+                  <QuestionCardItem
+                    :question="element"
+                    :index="index"
+                    :question-types="questionTypes"
+                    show-weight
+                  >
+                    <template #actions>
+                      <div class="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          class="p-1.5 rounded-lg hover:bg-brand-50 dark:hover:bg-brand-950/30 transition-colors"
+                          title="Tahrirlash"
+                          @click="openEditQuestion(element)"
+                        >
+                          <PencilIcon class="h-4 w-4 text-surface-400 hover:text-brand-600 dark:hover:text-brand-400" />
+                        </button>
+                        <button
+                          class="p-1.5 rounded-lg hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                          title="Nusxa olish"
+                          @click="duplicateQuestion(element)"
+                        >
+                          <DocumentDuplicateIcon class="h-4 w-4 text-surface-400 hover:text-surface-600 dark:hover:text-surface-300" />
+                        </button>
+                        <button
+                          class="p-1.5 rounded-lg hover:bg-danger-50 dark:hover:bg-danger-950/30 transition-colors"
+                          title="O'chirish"
+                          @click="confirmDeleteQuestion(element)"
+                        >
+                          <TrashIcon class="h-4 w-4 text-surface-400 hover:text-danger-600 dark:hover:text-danger-400" />
+                        </button>
                       </div>
-                    </div>
-                  </div>
+                    </template>
+                  </QuestionCardItem>
                 </template>
               </draggable>
             </div>
 
-            <div v-else class="text-center py-12">
-              <ClipboardDocumentListIcon class="h-16 w-16 mx-auto text-surface-400 dark:text-surface-500 mb-4" />
+            <div v-else class="text-center py-16">
+              <div class="w-20 h-20 mx-auto mb-5 rounded-2xl bg-surface-100 dark:bg-surface-800 flex items-center justify-center">
+                <ClipboardDocumentListIcon class="h-10 w-10 text-surface-400 dark:text-surface-500" />
+              </div>
               <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100 mb-2">
-                Savollar yo'q
+                Savollar hali qo'shilmagan
               </h3>
-              <p class="text-surface-600 dark:text-surface-400 mb-4">
-                Savolnomangizga birinchi savolni qo'shing
+              <p class="text-surface-500 dark:text-surface-400 mb-6 max-w-sm mx-auto">
+                O'ng paneldagi savol turlaridan birini tanlang yoki quyidagi tugmani bosing
               </p>
               <AppButton variant="primary" @click="openAddQuestion(null)">
                 <template #icon-left>
                   <PlusIcon class="h-5 w-5" />
                 </template>
-                Savol qo'shish
+                Birinchi savolni qo'shish
               </AppButton>
             </div>
           </AppCard>
@@ -304,21 +303,47 @@
             </div>
           </AppCard>
 
+          <!-- Save as Template -->
+          <AppCard v-if="questions.length > 0">
+            <template #header>
+              <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">Shablon</h3>
+            </template>
+            <p class="text-sm text-surface-600 dark:text-surface-400 mb-3">
+              Bu savolnomani shablon sifatida saqlang va boshqa vakansiyalarda qayta ishlating.
+            </p>
+            <AppButton
+              variant="outline"
+              size="sm"
+              full-width
+              @click="showSaveTemplateModal = true"
+            >
+              <template #icon-left>
+                <DocumentDuplicateIcon class="h-4 w-4" />
+              </template>
+              Shablon sifatida saqlash
+            </AppButton>
+          </AppCard>
+
           <!-- Question Types -->
           <AppCard>
             <template #header>
               <h3 class="text-sm font-semibold text-surface-900 dark:text-surface-100">Savol turlari</h3>
             </template>
 
-            <div class="space-y-2">
+            <div class="space-y-1.5">
               <button
                 v-for="type in questionTypes"
                 :key="type.value"
-                class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors text-left"
+                class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-800 border border-transparent hover:border-surface-200 dark:hover:border-surface-700 transition-all text-left group/type"
                 @click="openAddQuestion(type.value)"
               >
-                <div class="flex-shrink-0 text-2xl">{{ type.icon }}</div>
-                <div class="flex-1">
+                <div
+                  class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover/type:scale-110"
+                  :class="getTypeColorFn(type.value).number"
+                >
+                  <span v-html="getTypeIndicatorFn(type.value)" class="[&>svg]:w-4 [&>svg]:h-4" />
+                </div>
+                <div class="flex-1 min-w-0">
                   <p class="text-sm font-medium text-surface-900 dark:text-surface-100">
                     {{ type.label }}
                   </p>
@@ -326,6 +351,7 @@
                     {{ type.description }}
                   </p>
                 </div>
+                <PlusIcon class="h-4 w-4 text-surface-400 opacity-0 group-hover/type:opacity-100 transition-opacity flex-shrink-0" />
               </button>
             </div>
           </AppCard>
@@ -351,10 +377,12 @@
     </div>
 
     <!-- Add/Edit Question Modal -->
-    <QuestionForm
+    <QuestionFormModal
       :show="showQuestionForm"
       :question="editingQuestion"
       :preselected-type="preselectedType"
+      :question-types="questionTypes"
+      show-scoring
       @close="closeQuestionForm"
       @save="handleQuestionSave"
     />
@@ -372,6 +400,43 @@
       @cancel="showDeleteDialog = false"
     />
 
+    <!-- Save as Template Modal -->
+    <AppModal
+      :show="showSaveTemplateModal"
+      size="md"
+      title="Shablon sifatida saqlash"
+      @close="showSaveTemplateModal = false"
+    >
+      <div class="space-y-4">
+        <AppInput
+          v-model="templateForm.name"
+          label="Shablon nomi"
+          placeholder="Masalan: IT mutaxassis uchun savolnoma"
+          required
+        />
+        <AppInput
+          v-model="templateForm.category"
+          label="Kategoriya"
+          placeholder="Masalan: IT, Savdo, Umumiy"
+        />
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <AppButton variant="outline" @click="showSaveTemplateModal = false">
+            Bekor qilish
+          </AppButton>
+          <AppButton
+            variant="primary"
+            :loading="savingTemplate"
+            :disabled="!templateForm.name.trim()"
+            @click="saveAsTemplate"
+          >
+            Saqlash
+          </AppButton>
+        </div>
+      </template>
+    </AppModal>
+
     <!-- Preview Modal -->
     <AppModal
       :show="showPreview"
@@ -388,7 +453,7 @@
             <p class="text-sm text-surface-500 dark:text-surface-400 mt-1">
               {{ questions.length }} ta savol
               <span v-if="questionnaire.time_limit_minutes">
-                • {{ questionnaire.time_limit_minutes }} daqiqa
+                &bull; {{ questionnaire.time_limit_minutes }} daqiqa
               </span>
             </p>
           </div>
@@ -470,20 +535,22 @@ import {
   ArrowLeftIcon,
   PlusIcon,
   EyeIcon,
-  Bars3Icon,
-  EllipsisVerticalIcon,
+  PencilIcon,
+  TrashIcon,
   ClipboardDocumentListIcon,
   InformationCircleIcon,
+  DocumentDuplicateIcon,
 } from '@heroicons/vue/24/outline';
+import { getTypeColor as getTypeColorFn, getTypeIndicator as getTypeIndicatorFn } from '../../composables/useQuestionTypes';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppBadge from '../../components/ui/AppBadge.vue';
-import AppDropdown from '../../components/ui/AppDropdown.vue';
 import AppModal from '../../components/ui/AppModal.vue';
 import AppInput from '../../components/ui/AppInput.vue';
 import AppConfirmDialog from '../../components/ui/AppConfirmDialog.vue';
 import AppLoadingSpinner from '../../components/ui/AppLoadingSpinner.vue';
-import QuestionForm from './QuestionForm.vue';
+import QuestionCardItem from '../../components/questionnaire/QuestionCardItem.vue';
+import QuestionFormModal from '../../components/questionnaire/QuestionFormModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -524,13 +591,23 @@ const deleting = ref(false);
 // Preview
 const showPreview = ref(false);
 
+// Save as Template
+const showSaveTemplateModal = ref(false);
+const savingTemplate = ref(false);
+const templateForm = ref({ name: '', category: '' });
+
+// Templates (for creating from template)
+const templates = ref([]);
+const loadingTemplates = ref(false);
+const applyingTemplate = ref(false);
+
 const questionTypes = [
-  { value: 'single_choice', label: 'Bir tanlov', description: 'Faqat bitta javobni tanlash mumkin', icon: '⭕' },
-  { value: 'multi_select', label: 'Ko\'p tanlov', description: 'Bir nechta javob tanlash mumkin', icon: '☑️' },
-  { value: 'number_range', label: 'Raqam', description: 'Min va max raqam orasida', icon: '🔢' },
-  { value: 'open_text', label: 'Ochiq javob', description: 'Erkin matn kiritish', icon: '📝' },
-  { value: 'knockout', label: 'Knockout', description: 'Rad etish uchun savol', icon: '⛔' },
-  { value: 'file_upload', label: 'Fayl yuklash', description: 'Hujjat yoki rasm yuklash', icon: '📎' },
+  { value: 'single_choice', label: 'Bir tanlov', description: 'Faqat bitta javobni tanlash mumkin' },
+  { value: 'multi_select', label: 'Ko\'p tanlov', description: 'Bir nechta javob tanlash mumkin' },
+  { value: 'number_range', label: 'Raqam', description: 'Min va max raqam orasida' },
+  { value: 'open_text', label: 'Ochiq javob', description: 'Erkin matn kiritish' },
+  { value: 'knockout', label: 'Knockout', description: 'Rad etish uchun savol' },
+  { value: 'file_upload', label: 'Fayl yuklash', description: 'Hujjat yoki rasm yuklash' },
 ];
 
 const totalWeight = computed(() =>
@@ -574,7 +651,12 @@ async function loadData() {
     }
 
     // Pre-fill create form title
-    createForm.value.title = `${vacancy.value.title} — Savolnoma`;
+    createForm.value.title = `${vacancy.value.title_uz || vacancy.value.title_ru} — Savolnoma`;
+
+    // Load templates if no questionnaire exists
+    if (!questionnaire.value) {
+      fetchTemplates();
+    }
   } catch {
     vacancy.value = null;
   } finally {
@@ -588,7 +670,7 @@ async function createQuestionnaire() {
     const { data } = await axios.post(
       `/api/recruiter/vacancies/${route.params.vacancyId}/questionnaire`,
       {
-        title: createForm.value.title || `${vacancy.value.title} — Savolnoma`,
+        title: createForm.value.title || `${vacancy.value.title_uz || vacancy.value.title_ru} — Savolnoma`,
         time_limit_minutes: parseInt(createForm.value.time_limit_minutes) || 30,
         passing_score: parseInt(createForm.value.passing_score) || 60,
         auto_reject_below: parseInt(createForm.value.auto_reject_below) || 30,
@@ -747,30 +829,83 @@ async function duplicateQuestion(question) {
   }
 }
 
-function getQuestionTypeLabel(type) {
-  const typeObj = questionTypes.find(t => t.value === type);
-  return typeObj ? typeObj.label : type;
-}
-
 function hasTypeOptions(type) {
   return ['single_choice', 'multi_select', 'knockout'].includes(type);
 }
 
-function getQuestionActions(question) {
-  return [
-    {
-      label: 'Tahrirlash',
-      onClick: () => openEditQuestion(question),
-    },
-    {
-      label: 'Nusxa olish',
-      onClick: () => duplicateQuestion(question),
-    },
-    {
-      label: 'O\'chirish',
-      danger: true,
-      onClick: () => confirmDeleteQuestion(question),
-    },
-  ];
+// --- Template functions ---
+
+async function saveAsTemplate() {
+  savingTemplate.value = true;
+  try {
+    const questionsData = questions.value.map(q => ({
+      type: q.type,
+      text_uz: q.text_uz,
+      text_ru: q.text_ru || null,
+      weight: q.weight || 0,
+      is_required: q.is_required ?? true,
+      is_knockout: q.is_knockout ?? false,
+      correct_answer: q.correct_answer || null,
+      scoring_config: q.scoring_config || null,
+      options: (q.options || []).map(o => ({
+        value: o.value,
+        label_uz: o.label_uz,
+        label_ru: o.label_ru || null,
+        is_correct: o.is_correct ?? false,
+        score_value: o.score_value || null,
+      })),
+    }));
+
+    await axios.post('/api/recruiter/templates', {
+      name: templateForm.value.name,
+      category: templateForm.value.category || null,
+      questions_data: questionsData,
+    });
+
+    toast.success('Shablon muvaffaqiyatli saqlandi');
+    showSaveTemplateModal.value = false;
+    templateForm.value = { name: '', category: '' };
+  } catch (error) {
+    toast.error(error.response?.data?.message || 'Shablonni saqlashda xatolik');
+  } finally {
+    savingTemplate.value = false;
+  }
+}
+
+async function fetchTemplates() {
+  loadingTemplates.value = true;
+  try {
+    const { data } = await axios.get('/api/recruiter/templates', {
+      params: { per_page: 50 },
+    });
+    templates.value = data.data || [];
+  } catch {
+    templates.value = [];
+  } finally {
+    loadingTemplates.value = false;
+  }
+}
+
+async function applyTemplate(template) {
+  applyingTemplate.value = true;
+  try {
+    const { data } = await axios.post(`/api/recruiter/templates/${template.id}/apply`, {
+      vacancy_id: route.params.vacancyId,
+    });
+    questionnaire.value = data.questionnaire;
+    questions.value = data.questionnaire.questions || [];
+    settingsForm.value = {
+      title: questionnaire.value.title || '',
+      time_limit_minutes: questionnaire.value.time_limit_minutes || 30,
+      passing_score: questionnaire.value.passing_score || 60,
+      auto_reject_below: questionnaire.value.auto_reject_below || 30,
+    };
+    toast.success(`"${template.name}" shabloni qo'llanildi`);
+  } catch (error) {
+    const msg = error.response?.data?.message || 'Shablonni qo\'llashda xatolik';
+    toast.error(msg);
+  } finally {
+    applyingTemplate.value = false;
+  }
 }
 </script>

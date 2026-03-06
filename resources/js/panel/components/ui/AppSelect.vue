@@ -8,6 +8,7 @@
     <Listbox v-model="selectedValue" :disabled="disabled">
       <div class="relative">
         <ListboxButton
+          ref="buttonRef"
           :id="inputId"
           :class="buttonClasses"
         >
@@ -19,14 +20,21 @@
         </ListboxButton>
 
         <transition
+          enter-active-class="transition duration-150 ease-out"
+          enter-from-class="opacity-0 scale-95"
+          enter-to-class="opacity-100 scale-100"
           leave-active-class="transition duration-100 ease-in"
-          leave-from-class="opacity-100"
-          leave-to-class="opacity-0"
+          leave-from-class="opacity-100 scale-100"
+          leave-to-class="opacity-0 scale-95"
+          @before-enter="updateDropdownPosition"
         >
           <ListboxOptions
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-surface-800 py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
+            :class="[
+              'absolute z-[60] max-h-60 w-full overflow-auto rounded-lg bg-white dark:bg-surface-800 py-1 text-base shadow-xl ring-1 ring-black/10 dark:ring-white/10 focus:outline-none sm:text-sm select-dropdown',
+              flipUp ? 'bottom-full mb-1' : 'top-full mt-1'
+            ]"
           >
-            <div v-if="searchable" class="sticky top-0 bg-white dark:bg-surface-800 px-2 py-1.5 border-b border-surface-200 dark:border-surface-700">
+            <div v-if="searchable" class="sticky top-0 z-10 bg-white dark:bg-surface-800 px-2 py-1.5 border-b border-surface-200 dark:border-surface-700">
               <input
                 v-model="searchQuery"
                 type="text"
@@ -135,6 +143,8 @@ const emit = defineEmits(['update:modelValue']);
 
 const inputId = `select-${Math.random().toString(36).substr(2, 9)}`;
 const searchQuery = ref('');
+const buttonRef = ref(null);
+const flipUp = ref(false);
 
 const selectedValue = computed({
   get: () => props.modelValue,
@@ -152,6 +162,15 @@ const filteredOptions = computed(() => {
     return label.includes(query);
   });
 });
+
+function updateDropdownPosition() {
+  const el = buttonRef.value?.$el || buttonRef.value;
+  if (!el) return;
+  const rect = el.getBoundingClientRect();
+  const spaceBelow = window.innerHeight - rect.bottom;
+  const dropdownHeight = Math.min(filteredOptions.value.length * 40 + 16, 240); // max-h-60 = 240px
+  flipUp.value = spaceBelow < dropdownHeight + 8;
+}
 
 const buttonClasses = computed(() => {
   const classes = [
@@ -200,3 +219,27 @@ watch(() => selectedValue.value, () => {
   searchQuery.value = '';
 });
 </script>
+
+<style scoped>
+.select-dropdown {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.4) transparent;
+}
+
+.select-dropdown::-webkit-scrollbar {
+  width: 6px;
+}
+
+.select-dropdown::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.select-dropdown::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.4);
+  border-radius: 3px;
+}
+
+.select-dropdown::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(156, 163, 175, 0.6);
+}
+</style>

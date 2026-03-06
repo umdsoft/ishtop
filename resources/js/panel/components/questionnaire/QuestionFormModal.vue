@@ -16,30 +16,52 @@
             v-for="type in questionTypes"
             :key="type.value"
             :class="[
-              'flex items-center gap-2 p-3 rounded-lg border-2 text-left transition-all text-sm',
+              'flex items-center gap-2.5 p-3 rounded-xl border-2 text-left transition-all text-sm',
               form.type === type.value
-                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-400'
+                ? 'border-brand-500 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-400 shadow-sm'
                 : 'border-surface-200 dark:border-surface-700 hover:border-surface-300 dark:hover:border-surface-600',
             ]"
             @click="form.type = type.value"
           >
-            <span class="text-lg flex-shrink-0">{{ type.icon }}</span>
+            <div
+              class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
+              :class="getTypeColorClass(type.value)"
+            >
+              <span v-html="getTypeIndicatorSvg(type.value)" class="[&>svg]:w-4 [&>svg]:h-4" />
+            </div>
             <span class="font-medium text-surface-900 dark:text-surface-100">{{ type.label }}</span>
           </button>
         </div>
       </div>
 
-      <!-- Question Text -->
-      <AppTextarea
-        v-model="form.text_uz"
-        label="Savol matni"
-        placeholder="Savolingizni kiriting..."
-        :rows="3"
-        required
-      />
+      <!-- Question Text UZ -->
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          Savol matni (o'zbekcha) <span class="text-danger-500">*</span>
+        </label>
+        <textarea
+          v-model="form.text_uz"
+          rows="3"
+          class="w-full px-3 py-2 rounded-lg border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+          placeholder="Savolingizni kiriting..."
+        />
+      </div>
 
-      <!-- Weight & Settings Row -->
-      <div class="grid grid-cols-2 gap-4">
+      <!-- Question Text RU -->
+      <div>
+        <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+          Savol matni (ruscha, ixtiyoriy)
+        </label>
+        <textarea
+          v-model="form.text_ru"
+          rows="2"
+          class="w-full px-3 py-2 rounded-lg border border-surface-300 dark:border-surface-600 bg-surface-0 dark:bg-surface-800 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-transparent resize-none"
+          placeholder="Вопрос на русском..."
+        />
+      </div>
+
+      <!-- Weight & Settings (scoring mode) -->
+      <div v-if="showScoring" class="grid grid-cols-2 gap-4">
         <AppInput
           v-model="form.weight"
           type="number"
@@ -67,31 +89,49 @@
         </div>
       </div>
 
-      <!-- Options for single_choice / multi_select / knockout -->
+      <!-- Settings (non-scoring mode) -->
+      <div v-else class="flex items-center gap-6">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input
+            v-model="form.is_required"
+            type="checkbox"
+            class="rounded border-surface-300 dark:border-surface-600 text-brand-600 focus:ring-brand-500"
+          />
+          <span class="text-sm text-surface-700 dark:text-surface-300">Majburiy savol</span>
+        </label>
+      </div>
+
+      <!-- Options (for choice types) -->
       <div v-if="hasOptions" class="space-y-3">
         <div class="flex items-center justify-between">
           <label class="block text-sm font-medium text-surface-700 dark:text-surface-300">
             Javob variantlari <span class="text-danger-500">*</span>
           </label>
           <button
-            class="text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
+            type="button"
+            class="flex items-center gap-1 text-sm text-brand-600 dark:text-brand-400 hover:text-brand-700 dark:hover:text-brand-300 font-medium"
             @click="addOption"
           >
-            + Variant qo'shish
+            <PlusIcon class="w-3.5 h-3.5" />
+            Variant qo'shish
           </button>
         </div>
 
-        <div class="space-y-2">
+        <div v-if="form.options.length === 0" class="text-center py-4 border border-dashed border-surface-300 dark:border-surface-600 rounded-lg">
+          <p class="text-sm text-surface-500 dark:text-surface-400">Kamida 2 ta variant qo'shing</p>
+        </div>
+
+        <div v-else class="space-y-2">
           <div
             v-for="(option, index) in form.options"
             :key="index"
-            class="flex items-center gap-3 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg"
+            class="flex items-center gap-2.5 p-3 bg-surface-50 dark:bg-surface-800 rounded-lg group/opt"
           >
-            <!-- Is correct checkbox -->
-            <label class="flex-shrink-0 cursor-pointer" :title="form.type === 'knockout' ? 'O\'tish' : 'To\'g\'ri javob'">
+            <!-- Is correct (scoring mode) -->
+            <label v-if="showScoring" class="flex-shrink-0 cursor-pointer" :title="form.type === 'knockout' ? 'O\'tish' : 'To\'g\'ri javob'">
               <input
                 v-model="option.is_correct"
-                :type="form.type === 'single_choice' || form.type === 'knockout' ? 'radio' : 'checkbox'"
+                :type="isRadio ? 'radio' : 'checkbox'"
                 :name="'correct-' + formKey"
                 :value="true"
                 :checked="option.is_correct"
@@ -99,17 +139,31 @@
                 @change="handleCorrectChange(index)"
               />
             </label>
+            <!-- Type indicator (non-scoring mode) -->
+            <div v-else class="flex-shrink-0 mt-0.5">
+              <div v-if="isRadio" class="w-4 h-4 rounded-full border-2 border-surface-300 dark:border-surface-500" />
+              <div v-else class="w-4 h-4 rounded border-2 border-surface-300 dark:border-surface-500" />
+            </div>
 
-            <!-- Label -->
-            <input
-              v-model="option.label_uz"
-              type="text"
-              :placeholder="`Variant ${index + 1}`"
-              class="flex-1 px-3 py-1.5 text-sm rounded-md border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-            />
+            <!-- Option labels -->
+            <div class="flex items-center gap-2 flex-1">
+              <input
+                v-model="option.label_uz"
+                type="text"
+                class="flex-1 px-3 py-1.5 text-sm rounded-md border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                :placeholder="`Variant ${index + 1} (o'zbekcha)`"
+              />
+              <input
+                v-model="option.label_ru"
+                type="text"
+                class="flex-1 px-3 py-1.5 text-sm rounded-md border border-surface-300 dark:border-surface-600 bg-white dark:bg-surface-900 text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
+                :placeholder="`Variant ${index + 1} (ruscha)`"
+              />
+            </div>
 
-            <!-- Score value -->
+            <!-- Score value (scoring mode) -->
             <input
+              v-if="showScoring"
               v-model.number="option.score_value"
               type="number"
               placeholder="Ball"
@@ -119,14 +173,15 @@
             <!-- Remove -->
             <button
               v-if="form.options.length > 2"
-              class="flex-shrink-0 p-1 text-surface-400 hover:text-danger-500 transition-colors"
+              type="button"
+              class="flex-shrink-0 p-1.5 text-surface-400 hover:text-danger-500 hover:bg-danger-50 dark:hover:bg-danger-950/30 rounded-lg transition-colors opacity-0 group-hover/opt:opacity-100"
               @click="removeOption(index)"
             >
-              <XMarkIcon class="w-4 h-4" />
+              <TrashIcon class="w-4 h-4" />
             </button>
           </div>
         </div>
-        <p class="text-xs text-surface-500 dark:text-surface-400">
+        <p v-if="showScoring" class="text-xs text-surface-500 dark:text-surface-400">
           {{ form.type === 'knockout' ? 'Belgilangan variant — o\'tish sharti' : 'Belgilangan variantlar — to\'g\'ri javoblar' }}
         </p>
       </div>
@@ -182,10 +237,14 @@
 
     <template #footer>
       <div class="flex gap-3 justify-end">
-        <AppButton variant="secondary" @click="$emit('close')">
+        <AppButton variant="outline" @click="$emit('close')">
           Bekor qilish
         </AppButton>
-        <AppButton variant="primary" :loading="saving" @click="handleSave">
+        <AppButton
+          variant="primary"
+          :disabled="!canSave"
+          @click="handleSave"
+        >
           {{ isEditing ? 'Saqlash' : 'Qo\'shish' }}
         </AppButton>
       </div>
@@ -195,43 +254,44 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
-import { XMarkIcon } from '@heroicons/vue/24/outline';
-import AppModal from '../../components/ui/AppModal.vue';
-import AppButton from '../../components/ui/AppButton.vue';
-import AppInput from '../../components/ui/AppInput.vue';
-import AppTextarea from '../../components/ui/AppTextarea.vue';
+import { PlusIcon, TrashIcon } from '@heroicons/vue/24/outline';
+import { getTypeColor, getTypeIndicator, isRadioType, hasChoiceOptions } from '../../composables/useQuestionTypes';
+import AppModal from '../ui/AppModal.vue';
+import AppButton from '../ui/AppButton.vue';
+import AppInput from '../ui/AppInput.vue';
 
 const props = defineProps({
   show: { type: Boolean, required: true },
   question: { type: Object, default: null },
   preselectedType: { type: String, default: null },
+  questionTypes: { type: Array, required: true },
+  showScoring: { type: Boolean, default: false },
 });
 
 const emit = defineEmits(['close', 'save']);
 
 const formKey = ref(0);
-const saving = ref(false);
 
 const isEditing = computed(() => !!props.question);
 
-const questionTypes = [
-  { value: 'single_choice', label: 'Bir tanlov', icon: '⭕' },
-  { value: 'multi_select', label: 'Ko\'p tanlov', icon: '☑️' },
-  { value: 'number_range', label: 'Raqam', icon: '🔢' },
-  { value: 'open_text', label: 'Ochiq javob', icon: '📝' },
-  { value: 'knockout', label: 'Knockout', icon: '⛔' },
-  { value: 'file_upload', label: 'Fayl yuklash', icon: '📎' },
-];
+function getTypeColorClass(type) {
+  return getTypeColor(type).number;
+}
+
+function getTypeIndicatorSvg(type) {
+  return getTypeIndicator(type);
+}
 
 const defaultForm = () => ({
-  type: 'single_choice',
+  type: props.questionTypes[0]?.value || 'text',
   text_uz: '',
-  weight: 10,
+  text_ru: '',
   is_required: true,
   is_knockout: false,
+  weight: 10,
   options: [
-    { label_uz: '', is_correct: false, score_value: 0 },
-    { label_uz: '', is_correct: false, score_value: 0 },
+    { label_uz: '', label_ru: '', is_correct: false, score_value: 0 },
+    { label_uz: '', label_ru: '', is_correct: false, score_value: 0 },
   ],
   correct_answer_min: '',
   correct_answer_max: '',
@@ -242,9 +302,14 @@ const defaultForm = () => ({
 
 const form = ref(defaultForm());
 
-const hasOptions = computed(() =>
-  ['single_choice', 'multi_select', 'knockout'].includes(form.value.type),
-);
+const hasOptions = computed(() => hasChoiceOptions(form.value.type));
+const isRadio = computed(() => isRadioType(form.value.type));
+
+const canSave = computed(() => {
+  if (!form.value.text_uz?.trim()) return false;
+  if (hasOptions.value && form.value.options.filter(o => o.label_uz?.trim()).length < 2) return false;
+  return true;
+});
 
 watch(() => props.show, (newVal) => {
   if (newVal) {
@@ -252,20 +317,22 @@ watch(() => props.show, (newVal) => {
     if (props.question) {
       // Editing existing question
       form.value = {
-        type: props.question.type,
+        type: props.question.type || props.questionTypes[0]?.value || 'text',
         text_uz: props.question.text_uz || '',
-        weight: props.question.weight ?? 10,
+        text_ru: props.question.text_ru || '',
         is_required: props.question.is_required ?? true,
         is_knockout: props.question.is_knockout ?? false,
+        weight: props.question.weight ?? 10,
         options: props.question.options?.length > 0
           ? props.question.options.map(o => ({
               label_uz: o.label_uz || '',
+              label_ru: o.label_ru || '',
               is_correct: o.is_correct || false,
               score_value: o.score_value ?? 0,
             }))
           : [
-              { label_uz: '', is_correct: false, score_value: 0 },
-              { label_uz: '', is_correct: false, score_value: 0 },
+              { label_uz: '', label_ru: '', is_correct: false, score_value: 0 },
+              { label_uz: '', label_ru: '', is_correct: false, score_value: 0 },
             ],
         correct_answer_min: props.question.correct_answer?.min ?? '',
         correct_answer_max: props.question.correct_answer?.max ?? '',
@@ -283,7 +350,12 @@ watch(() => props.show, (newVal) => {
 });
 
 function addOption() {
-  form.value.options.push({ label_uz: '', is_correct: false, score_value: 0 });
+  form.value.options.push({
+    label_uz: '',
+    label_ru: '',
+    is_correct: false,
+    score_value: 0,
+  });
 }
 
 function removeOption(index) {
@@ -291,8 +363,7 @@ function removeOption(index) {
 }
 
 function handleCorrectChange(index) {
-  if (form.value.type === 'single_choice' || form.value.type === 'knockout') {
-    // Only one can be correct
+  if (isRadio.value) {
     form.value.options.forEach((opt, i) => {
       opt.is_correct = i === index;
     });
@@ -300,37 +371,31 @@ function handleCorrectChange(index) {
 }
 
 function handleSave() {
-  // Validate
-  if (!form.value.text_uz.trim()) return;
-  if (hasOptions.value) {
-    const validOptions = form.value.options.filter(o => o.label_uz.trim());
-    if (validOptions.length < 2) return;
-  }
+  if (!canSave.value) return;
 
-  saving.value = true;
-
-  // Build payload
   const payload = {
     type: form.value.type,
     text_uz: form.value.text_uz,
-    weight: parseInt(form.value.weight) || 10,
+    text_ru: form.value.text_ru || '',
     is_required: form.value.is_required,
-    is_knockout: form.value.is_knockout,
+    weight: props.showScoring ? (parseInt(form.value.weight) || 10) : 0,
+    is_knockout: props.showScoring ? form.value.is_knockout : false,
     correct_answer: {},
     scoring_config: {},
   };
 
   if (hasOptions.value) {
     payload.options = form.value.options
-      .filter(o => o.label_uz.trim())
+      .filter(o => o.label_uz?.trim())
       .map((o, i) => ({
         value: `option_${i + 1}`,
         label_uz: o.label_uz,
+        label_ru: o.label_ru || '',
         is_correct: o.is_correct,
         score_value: parseInt(o.score_value) || 0,
         sort_order: i + 1,
       }));
-    // Set correct_answer for knockout
+
     if (form.value.type === 'knockout') {
       const correctOption = payload.options.find(o => o.is_correct);
       if (correctOption) {
@@ -361,6 +426,5 @@ function handleSave() {
   }
 
   emit('save', payload);
-  saving.value = false;
 }
 </script>

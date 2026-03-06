@@ -50,6 +50,36 @@ class MatchingService
         return $query->limit($limit)->get();
     }
 
+    /**
+     * Find recommended candidates for a vacancy with scoring, excluding already applied.
+     */
+    public function getRecommendedCandidates(Vacancy $vacancy, int $perPage = 20): \Illuminate\Contracts\Pagination\LengthAwarePaginator
+    {
+        $query = WorkerProfile::query()
+            ->whereIn('search_status', ['open', 'passive'])
+            ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id));
+
+        // Soft filters — don't strictly require, but prefer matches
+        // City filter (soft — include all but city matches will score higher)
+        // We don't filter strictly so recruiters can see nearby candidates too
+
+        $workers = $query
+            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'photo_url', 'search_status')
+            ->paginate($perPage);
+
+        // Calculate match score for each worker
+        $workers->getCollection()->transform(function ($worker) use ($vacancy) {
+            $worker->match_score = $this->calculateMatchScore($worker, $vacancy);
+            return $worker;
+        });
+
+        // Sort by match_score descending (within the page)
+        $sorted = $workers->getCollection()->sortByDesc('match_score')->values();
+        $workers->setCollection($sorted);
+
+        return $workers;
+    }
+
     public function calculateMatchScore(WorkerProfile $worker, Vacancy $vacancy): int
     {
         $score = 0;

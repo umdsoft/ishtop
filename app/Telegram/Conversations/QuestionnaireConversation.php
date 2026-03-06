@@ -2,7 +2,7 @@
 
 namespace App\Telegram\Conversations;
 
-use App\Enums\ApplicationStatus;
+use App\Enums\ApplicationStage;
 use App\Models\Application;
 use App\Models\Question;
 use App\Models\QuestionOption;
@@ -89,7 +89,7 @@ class QuestionnaireConversation extends Conversation
 
         $bot->sendMessage(
             text: $intro,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make(
@@ -140,7 +140,7 @@ class QuestionnaireConversation extends Conversation
             $keyboard = $this->buildOptionsKeyboard($question);
             $bot->sendMessage(
                 text: $text,
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
                 reply_markup: $keyboard,
             );
             $this->next('handleSingleChoice');
@@ -149,7 +149,7 @@ class QuestionnaireConversation extends Conversation
             $keyboard = $this->buildMultiSelectKeyboard($question);
             $bot->sendMessage(
                 text: $text . "\n\n" . $this->t('(Bir nechta variant tanlang, keyin ✅ bosing)', '(Выберите несколько, затем нажмите ✅)'),
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
                 reply_markup: $keyboard,
             );
             Cache::put("quest_multi_{$bot->userId()}_{$this->currentIndex}", [], now()->addMinutes(30));
@@ -161,17 +161,17 @@ class QuestionnaireConversation extends Conversation
             $max = $config['max'] ?? 100;
             $text .= "\n\n" . $this->t("Raqam kiriting ({$min} - {$max}):", "Введите число ({$min} - {$max}):");
 
-            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN);
+            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN_LEGACY);
             $this->next('handleNumberRange');
 
         } elseif ($type === 'open_text') {
             $text .= "\n\n" . $this->t('Javobingizni yozing:', 'Напишите ваш ответ:');
-            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN);
+            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN_LEGACY);
             $this->next('handleOpenText');
 
         } elseif ($type === 'file_upload') {
             $text .= "\n\n" . $this->t('Faylni yuboring (hujjat, rasm):', 'Отправьте файл (документ, изображение):');
-            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN);
+            $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN_LEGACY);
             $this->next('handleFileUpload');
 
         } else {
@@ -365,7 +365,7 @@ class QuestionnaireConversation extends Conversation
 
         // Auto-advance if score is good
         if ($percentage >= 70) {
-            $application->update(['status' => ApplicationStatus::SHORTLISTED]);
+            $application->moveToStage(ApplicationStage::SHORTLISTED);
         }
 
         $congratsText = $this->t(
@@ -375,7 +375,7 @@ class QuestionnaireConversation extends Conversation
 
         $bot->sendMessage(
             text: $congratsText,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
 
         $this->end();
@@ -385,8 +385,8 @@ class QuestionnaireConversation extends Conversation
     {
         $application = Application::find($this->applicationId);
         if ($application) {
+            $application->moveToStage(ApplicationStage::REJECTED);
             $application->update([
-                'status' => ApplicationStatus::REJECTED,
                 'questionnaire_answers' => $this->answers,
                 'questionnaire_completed' => true,
                 'questionnaire_completed_at' => now(),

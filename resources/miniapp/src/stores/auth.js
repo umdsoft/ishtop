@@ -6,10 +6,17 @@ export const useAuthStore = defineStore('auth', () => {
   const user = ref(null)
   const token = ref(localStorage.getItem('auth_token') || null)
   const loading = ref(false)
+  const authAttempted = ref(false)
+
+  // Resolves when initial auth attempt is done
+  let _authReadyResolve
+  const authReady = new Promise((resolve) => {
+    _authReadyResolve = resolve
+  })
 
   const isAuthenticated = computed(() => !!token.value && !!user.value)
-  const isWorker = computed(() => !!user.value?.worker_profile)
-  const isEmployer = computed(() => !!user.value?.employer_profile)
+  const isWorker = computed(() => !!user.value?.worker_profile || !!user.value?.has_worker_profile)
+  const isEmployer = computed(() => !!user.value?.employer_profile || !!user.value?.has_employer_profile)
 
   async function loginWithTelegram(initData) {
     loading.value = true
@@ -21,9 +28,20 @@ export const useAuthStore = defineStore('auth', () => {
       return response.data
     } catch (error) {
       console.error('Login failed:', error)
+      // Try to restore session from stored token
+      if (token.value) {
+        try {
+          await fetchUser()
+          return
+        } catch (e) {
+          // Token is invalid
+        }
+      }
       throw error
     } finally {
       loading.value = false
+      authAttempted.value = true
+      _authReadyResolve()
     }
   }
 
@@ -33,8 +51,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await api.get('/me')
-      user.value = response.data
-      return response.data
+      user.value = response.data.user || response.data
+      return user.value
     } catch (error) {
       console.error('Fetch user failed:', error)
       if (error.response?.status === 401) {
@@ -50,8 +68,8 @@ export const useAuthStore = defineStore('auth', () => {
     loading.value = true
     try {
       const response = await api.put('/me', data)
-      user.value = response.data
-      return response.data
+      user.value = response.data.user || response.data
+      return user.value
     } catch (error) {
       console.error('Update profile failed:', error)
       throw error
@@ -66,10 +84,17 @@ export const useAuthStore = defineStore('auth', () => {
     localStorage.removeItem('auth_token')
   }
 
+  function markAuthReady() {
+    authAttempted.value = true
+    _authReadyResolve()
+  }
+
   return {
     user,
     token,
     loading,
+    authAttempted,
+    authReady,
     isAuthenticated,
     isWorker,
     isEmployer,
@@ -77,5 +102,6 @@ export const useAuthStore = defineStore('auth', () => {
     fetchUser,
     updateProfile,
     logout,
+    markAuthReady,
   }
 })

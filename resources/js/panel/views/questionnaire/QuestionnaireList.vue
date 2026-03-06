@@ -27,7 +27,7 @@
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-3 mb-1.5">
               <h3 class="text-base font-semibold text-surface-900 dark:text-surface-100 truncate">
-                {{ vacancy.title }}
+                {{ vacancy.title_uz || vacancy.title_ru }}
               </h3>
               <AppBadge :variant="getStatusVariant(vacancy.status)" size="sm">
                 {{ getStatusLabel(vacancy.status) }}
@@ -110,7 +110,7 @@ async function fetchVacancies() {
     const { data } = await axios.get('/api/recruiter/vacancies', {
       params: { per_page: 100 },
     });
-    vacancies.value = data.data || [];
+    vacancies.value = data.vacancies?.data || [];
   } catch (error) {
     toast.error('Vakansiyalarni yuklashda xatolik');
   } finally {

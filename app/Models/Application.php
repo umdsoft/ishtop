@@ -16,7 +16,9 @@ class Application extends Model
 
     protected $fillable = [
         'vacancy_id', 'worker_id', 'stage', 'cover_letter',
-        'questionnaire_score', 'knockout_passed', 'recruiter_rating',
+        'questionnaire_score', 'questionnaire_max_score', 'questionnaire_answers',
+        'questionnaire_completed', 'questionnaire_completed_at',
+        'knockout_passed', 'recruiter_rating',
         'matching_score', 'source', 'viewed_at', 'shortlisted_at',
         'interviewed_at', 'offered_at', 'rejected_reason',
     ];
@@ -25,6 +27,10 @@ class Application extends Model
     {
         return [
             'questionnaire_score' => 'decimal:2',
+            'questionnaire_max_score' => 'decimal:2',
+            'questionnaire_answers' => 'array',
+            'questionnaire_completed' => 'boolean',
+            'questionnaire_completed_at' => 'datetime',
             'matching_score' => 'decimal:2',
             'knockout_passed' => 'boolean',
             'recruiter_rating' => 'integer',

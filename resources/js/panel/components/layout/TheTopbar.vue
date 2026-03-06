@@ -72,6 +72,9 @@
             <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-400 flex items-center justify-center font-semibold text-sm">
               {{ userInitials }}
             </div>
+            <span class="hidden md:block text-sm font-medium text-surface-700 dark:text-surface-300 max-w-[150px] truncate">
+              {{ user?.first_name }} {{ user?.last_name }}
+            </span>
             <ChevronDownIcon class="w-4 h-4 text-surface-500 dark:text-surface-400 hidden md:block" />
           </button>
 

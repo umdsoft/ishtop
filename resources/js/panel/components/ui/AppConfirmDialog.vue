@@ -25,6 +25,8 @@
       {{ message }}
     </p>
 
+    <slot name="body" />
+
     <template #footer>
       <div class="flex gap-3 justify-end">
         <AppButton

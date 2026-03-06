@@ -1,92 +1,120 @@
 <template>
-  <div class="home-view p-4 pb-20">
-    <!-- Header -->
-    <div class="mb-6">
-      <h1 class="text-2xl font-bold mb-2">IshTop</h1>
-      <p class="text-tg-hint">Telegramdan chiqmay ish toping!</p>
+  <div class="home-view pb-20">
+    <!-- Hero Header -->
+    <div class="hero-header px-5 pt-6 pb-5">
+      <div class="flex items-center justify-between mb-5">
+        <div>
+          <h1 class="text-[22px] font-bold tracking-tight" style="color: var(--tg-theme-text-color);">
+            {{ greeting }}
+          </h1>
+          <p class="text-sm mt-0.5" style="color: var(--tg-theme-hint-color);">
+            {{ t('home.subtitle') }}
+          </p>
+        </div>
+        <div
+          class="w-10 h-10 rounded-full flex items-center justify-center cursor-pointer active:scale-95 transition-transform"
+          style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);"
+          @click="router.push('/profile')"
+        >
+          <span class="text-sm font-bold">{{ userInitial }}</span>
+        </div>
+      </div>
+
+      <!-- Search Bar -->
+      <div
+        class="flex items-center gap-3 px-4 py-3 rounded-2xl cursor-pointer active:scale-[0.98] transition-transform"
+        style="background-color: var(--tg-theme-secondary-bg-color); border: 1px solid var(--separator-color);"
+        @click="router.push('/search')"
+      >
+        <svg class="w-5 h-5 flex-shrink-0" style="color: var(--tg-theme-hint-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="7" />
+          <path stroke-linecap="round" d="M20 20l-4-4" />
+        </svg>
+        <span class="text-[15px]" style="color: var(--tg-theme-hint-color);">{{ t('home.search_placeholder') }}</span>
+      </div>
     </div>
 
     <!-- Banner -->
-    <BannerSlot placement="home_top" />
-
-    <!-- Search Bar -->
-    <div class="mb-6">
-      <div class="input flex items-center gap-2 cursor-pointer" @click="router.push('/search')">
-        <svg class="w-5 h-5 text-tg-hint" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <span class="text-tg-hint">Vakansiya qidirish...</span>
-      </div>
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="grid grid-cols-4 gap-3 mb-6">
-      <div
-        v-for="action in quickActions"
-        :key="action.label"
-        class="flex flex-col items-center gap-2 p-3 card cursor-pointer active:opacity-70"
-        @click="handleQuickAction(action.action)"
-      >
-        <span class="text-2xl">{{ action.icon }}</span>
-        <span class="text-xs text-center">{{ action.label }}</span>
-      </div>
+    <div class="px-5">
+      <BannerSlot placement="home_top" />
     </div>
 
     <!-- Recommended Vacancies -->
-    <div v-if="recommendedLoading || recommended.length > 0" class="mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold">Siz uchun</h2>
-        <RouterLink to="/search" class="text-sm text-tg-link">Barchasi</RouterLink>
+    <div v-if="recommendedLoading || recommended.length > 0" class="mb-2">
+      <div class="flex items-center justify-between px-5 mb-3">
+        <h2 class="text-[17px] font-bold" style="color: var(--tg-theme-text-color);">{{ t('home.recommended') }}</h2>
+        <RouterLink
+          to="/search"
+          class="text-[13px] font-medium"
+          style="color: var(--tg-theme-link-color);"
+        >
+          {{ t('common.all') }}
+        </RouterLink>
       </div>
 
-      <LoadingSpinner v-if="recommendedLoading" />
-      <div v-else class="space-y-3">
-        <VacancyCard v-for="vacancy in recommended" :key="vacancy.id" :vacancy="vacancy" />
+      <div class="px-5">
+        <LoadingSpinner v-if="recommendedLoading" />
+        <div v-else class="space-y-2.5">
+          <VacancyCard v-for="vacancy in recommended" :key="vacancy.id" :vacancy="vacancy" />
+        </div>
       </div>
     </div>
 
     <!-- Latest Vacancies -->
-    <div class="mb-6">
-      <div class="flex items-center justify-between mb-3">
-        <h2 class="text-lg font-semibold">So'nggi e'lonlar</h2>
+    <div class="mt-4">
+      <div class="flex items-center justify-between px-5 mb-3">
+        <h2 class="text-[17px] font-bold" style="color: var(--tg-theme-text-color);">{{ t('home.latest') }}</h2>
       </div>
 
-      <LoadingSpinner v-if="vacancyStore.loading" />
-      <div v-else class="space-y-3">
-        <VacancyCard v-for="vacancy in vacancyStore.vacancies" :key="vacancy.id" :vacancy="vacancy" />
+      <div class="px-5">
+        <LoadingSpinner v-if="vacancyStore.loading" />
+        <div v-else class="space-y-2.5">
+          <VacancyCard v-for="vacancy in vacancyStore.vacancies" :key="vacancy.id" :vacancy="vacancy" />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useVacancyStore } from '@/stores/vacancy'
+import { useAuthStore } from '@/stores/auth'
 import { useTelegram } from '@/composables/useTelegram'
+import { useLocale } from '@/composables/useLocale'
 import BannerSlot from '@/components/BannerSlot.vue'
 import VacancyCard from '@/components/VacancyCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 
 const router = useRouter()
 const vacancyStore = useVacancyStore()
+const authStore = useAuthStore()
 const telegram = useTelegram()
+const { t } = useLocale()
 
 const recommended = ref([])
 const recommendedLoading = ref(false)
 
-const quickActions = [
-  { icon: '🔍', label: 'Qidirish', action: 'search' },
-  { icon: '📍', label: 'Yaqinida', action: 'nearby' },
-  { icon: '⭐', label: 'TOP', action: 'top' },
-  { icon: '📝', label: 'Arizalar', action: 'applications' },
-]
+const userInitial = computed(() => {
+  const name = telegram.user.value?.first_name || authStore.user?.first_name || ''
+  return name ? name.charAt(0).toUpperCase() : 'U'
+})
+
+const greeting = computed(() => {
+  const name = telegram.user.value?.first_name || authStore.user?.first_name || ''
+  const hour = new Date().getHours()
+  let greet = ''
+  if (hour >= 5 && hour < 12) greet = 'Xayrli tong'
+  else if (hour >= 12 && hour < 18) greet = 'Xayrli kun'
+  else greet = 'Xayrli kech'
+
+  return name ? `${greet}, ${name}!` : `${greet}!`
+})
 
 onMounted(async () => {
-  // Fetch latest vacancies
   await vacancyStore.fetchVacancies({ per_page: 10 })
 
-  // Fetch recommended vacancies
   recommendedLoading.value = true
   try {
     recommended.value = await vacancyStore.recommendedVacancies()
@@ -97,22 +125,4 @@ onMounted(async () => {
   }
 })
 
-function handleQuickAction(action) {
-  telegram.hapticFeedback('soft')
-
-  switch (action) {
-    case 'search':
-      router.push('/search')
-      break
-    case 'nearby':
-      router.push('/search?nearby=true')
-      break
-    case 'top':
-      router.push('/search?is_top=true')
-      break
-    case 'applications':
-      router.push('/applications')
-      break
-  }
-}
 </script>

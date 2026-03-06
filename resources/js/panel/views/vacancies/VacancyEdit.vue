@@ -28,7 +28,7 @@
             <!-- Language Selector -->
             <div class="flex items-center gap-3 p-4 bg-surface-50 dark:bg-surface-800/50 rounded-xl border border-surface-200 dark:border-surface-700">
               <LanguageIcon class="h-5 w-5 text-surface-500 dark:text-surface-400" />
-              <span class="text-sm font-medium text-surface-700 dark:text-surface-300">E'lon tili:</span>
+              <span class="text-sm font-medium text-surface-700 dark:text-surface-300">Qaysi tilda yozasiz:</span>
               <div class="flex rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden">
                 <button
                   type="button"
@@ -55,6 +55,9 @@
                   Ruscha
                 </button>
               </div>
+              <span class="text-xs text-surface-400 dark:text-surface-500 ml-auto hidden sm:inline">
+                Ikkinchi tilga avtomatik tarjima qilinadi
+              </span>
             </div>
 
             <!-- Basic Information -->
@@ -246,72 +249,6 @@
               </div>
             </AppCard>
 
-            <!-- Translation Section -->
-            <AppCard>
-              <button
-                type="button"
-                class="w-full flex items-center justify-between py-1"
-                @click="showTranslation = !showTranslation"
-              >
-                <div class="flex items-center gap-3">
-                  <LanguageIcon class="h-5 w-5 text-brand-500" />
-                  <div class="text-left">
-                    <h2 class="text-lg font-semibold text-surface-900 dark:text-surface-100">{{ translationLabel }}</h2>
-                    <p class="text-xs text-surface-500 dark:text-surface-400">Ixtiyoriy — tarjimani keyinroq ham qo'shish mumkin</p>
-                  </div>
-                </div>
-                <ChevronDownIcon
-                  :class="['h-5 w-5 text-surface-400 transition-transform duration-200', showTranslation ? 'rotate-180' : '']"
-                />
-              </button>
-
-              <div v-if="showTranslation" class="mt-4 space-y-4 pt-4 border-t border-surface-200 dark:border-surface-700">
-                <!-- AI Translate Button -->
-                <button
-                  type="button"
-                  :disabled="translating || (!form.title && !form.description)"
-                  class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 text-white shadow-sm hover:shadow-md"
-                  @click="handleAiTranslate"
-                >
-                  <SparklesIcon v-if="!translating" class="h-4 w-4" />
-                  <svg v-else class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  {{ translating ? 'Tarjima qilinmoqda...' : 'AI bilan tarjima qilish' }}
-                </button>
-
-                <AppInput
-                  v-model="form.title_translation"
-                  :label="form.language === 'uz' ? 'Название вакансии' : 'Vakansiya nomi'"
-                  :placeholder="form.language === 'uz' ? 'Senior PHP Developer' : 'Senior PHP Developer'"
-                  :error="errors.title_translation"
-                />
-
-                <AppTextarea
-                  v-model="form.description_translation"
-                  :label="form.language === 'uz' ? 'Описание' : 'Tavsif'"
-                  :placeholder="form.language === 'uz' ? 'Подробная информация о вакансии...' : 'Vakansiya haqida batafsil ma\'lumot...'"
-                  :rows="5"
-                  :error="errors.description_translation"
-                />
-
-                <AppTextarea
-                  v-model="form.requirements_translation"
-                  :label="form.language === 'uz' ? 'Требования' : 'Talablar'"
-                  :rows="4"
-                  :error="errors.requirements_translation"
-                />
-
-                <AppTextarea
-                  v-model="form.responsibilities_translation"
-                  :label="form.language === 'uz' ? 'Обязанности' : 'Mas\'uliyatlar'"
-                  :rows="4"
-                  :error="errors.responsibilities_translation"
-                />
-              </div>
-            </AppCard>
-
             <!-- Contact Information -->
             <AppCard>
               <template #header>
@@ -361,7 +298,18 @@
                   full-width
                   :loading="loading"
                 >
-                  O'zgarishlarni saqlash
+                  <template v-if="loadingPhase === 'translating'">
+                    <span class="flex items-center gap-2">
+                      <SparklesIcon class="h-4 w-4 animate-pulse" />
+                      Tarjima qilinmoqda...
+                    </span>
+                  </template>
+                  <template v-else-if="loadingPhase === 'saving'">
+                    Saqlanmoqda...
+                  </template>
+                  <template v-else>
+                    O'zgarishlarni saqlash
+                  </template>
                 </AppButton>
 
                 <AppButton
@@ -457,7 +405,7 @@ import { ref, computed, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
-import { ArrowLeftIcon, ChevronDownIcon, LanguageIcon, SparklesIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, LanguageIcon, SparklesIcon } from '@heroicons/vue/24/outline';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppInput from '../../components/ui/AppInput.vue';
@@ -473,6 +421,7 @@ const router = useRouter();
 
 const vacancy = ref(null);
 const loadingVacancy = ref(true);
+const canTranslate = ref(false);
 
 const form = ref({
   language: 'uz',
@@ -499,21 +448,11 @@ const form = ref({
   is_featured: false,
   auto_reject_unqualified: false,
   require_questionnaire: true,
-  // Translation fields
-  title_translation: '',
-  description_translation: '',
-  requirements_translation: '',
-  responsibilities_translation: '',
-});
-
-const showTranslation = ref(false);
-const translating = ref(false);
-const translationLabel = computed(() => {
-  return form.value.language === 'uz' ? 'Rus tiliga tarjima' : "O'zbek tiliga tarjima";
 });
 
 const errors = ref({});
 const loading = ref(false);
+const loadingPhase = ref(''); // 'translating' | 'saving' | ''
 
 const categories = ref([
   { id: 1, name: 'IT va Texnologiya' },
@@ -564,6 +503,12 @@ const minDeadline = computed(() => {
 });
 
 onMounted(async () => {
+  try {
+    const { data } = await axios.get('/api/subscriptions/current');
+    canTranslate.value = !!data.limits?.ai_translation;
+  } catch {
+    // Continue even if check fails
+  }
   await loadVacancy();
 });
 
@@ -576,46 +521,27 @@ async function loadVacancy() {
 
     const v = vacancy.value;
     const lang = v.language || 'uz';
-    const otherLang = lang === 'uz' ? 'ru' : 'uz';
 
-    // Map bilingual fields to primary/translation
+    // Map bilingual fields to primary form fields based on language
     form.value.language = lang;
-    form.value.title = v[`title_${lang}`] || v.title_uz || '';
-    form.value.description = v[`description_${lang}`] || v.description_uz || '';
-    form.value.requirements = v[`requirements_${lang}`] || v.requirements_uz || '';
-    form.value.responsibilities = v[`responsibilities_${lang}`] || v.responsibilities_uz || '';
-    form.value.title_translation = v[`title_${otherLang}`] || '';
-    form.value.description_translation = v[`description_${otherLang}`] || '';
-    form.value.requirements_translation = v[`requirements_${otherLang}`] || '';
-    form.value.responsibilities_translation = v[`responsibilities_${otherLang}`] || '';
-
-    // Show translation section if translations exist
-    if (form.value.title_translation || form.value.description_translation) {
-      showTranslation.value = true;
-    }
+    form.value.title = v[`title_${lang}`] || v.title_uz || v.title_ru || '';
+    form.value.description = v[`description_${lang}`] || v.description_uz || v.description_ru || '';
+    form.value.requirements = v[`requirements_${lang}`] || v.requirements_uz || v.requirements_ru || '';
+    form.value.responsibilities = v[`responsibilities_${lang}`] || v.responsibilities_uz || v.responsibilities_ru || '';
 
     // Non-bilingual fields
-    form.value.address = v.address || '';
     form.value.salary_negotiable = v.salary_type === 'negotiable';
     form.value.salary_min = v.salary_min;
     form.value.salary_max = v.salary_max;
-    form.value.max_applicants = v.max_applicants || 0;
-    form.value.deadline = v.expires_at ? v.expires_at.split('T')[0] : null;
-    form.value.benefits = v.benefits || '';
-    form.value.contact_name = v.contact_name || '';
     form.value.contact_phone = v.contact_phone || '';
-    form.value.contact_email = v.contact_email || '';
-    form.value.is_featured = v.is_featured || false;
-    form.value.auto_reject_unqualified = v.auto_reject_unqualified || false;
-    form.value.require_questionnaire = v.require_questionnaire ?? true;
 
     // Map raw string values to option objects for AppSelect
     form.value.employment_type = employmentTypes.find(t => t.value === v.work_type) || employmentTypes[0];
     form.value.experience_level = experienceLevels.find(t => t.value === v.experience_required) || experienceLevels[2];
     form.value.status = statusOptions.find(t => t.value === v.status) || statusOptions[0];
-    form.value.category_id = categories.value.find(c => c.id === v.category_id) || null;
-    form.value.region_id = regions.find(r => r.id === v.region_id) || null;
-    form.value.district_id = districts.find(d => d.id === v.district_id) || null;
+    form.value.category_id = categories.value.find(c => c.name === v.category) || null;
+    form.value.region_id = regions.find(r => r.name === v.city) || null;
+    form.value.district_id = districts.find(d => d.name === v.district) || null;
   } catch (error) {
     toast.error('Vakansiya yuklanmadi');
     router.push('/dashboard/vacancies');
@@ -627,47 +553,125 @@ async function loadVacancy() {
 function getFormData() {
   const data = { ...form.value };
   const lang = data.language || 'uz';
-  const otherLang = lang === 'uz' ? 'ru' : 'uz';
 
-  // Map primary content and translation to _uz/_ru fields
+  // Map primary fields to the selected language columns
   data[`title_${lang}`] = data.title;
   data[`description_${lang}`] = data.description;
   data[`requirements_${lang}`] = data.requirements || null;
   data[`responsibilities_${lang}`] = data.responsibilities || null;
-  data[`title_${otherLang}`] = data.title_translation || null;
-  data[`description_${otherLang}`] = data.description_translation || null;
-  data[`requirements_${otherLang}`] = data.requirements_translation || null;
-  data[`responsibilities_${otherLang}`] = data.responsibilities_translation || null;
 
-  // Clean up non-API fields
+  // Clean up generic field names
   delete data.title;
   delete data.description;
   delete data.requirements;
   delete data.responsibilities;
-  delete data.title_translation;
-  delete data.description_translation;
-  delete data.requirements_translation;
-  delete data.responsibilities_translation;
 
-  // Extract .value from option objects for AppSelect fields
+  // Map category_id to category (backend expects string name)
+  if (data.category_id) {
+    const cat = typeof data.category_id === 'object'
+      ? data.category_id
+      : categories.value.find(c => c.id === data.category_id);
+    data.category = cat?.name || '';
+  }
+  delete data.category_id;
+
+  // Map employment_type to work_type (backend field name)
   if (data.employment_type && typeof data.employment_type === 'object') {
-    data.employment_type = data.employment_type.value;
+    data.work_type = data.employment_type.value;
+  } else {
+    data.work_type = data.employment_type;
   }
+  delete data.employment_type;
+
+  // Map experience_level to experience_required (backend field name)
   if (data.experience_level && typeof data.experience_level === 'object') {
-    data.experience_level = data.experience_level.value;
+    data.experience_required = data.experience_level.value;
+  } else {
+    data.experience_required = data.experience_level;
   }
+  delete data.experience_level;
+
+  // Map region_id to city (backend expects string name)
+  if (data.region_id) {
+    const region = typeof data.region_id === 'object'
+      ? data.region_id
+      : regions.find(r => r.id === data.region_id);
+    data.city = region?.name || '';
+  }
+  delete data.region_id;
+
+  // Map district_id to district (backend expects string name)
+  if (data.district_id) {
+    const dist = typeof data.district_id === 'object'
+      ? data.district_id
+      : districts.find(d => d.id === data.district_id);
+    data.district = dist?.name || '';
+  }
+  delete data.district_id;
+
+  // Map salary_negotiable to salary_type
+  if (data.salary_negotiable) {
+    data.salary_type = 'negotiable';
+    data.salary_min = null;
+    data.salary_max = null;
+  } else if (data.salary_min && data.salary_max) {
+    data.salary_type = 'range';
+  } else if (data.salary_min) {
+    data.salary_type = 'fixed';
+  }
+  delete data.salary_negotiable;
+
+  // Map status from object
   if (data.status && typeof data.status === 'object') {
     data.status = data.status.value;
   }
-  if (data.category_id && typeof data.category_id === 'object') {
-    data.category_id = data.category_id.id;
+
+  // Remove fields not in backend schema
+  delete data.contact_name;
+  delete data.contact_email;
+  delete data.max_applicants;
+  delete data.deadline;
+  delete data.is_featured;
+  delete data.auto_reject_unqualified;
+  delete data.require_questionnaire;
+  delete data.benefits;
+  delete data.address;
+
+  return data;
+}
+
+async function autoTranslate(data) {
+  if (!canTranslate.value) return data;
+
+  const lang = data.language || 'uz';
+  const otherLang = lang === 'uz' ? 'ru' : 'uz';
+
+  const fields = {};
+  if (data[`title_${lang}`]) fields.title = data[`title_${lang}`];
+  if (data[`description_${lang}`]) fields.description = data[`description_${lang}`];
+  if (data[`requirements_${lang}`]) fields.requirements = data[`requirements_${lang}`];
+  if (data[`responsibilities_${lang}`]) fields.responsibilities = data[`responsibilities_${lang}`];
+
+  if (Object.keys(fields).length === 0) return data;
+
+  try {
+    loadingPhase.value = 'translating';
+    const { data: result } = await axios.post('/api/recruiter/vacancies/translate', {
+      from: lang,
+      to: otherLang,
+      ...fields,
+    });
+
+    if (result.translated) {
+      if (result.translated.title) data[`title_${otherLang}`] = result.translated.title;
+      if (result.translated.description) data[`description_${otherLang}`] = result.translated.description;
+      if (result.translated.requirements) data[`requirements_${otherLang}`] = result.translated.requirements;
+      if (result.translated.responsibilities) data[`responsibilities_${otherLang}`] = result.translated.responsibilities;
+    }
+  } catch {
+    // Tarjima xatoligi bo'lsa ham vakansiyani saqlaymiz
   }
-  if (data.region_id && typeof data.region_id === 'object') {
-    data.region_id = data.region_id.id;
-  }
-  if (data.district_id && typeof data.district_id === 'object') {
-    data.district_id = data.district_id.id;
-  }
+
   return data;
 }
 
@@ -675,14 +679,19 @@ async function handleSubmit() {
   errors.value = {};
   loading.value = true;
 
-  // Validate
   if (!validateForm()) {
     loading.value = false;
     return;
   }
 
   try {
-    const data = getFormData();
+    let data = getFormData();
+
+    // Avtomatik tarjima
+    data = await autoTranslate(data);
+
+    // Saqlash
+    loadingPhase.value = 'saving';
     await axios.put(`/api/recruiter/vacancies/${route.params.id}`, data);
 
     toast.success('O\'zgarishlar saqlandi!');
@@ -694,40 +703,7 @@ async function handleSubmit() {
     toast.error(error.response?.data?.message || 'Xatolik yuz berdi. Qaytadan urinib ko\'ring.');
   } finally {
     loading.value = false;
-  }
-}
-
-async function handleAiTranslate() {
-  if (!form.value.title && !form.value.description) {
-    toast.error('Tarjima qilish uchun avval asosiy matnni yozing');
-    return;
-  }
-
-  translating.value = true;
-  try {
-    const from = form.value.language || 'uz';
-    const to = from === 'uz' ? 'ru' : 'uz';
-
-    const { data } = await axios.post('/api/recruiter/vacancies/translate', {
-      from,
-      to,
-      title: form.value.title || null,
-      description: form.value.description || null,
-      requirements: form.value.requirements || null,
-      responsibilities: form.value.responsibilities || null,
-    });
-
-    if (data.translated) {
-      if (data.translated.title) form.value.title_translation = data.translated.title;
-      if (data.translated.description) form.value.description_translation = data.translated.description;
-      if (data.translated.requirements) form.value.requirements_translation = data.translated.requirements;
-      if (data.translated.responsibilities) form.value.responsibilities_translation = data.translated.responsibilities;
-      toast.success('Tarjima muvaffaqiyatli bajarildi!');
-    }
-  } catch (error) {
-    toast.error(error.response?.data?.message || 'Tarjima xatoligi. Qaytadan urinib ko\'ring.');
-  } finally {
-    translating.value = false;
+    loadingPhase.value = '';
   }
 }
 

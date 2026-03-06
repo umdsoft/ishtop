@@ -60,7 +60,7 @@ return [
     ],
 
     'claude' => [
-        'key' => env('CLAUDE_API_KEY'),
+        'key' => env('ANTHROPIC_API_KEY'),
     ],
 
     'deepseek' => [

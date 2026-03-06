@@ -6,12 +6,16 @@ use App\Enums\SubscriptionPlan;
 use App\Http\Controllers\Controller;
 use App\Models\Subscription;
 use App\Services\PaymentService;
+use App\Services\SubscriptionLimitService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    public function __construct(private PaymentService $paymentService) {}
+    public function __construct(
+        private PaymentService $paymentService,
+        private SubscriptionLimitService $limitService,
+    ) {}
 
     public function store(Request $request): JsonResponse
     {
@@ -47,8 +51,8 @@ class SubscriptionController extends Controller
             'plan' => $plan,
             'status' => 'active',
             'price' => $price,
-            'limits' => ['max_vacancies' => $plan->maxVacancies()],
-            'features' => $this->planFeatures($plan),
+            'limits' => $plan->limits(),
+            'features' => $plan->features(),
             'starts_at' => now(),
             'expires_at' => now()->addDays(30),
         ]);
@@ -58,27 +62,9 @@ class SubscriptionController extends Controller
 
     public function current(Request $request): JsonResponse
     {
-        $subscription = Subscription::where('user_id', $request->user()->id)
-            ->active()
-            ->first();
+        $user = $request->user();
 
-        if (!$subscription) {
-            return response()->json([
-                'subscription' => null,
-                'plan' => 'free',
-                'plans' => collect(SubscriptionPlan::cases())->map(fn($p) => [
-                    'value' => $p->value,
-                    'label' => $p->label(),
-                    'price' => $p->price(),
-                    'max_vacancies' => $p->maxVacancies(),
-                ]),
-            ]);
-        }
-
-        return response()->json([
-            'subscription' => $subscription,
-            'days_left' => $subscription->daysLeft(),
-        ]);
+        return response()->json($this->limitService->getSubscriptionInfo($user));
     }
 
     public function cancel(Request $request, string $subscription): JsonResponse
@@ -94,17 +80,5 @@ class SubscriptionController extends Controller
         $sub->update(['status' => 'cancelled']);
 
         return response()->json(['message' => 'Obuna bekor qilindi', 'subscription' => $sub->fresh()]);
-    }
-
-    private function planFeatures(SubscriptionPlan $plan): array
-    {
-        return match ($plan) {
-            SubscriptionPlan::WORKER_PREMIUM => ['priority_search', 'resume_highlight', 'no_ads'],
-            SubscriptionPlan::BUSINESS => ['10_vacancies', 'basic_analytics', 'questionnaires'],
-            SubscriptionPlan::RECRUITER_PRO => ['unlimited_vacancies', 'advanced_analytics', 'talent_pool', 'ai_scoring'],
-            SubscriptionPlan::AGENCY => ['team_access', 'api_access', 'white_label', 'unlimited_all'],
-            SubscriptionPlan::CORPORATE => ['custom_branding', 'dedicated_support', 'bulk_posting'],
-            default => [],
-        };
     }
 }

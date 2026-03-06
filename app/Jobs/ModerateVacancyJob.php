@@ -3,6 +3,7 @@
 namespace App\Jobs;
 
 use App\Models\Vacancy;
+use App\Services\TelegramNotificationService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -22,6 +23,8 @@ class ModerateVacancyJob implements ShouldQueue
         // Check for spam
         if ($this->isSpam()) {
             $this->vacancy->update(['status' => 'closed']);
+            app(TelegramNotificationService::class)
+                ->notifyVacancyModerated($this->vacancy, false, 'Spam yoki taqiqlangan kontent aniqlandi');
             return;
         }
 

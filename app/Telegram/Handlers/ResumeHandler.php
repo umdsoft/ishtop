@@ -11,10 +11,6 @@ use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 
-/**
- * ResumeHandler
- * Handles /resume command and resume management
- */
 class ResumeHandler
 {
     public function __invoke(Nutgram $bot): void
@@ -30,13 +26,49 @@ class ResumeHandler
         $profile = $user->workerProfile;
 
         if (!$profile) {
-            // No resume yet - start creating
             $this->showCreatePrompt($bot, $lang);
             return;
         }
 
-        // Show existing resume
         $this->showResume($bot, $profile, $lang);
+    }
+
+    public function handleCallback(Nutgram $bot): void
+    {
+        $data = $bot->callbackQuery()->data ?? '';
+        $bot->answerCallbackQuery();
+
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+        if (!$user) {
+            $bot->sendMessage(text: 'Avval /start buyrug\'ini yuboring.');
+            return;
+        }
+
+        $lang = $user->language?->value ?? 'uz';
+
+        if ($data === 'resume:edit') {
+            (new ResumeBuilderConversation())->begin($bot);
+            return;
+        }
+
+        if ($data === 'resume:toggle_search') {
+            $profile = $user->workerProfile;
+            if (!$profile) return;
+
+            $newStatus = $profile->search_status === SearchStatus::OPEN
+                ? SearchStatus::CLOSED
+                : SearchStatus::OPEN;
+
+            $profile->update(['search_status' => $newStatus]);
+
+            $msg = $newStatus === SearchStatus::OPEN
+                ? ($lang === 'ru' ? '✅ Поиск активирован!' : '✅ Qidiruv faollashtirildi!')
+                : ($lang === 'ru' ? '⏸ Поиск приостановлен' : '⏸ Qidiruv to\'xtatildi');
+
+            $bot->answerCallbackQuery(text: $msg, show_alert: true);
+            $this->showResume($bot, $profile->fresh(), $lang);
+            return;
+        }
     }
 
     protected function showCreatePrompt(Nutgram $bot, string $lang): void
@@ -47,7 +79,7 @@ class ResumeHandler
 
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make(
@@ -62,11 +94,6 @@ class ResumeHandler
                     )
                 ),
         );
-
-        $bot->onCallbackQueryData('resume:create', function (Nutgram $bot) {
-            $bot->answerCallbackQuery();
-            ResumeBuilderConversation::begin($bot);
-        });
     }
 
     protected function showResume(Nutgram $bot, WorkerProfile $profile, string $lang): void
@@ -86,9 +113,11 @@ class ResumeHandler
 
         $salary = '-';
         if ($profile->expected_salary_min && $profile->expected_salary_max) {
-            $salary = number_format($profile->expected_salary_min) . ' - ' . number_format($profile->expected_salary_max) . " so'm";
+            $currency = $lang === 'ru' ? 'сум' : "so'm";
+            $salary = number_format($profile->expected_salary_min) . ' - ' . number_format($profile->expected_salary_max) . " {$currency}";
         } elseif ($profile->expected_salary_min) {
-            $salary = number_format($profile->expected_salary_min) . "+ so'm";
+            $currency = $lang === 'ru' ? 'сум' : "so'm";
+            $salary = number_format($profile->expected_salary_min) . "+ {$currency}";
         }
 
         $workTypes = [];
@@ -172,31 +201,8 @@ class ResumeHandler
 
         $bot->sendMessage(
             text: $text,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
-
-        // Handle callbacks
-        $bot->onCallbackQueryData('resume:edit', function (Nutgram $bot) {
-            $bot->answerCallbackQuery();
-            ResumeBuilderConversation::begin($bot);
-        });
-
-        $bot->onCallbackQueryData('resume:toggle_search', function (Nutgram $bot) use ($profile, $lang) {
-            $newStatus = $profile->search_status === SearchStatus::OPEN
-                ? SearchStatus::CLOSED
-                : SearchStatus::OPEN;
-
-            $profile->update(['search_status' => $newStatus]);
-
-            $msg = $newStatus === SearchStatus::OPEN
-                ? ($lang === 'ru' ? '✅ Поиск активирован!' : '✅ Qidiruv faollashtirildi!')
-                : ($lang === 'ru' ? '⏸ Поиск приостановлен' : '⏸ Qidiruv to\'xtatildi');
-
-            $bot->answerCallbackQuery(text: $msg, show_alert: true);
-
-            // Refresh resume display
-            $this->showResume($bot, $profile->fresh(), $lang);
-        });
     }
 }

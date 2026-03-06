@@ -136,6 +136,7 @@ Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->
 
     Route::apiResource('/vacancies', Recruiter\VacancyController::class)->names('recruiter.vacancies');
     Route::post('/vacancies/translate', [Recruiter\VacancyController::class, 'translate'])->name('recruiter.vacancies.translate');
+    Route::put('/vacancies/{vacancy}/toggle-status', [Recruiter\VacancyController::class, 'toggleStatus'])->name('recruiter.vacancies.toggle-status');
 
     // Questionnaire management
     Route::post('/vacancies/{vacancy}/questionnaire', [Recruiter\QuestionnaireController::class, 'store']);
@@ -162,14 +163,20 @@ Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->
     // Templates
     Route::get('/templates', [Recruiter\TemplateController::class, 'index']);
     Route::post('/templates', [Recruiter\TemplateController::class, 'store']);
+    Route::put('/templates/{template}', [Recruiter\TemplateController::class, 'update']);
     Route::post('/templates/{template}/apply', [Recruiter\TemplateController::class, 'apply']);
+    Route::delete('/templates/{template}', [Recruiter\TemplateController::class, 'destroy']);
 
     // Messages
     Route::get('/message-templates', [Recruiter\MessageTemplateController::class, 'index']);
     Route::post('/message-templates', [Recruiter\MessageTemplateController::class, 'store']);
     Route::post('/message-templates/{template}/send', [Recruiter\MessageTemplateController::class, 'send']);
 
-    // Talent pool
+    // Candidates (Nomzodlar)
+    Route::get('/candidates/recommended', [Recruiter\CandidateController::class, 'recommended']);
+    Route::get('/candidates/vacancies', [Recruiter\CandidateController::class, 'vacancies']);
+
+    // Talent pool (saqlangan nomzodlar)
     Route::get('/talent-pool', [Recruiter\TalentPoolController::class, 'index']);
     Route::post('/talent-pool', [Recruiter\TalentPoolController::class, 'store']);
     Route::delete('/talent-pool/{entry}', [Recruiter\TalentPoolController::class, 'destroy']);
@@ -192,4 +199,17 @@ Route::prefix('payments/webhook')->middleware('throttle:webhook')->group(functio
     Route::post('/click/prepare', [Webhook\ClickController::class, 'prepare']);
     Route::post('/click/complete', [Webhook\ClickController::class, 'complete']);
     Route::post('/uzum', [Webhook\UzumController::class, 'handle']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Telegram Webhook
+|--------------------------------------------------------------------------
+*/
+
+Route::post('/webhook/telegram', function () {
+    $bot = app(\SergiX44\Nutgram\Nutgram::class);
+    $bot->setRunningMode(\SergiX44\Nutgram\RunningMode\Webhook::class);
+    $bot->run();
+    return response()->json(['ok' => true]);
 });

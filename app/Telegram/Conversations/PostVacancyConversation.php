@@ -39,7 +39,7 @@ class PostVacancyConversation extends Conversation
                     "📢 *E\'lon berish*\n\nAvval kompaniya nomini kiriting:",
                     "📢 *Создание вакансии*\n\nСначала введите название компании:"
                 ),
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
             );
             $this->next('handleCompanyName');
             return;
@@ -76,7 +76,7 @@ class PostVacancyConversation extends Conversation
                 "*1/8 — Vakansiya sarlavhasi:*\n(masalan: PHP dasturchi, Sotuvchi, Haydovchi)",
                 "*1/8 — Название вакансии:*\n(например: PHP разработчик, Продавец, Водитель)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleTitle');
     }
@@ -107,7 +107,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*2/8 — Kategoriyani tanlang:*', '*2/8 — Выберите категорию:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleCategory');
@@ -144,7 +144,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*3/8 — Shaharni tanlang:*', '*3/8 — Выберите город:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleCity');
@@ -169,7 +169,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*4/8 — Vakansiya tavsifi:*', '*4/8 — Описание вакансии:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleDescription');
     }
@@ -191,7 +191,7 @@ class PostVacancyConversation extends Conversation
                 "*5/8 — Talablar:*\n(yoki \"-\" o\'tkazib yuborish)",
                 "*5/8 — Требования:*\n(или \"-\" чтобы пропустить)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleRequirements');
     }
@@ -214,7 +214,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*6/8 — Maosh turi:*', '*6/8 — Тип зарплаты:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleSalaryType');
@@ -297,7 +297,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*7/8 — Ish turini tanlang:*', '*7/8 — Выберите тип работы:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleWorkType');
@@ -334,7 +334,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t('*8/8 — Aloqa usuli:*', '*8/8 — Способ связи:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleContactMethod');
@@ -358,7 +358,7 @@ class PostVacancyConversation extends Conversation
 
         $bot->sendMessage(
             text: $summary,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make('✅ ' . $this->t('Tasdiqlash', 'Подтвердить'), callback_data: 'vac_confirm:yes'),
@@ -410,7 +410,7 @@ class PostVacancyConversation extends Conversation
                 "✅ *Вакансия создана!*\n\nВаша вакансия отправлена на модерацию.\nПосле подтверждения будет активна 15 дней.\n\n📌 /menu — Главное меню"
             ),
             message_id: $cb->message->message_id,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
 
         $this->end();

@@ -42,10 +42,10 @@
     "dashboard": "Bosh sahifa",
     "vacancies": "Vakansiyalar",
     "newVacancy": "Yangi e'lon",
-    "talentPool": "Talent Pool",
-    "questionnaires": "Savolnoma shablonlar",
+    "talentPool": "Nomzodlar",
+    "questionnaires": "Savolnomalar",
+    "questionnaireTemplates": "Shablon savolnomalar",
     "messageTemplates": "Xabar shablonlar",
-    "banners": "Bannerlar",
     "analytics": "Statistika",
     "settings": "Sozlamalar",
     "profile": "Profil",
@@ -104,6 +104,6 @@
     "addNote": "Izoh qo'shish",
     "sendMessage": "Xabar yuborish",
     "moveToStage": "Bosqichga o'tkazish",
-    "saveToPool": "Talent pool ga saqlash"
+    "saveToPool": "Nomzodlarga saqlash"
   }
 }

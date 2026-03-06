@@ -18,10 +18,12 @@ class ApplicationController extends Controller
             'cover_letter' => 'nullable|string|max:2000',
         ]);
 
-        $worker = $request->user()->workerProfile;
-        if (!$worker) {
-            return response()->json(['message' => 'Worker profili kerak'], 403);
-        }
+        $user = $request->user();
+
+        // Auto-create worker profile if missing
+        $worker = $user->workerProfile ?? $user->workerProfile()->create([
+            'full_name' => trim("{$user->first_name} {$user->last_name}"),
+        ]);
 
         $existing = Application::where('vacancy_id', $request->vacancy_id)
             ->where('worker_id', $worker->id)

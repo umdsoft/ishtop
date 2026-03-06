@@ -31,7 +31,6 @@ class ResumeBuilderConversation extends Conversation
                 'birth_date' => $existing->birth_date?->format('d.m.Y'),
                 'gender' => $existing->gender,
                 'city' => $existing->city,
-                'district' => $existing->district,
                 'education_level' => $existing->education_level,
                 'specialty' => $existing->specialty,
                 'experience_years' => $existing->experience_years,
@@ -44,11 +43,11 @@ class ResumeBuilderConversation extends Conversation
         }
 
         $text = $this->t(
-            "📝 *Rezume yaratish*\n\n12 ta oddiy qadam bilan rezumengizni yarating.\nIstalgan vaqtda /cancel bilan bekor qilishingiz mumkin.\n\n*1/12 — To\'liq ismingiz:*",
-            "📝 *Создание резюме*\n\n12 простых шагов для создания резюме.\nВ любой момент отправьте /cancel для отмены.\n\n*1/12 — Ваше полное имя:*"
+            "📝 *Rezume yaratish*\n\n11 ta oddiy qadam bilan rezumengizni yarating.\nIstalgan vaqtda /cancel bilan bekor qilishingiz mumkin.\n\n*1/11 — To\'liq ismingiz:*",
+            "📝 *Создание резюме*\n\n11 простых шагов для создания резюме.\nВ любой момент отправьте /cancel для отмены.\n\n*1/11 — Ваше полное имя:*"
         );
 
-        $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN);
+        $bot->sendMessage(text: $text, parse_mode: ParseMode::MARKDOWN_LEGACY);
         $this->next('handleFullName');
     }
 
@@ -66,10 +65,10 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t(
-                "*2/12 — Tug\'ilgan sanangiz:*\nFormat: KK.OO.YYYY (masalan: 15.06.1995)",
-                "*2/12 — Дата рождения:*\nФормат: ДД.ММ.ГГГГ (например: 15.06.1995)"
+                "*2/11 — Tug\'ilgan sanangiz:*\nFormat: KK.OO.YYYY (masalan: 15.06.1995)",
+                "*2/11 — Дата рождения:*\nФормат: ДД.ММ.ГГГГ (например: 15.06.1995)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleBirthDate');
     }
@@ -93,8 +92,8 @@ class ResumeBuilderConversation extends Conversation
         $this->data['birth_date'] = $text;
 
         $bot->sendMessage(
-            text: $this->t('*3/12 — Jinsingiz:*', '*3/12 — Ваш пол:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            text: $this->t('*3/11 — Jinsingiz:*', '*3/11 — Ваш пол:*'),
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make($this->t('👨 Erkak', '👨 Мужской'), callback_data: 'resume_gender:male'),
@@ -136,8 +135,8 @@ class ResumeBuilderConversation extends Conversation
         }
 
         $bot->sendMessage(
-            text: $this->t('*4/12 — Shahringiz:*', '*4/12 — Ваш город:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            text: $this->t('*4/11 — Shahringiz:*', '*4/11 — Ваш город:*'),
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleCity');
@@ -159,23 +158,6 @@ class ResumeBuilderConversation extends Conversation
             $this->data['city'] = $text;
         }
 
-        $bot->sendMessage(
-            text: $this->t(
-                "*5/12 — Tuman/mahalla:*\n(yoki o\'tkazib yuborish uchun \"-\" yuboring)",
-                "*5/12 — Район:*\n(или отправьте \"-\" чтобы пропустить)"
-            ),
-            parse_mode: ParseMode::MARKDOWN,
-        );
-        $this->next('handleDistrict');
-    }
-
-    public function handleDistrict(Nutgram $bot): void
-    {
-        if ($this->checkCancel($bot)) return;
-
-        $text = trim($bot->message()->text ?? '');
-        $this->data['district'] = ($text === '-' || empty($text)) ? null : $text;
-
         $keyboard = InlineKeyboardMarkup::make()
             ->addRow(
                 InlineKeyboardButton::make($this->t("O\'rta", 'Среднее'), callback_data: 'resume_edu:secondary'),
@@ -187,8 +169,8 @@ class ResumeBuilderConversation extends Conversation
             );
 
         $bot->sendMessage(
-            text: $this->t("*6/12 — Ta\'lim darajangiz:*", '*6/12 — Уровень образования:*'),
-            parse_mode: ParseMode::MARKDOWN,
+            text: $this->t("*5/11 — Ta\'lim darajangiz:*", '*5/11 — Уровень образования:*'),
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleEducation');
@@ -216,10 +198,10 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t(
-                "*7/12 — Mutaxassisligingiz:*\n(masalan: Dasturchi, Buxgalter, Dizayner)",
-                "*7/12 — Ваша специальность:*\n(например: Программист, Бухгалтер, Дизайнер)"
+                "*6/11 — Mutaxassisligingiz:*\n(masalan: Dasturchi, Buxgalter, Dizayner)",
+                "*6/11 — Ваша специальность:*\n(например: Программист, Бухгалтер, Дизайнер)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleSpecialty');
     }
@@ -237,8 +219,8 @@ class ResumeBuilderConversation extends Conversation
         $this->data['specialty'] = $text;
 
         $bot->sendMessage(
-            text: $this->t('*8/12 — Tajriba (yil):*', '*8/12 — Опыт работы (лет):*'),
-            parse_mode: ParseMode::MARKDOWN,
+            text: $this->t('*7/11 — Tajriba (yil):*', '*7/11 — Опыт работы (лет):*'),
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make($this->t('Tajribasiz', 'Без опыта'), callback_data: 'resume_exp:0'),
@@ -274,10 +256,10 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t(
-                "*9/12 — Ko\'nikmalaringiz:*\nVergul bilan ajratib yozing\n(masalan: PHP, Laravel, MySQL, Git)",
-                "*9/12 — Ваши навыки:*\nЧерез запятую\n(например: PHP, Laravel, MySQL, Git)"
+                "*8/11 — Ko\'nikmalaringiz:*\nVergul bilan ajratib yozing\n(masalan: PHP, Laravel, MySQL, Git)",
+                "*8/11 — Ваши навыки:*\nЧерез запятую\n(например: PHP, Laravel, MySQL, Git)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleSkills');
     }
@@ -311,10 +293,10 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t(
-                "*10/12 — Ish turi:*\nBir yoki bir nechta tanlang, keyin ✅ bosing",
-                "*10/12 — Тип работы:*\nВыберите один или несколько, затем нажмите ✅"
+                "*9/11 — Ish turi:*\nBir yoki bir nechta tanlang, keyin ✅ bosing",
+                "*9/11 — Тип работы:*\nВыберите один или несколько, затем нажмите ✅"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
         $this->next('handleWorkType');
@@ -348,10 +330,10 @@ class ResumeBuilderConversation extends Conversation
 
             $bot->sendMessage(
                 text: $this->t(
-                    "*11/12 — Kutilayotgan maosh:*\nMinimum va maksimum (so\'m)\nMasalan: 3000000 - 5000000\n\nYoki \"-\" — kelishiladi",
-                    "*11/12 — Ожидаемая зарплата:*\nМин и макс (сум)\nНапример: 3000000 - 5000000\n\nИли \"-\" — договорная"
+                    "*10/11 — Kutilayotgan maosh:*\nMinimum va maksimum (so\'m)\nMasalan: 3000000 - 5000000\n\nYoki \"-\" — kelishiladi",
+                    "*10/11 — Ожидаемая зарплата:*\nМин и макс (сум)\nНапример: 3000000 - 5000000\n\nИли \"-\" — договорная"
                 ),
-                parse_mode: ParseMode::MARKDOWN,
+                parse_mode: ParseMode::MARKDOWN_LEGACY,
             );
             $this->next('handleSalary');
             return;
@@ -391,10 +373,10 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $this->t(
-                "*12/12 — O\'zingiz haqingizda qisqacha:*\n(yoki \"-\" yuboring)",
-                "*12/12 — Коротко о себе:*\n(или отправьте \"-\" чтобы пропустить)"
+                "*11/11 — O\'zingiz haqingizda qisqacha:*\n(yoki \"-\" yuboring)",
+                "*11/11 — Коротко о себе:*\n(или отправьте \"-\" чтобы пропустить)"
             ),
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
         );
         $this->next('handleBio');
     }
@@ -433,7 +415,7 @@ class ResumeBuilderConversation extends Conversation
                 'birth_date' => $birthDate,
                 'gender' => $this->data['gender'] ?? null,
                 'city' => $this->data['city'] ?? null,
-                'district' => $this->data['district'] ?? null,
+                'district' => null,
                 'education_level' => $this->data['education_level'] ?? null,
                 'specialty' => $this->data['specialty'] ?? null,
                 'experience_years' => $this->data['experience_years'] ?? 0,
@@ -450,7 +432,7 @@ class ResumeBuilderConversation extends Conversation
 
         $bot->sendMessage(
             text: $summary,
-            parse_mode: ParseMode::MARKDOWN,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: InlineKeyboardMarkup::make()
                 ->addRow(
                     InlineKeyboardButton::make('✏️ ' . $this->t('Qayta tahrirlash', 'Редактировать'), callback_data: 'resume:create'),
@@ -478,9 +460,9 @@ class ResumeBuilderConversation extends Conversation
 
         $salary = '-';
         if (!empty($this->data['expected_salary_min']) && !empty($this->data['expected_salary_max'])) {
-            $salary = number_format($this->data['expected_salary_min']) . ' - ' . number_format($this->data['expected_salary_max']) . " so\'m";
+            $salary = number_format($this->data['expected_salary_min']) . ' - ' . number_format($this->data['expected_salary_max']) . " so'm";
         } elseif (!empty($this->data['expected_salary_min'])) {
-            $salary = number_format($this->data['expected_salary_min']) . "+ so\'m";
+            $salary = number_format($this->data['expected_salary_min']) . "+ so'm";
         }
 
         return $this->t(

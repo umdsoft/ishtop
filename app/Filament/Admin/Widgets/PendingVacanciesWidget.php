@@ -2,7 +2,9 @@
 
 namespace App\Filament\Admin\Widgets;
 
+use App\Jobs\NotifyMatchingWorkersJob;
 use App\Models\Vacancy;
+use App\Services\TelegramNotificationService;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
@@ -29,13 +31,20 @@ class PendingVacanciesWidget extends BaseWidget
                     ->color('success')
                     ->icon('heroicon-o-check')
                     ->requiresConfirmation()
-                    ->action(fn (Vacancy $record) => $record->update(['status' => 'active', 'published_at' => now()])),
+                    ->action(function (Vacancy $record) {
+                        $record->update(['status' => 'active', 'published_at' => now()]);
+                        app(TelegramNotificationService::class)->notifyVacancyModerated($record, true);
+                        NotifyMatchingWorkersJob::dispatch($record);
+                    }),
                 Tables\Actions\Action::make('reject')
                     ->label('Rad etish')
                     ->color('danger')
                     ->icon('heroicon-o-x-mark')
                     ->requiresConfirmation()
-                    ->action(fn (Vacancy $record) => $record->update(['status' => 'closed'])),
+                    ->action(function (Vacancy $record) {
+                        $record->update(['status' => 'closed']);
+                        app(TelegramNotificationService::class)->notifyVacancyModerated($record, false);
+                    }),
             ])
             ->paginated(false);
     }

@@ -43,6 +43,24 @@ class TemplateController extends Controller
         return response()->json(['template' => $template], 201);
     }
 
+    public function update(Request $request, string $template): JsonResponse
+    {
+        $templateModel = QuestionnaireTemplate::where('id', $template)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        $validated = $request->validate([
+            'name' => 'sometimes|string|max:200',
+            'category' => 'nullable|string|max:50',
+            'questions_data' => 'sometimes|array',
+            'is_public' => 'nullable|boolean',
+        ]);
+
+        $templateModel->update($validated);
+
+        return response()->json(['template' => $templateModel->fresh()]);
+    }
+
     public function apply(Request $request, string $template): JsonResponse
     {
         $request->validate([
@@ -60,5 +78,16 @@ class TemplateController extends Controller
         $vacancy->update(['has_questionnaire' => true]);
 
         return response()->json(['questionnaire' => $questionnaire->load('questions.options')]);
+    }
+
+    public function destroy(Request $request, string $template): JsonResponse
+    {
+        $templateModel = QuestionnaireTemplate::where('id', $template)
+            ->where('user_id', $request->user()->id)
+            ->firstOrFail();
+
+        $templateModel->delete();
+
+        return response()->json(['message' => 'Shablon o\'chirildi']);
     }
 }
