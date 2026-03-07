@@ -15,6 +15,12 @@ const routes = [
     meta: { title: 'Qidirish' },
   },
   {
+    path: '/post',
+    name: 'post',
+    component: () => import('@/views/PostVacancyView.vue'),
+    meta: { title: "E'lon berish" },
+  },
+  {
     path: '/map',
     name: 'map',
     component: () => import('@/views/MapView.vue'),

@@ -18,7 +18,7 @@ class LatestVacanciesWidget extends BaseWidget
         return $table
             ->query(Vacancy::query()->latest()->limit(5))
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('Sarlavha')->limit(30),
+                Tables\Columns\TextColumn::make('title_uz')->label('Sarlavha')->limit(30),
                 Tables\Columns\TextColumn::make('employer.company_name')->label('Kompaniya'),
                 Tables\Columns\TextColumn::make('status')->label('Status')->badge(),
                 Tables\Columns\TextColumn::make('created_at')->label('Sana')->dateTime()->sortable(),

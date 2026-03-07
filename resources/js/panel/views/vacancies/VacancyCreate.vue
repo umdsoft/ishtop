@@ -99,7 +99,7 @@
                 :options="categories"
                 label="Kategoriya"
                 label-key="name"
-                value-key="id"
+                value-key="slug"
                 placeholder="Kategoriya tanlang"
                 searchable
                 required
@@ -451,6 +451,24 @@ onMounted(async () => {
   } catch {
     // Continue even if check fails
   }
+
+  // Load categories from API
+  try {
+    const { data } = await axios.get('/api/categories');
+    const opts = [];
+    (data.categories || []).forEach(cat => {
+      if (cat.children && cat.children.length > 0) {
+        cat.children.forEach(child => {
+          opts.push({ slug: child.slug, name: `${cat.name_uz} → ${child.name_uz}` });
+        });
+      } else {
+        opts.push({ slug: cat.slug, name: cat.name_uz });
+      }
+    });
+    categories.value = opts;
+  } catch {
+    // Fallback if API fails
+  }
 });
 
 const form = ref({
@@ -484,16 +502,7 @@ const errors = ref({});
 const loading = ref(false);
 const loadingPhase = ref(''); // 'translating' | 'saving' | ''
 
-const categories = ref([
-  { id: 1, name: 'IT va Texnologiya' },
-  { id: 2, name: 'Savdo va Marketing' },
-  { id: 3, name: 'Moliya va Buxgalteriya' },
-  { id: 4, name: 'Qurilish' },
-  { id: 5, name: 'Ovqatlanish' },
-  { id: 6, name: 'Transport' },
-  { id: 7, name: 'Ta\'lim' },
-  { id: 8, name: 'Sog\'liqni saqlash' },
-]);
+const categories = ref([]);
 
 // regions va districts are imported from ../../data/regions.js
 
@@ -552,12 +561,11 @@ function getFormData() {
   delete data.requirements;
   delete data.responsibilities;
 
-  // Map category_id to category (backend expects string name)
+  // Map category_id to category slug
   if (data.category_id) {
-    const cat = typeof data.category_id === 'object'
-      ? data.category_id
-      : categories.value.find(c => c.id === data.category_id);
-    data.category = cat?.name || '';
+    data.category = typeof data.category_id === 'object'
+      ? data.category_id.slug
+      : data.category_id;
   }
   delete data.category_id;
 
@@ -678,10 +686,15 @@ async function handleSubmit() {
 
     // Saqlash
     loadingPhase.value = 'saving';
-    await axios.post('/api/recruiter/vacancies', data);
+    const response = await axios.post('/api/recruiter/vacancies', data);
+    const newId = response.data.vacancy?.id;
 
     toast.success('Vakansiya muvaffaqiyatli yaratildi!');
-    router.push('/dashboard/vacancies');
+    if (newId) {
+      router.push({ name: 'vacancy-detail', params: { id: newId }, query: { tab: 'recommended' } });
+    } else {
+      router.push('/dashboard/vacancies');
+    }
   } catch (error) {
     if (error.response?.data?.limit_reached) {
       limitReached.value = true;

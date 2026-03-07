@@ -4,6 +4,7 @@ namespace App\Telegram\Handlers;
 
 use App\Models\User;
 use App\Telegram\Keyboards\MainMenuKeyboard;
+use App\Telegram\Keyboards\PersistentMenuKeyboard;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
@@ -31,18 +32,25 @@ class MenuHandler
         $action = str_replace('menu:', '', $bot->callbackQuery()->data);
         $bot->answerCallbackQuery();
 
-        match ($action) {
-            'search' => (new SearchHandler())($bot),
-            'resume' => $this->resume($bot),
-            'post' => $this->post($bot),
-            'apps' => (new AppsHandler())($bot),
-            'settings' => (new SettingsHandler())($bot),
-            'help' => (new HelpHandler())($bot),
-            'back' => $this->backToMenu($bot),
-            default => $bot->sendMessage(
-                $this->getUserLang($bot) === 'ru' ? 'Функция в разработке.' : 'Tez orada...'
-            ),
-        };
+        try {
+            match ($action) {
+                'search' => (new SearchHandler())($bot),
+                'resume' => $this->resume($bot),
+                'post' => $this->post($bot),
+                'apps' => (new AppsHandler())($bot),
+                'saved' => (new SavedHandler())($bot),
+                'notifications' => (new NotificationsHandler())($bot),
+                'settings' => (new SettingsHandler())($bot),
+                'help' => (new HelpHandler())($bot),
+                'back' => $this->backToMenu($bot),
+                default => $bot->sendMessage(
+                    $this->getUserLang($bot) === 'ru' ? 'Функция в разработке.' : 'Tez orada...'
+                ),
+            };
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error("MenuHandler [{$action}] error: " . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $bot->sendMessage(text: "Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring. /menu");
+        }
     }
 
     public function resume(Nutgram $bot): void

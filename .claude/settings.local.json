@@ -25,7 +25,16 @@
       "Bash(curl:*)",
       "Bash(tasklist:*)",
       "Bash(wmic process:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(TASKLIST /FI \"IMAGENAME eq php.exe\")",
+      "Bash(powershell -Command:*)",
+      "Bash(powershell -NoProfile -Command:*)",
+      "Bash(powershell.exe -NoProfile -Command 'Get-CimInstance Win32_Process -Filter \"\"Name=''php.exe'' AND CommandLine LIKE ''%telegram%''\"\" | ForEach-Object { Stop-Process -Id $_.ProcessId -Force }')",
+      "Bash(npm run build:miniapp:*)",
+      "Bash(npm run:*)",
+      "Bash(findstr:*)",
+      "Bash(netstat:*)",
+      "Bash(python -m json.tool:*)"
     ]
   }
 }

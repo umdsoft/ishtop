@@ -17,12 +17,12 @@ class Vacancy extends Model
     use HasFactory, HasUuids, SoftDeletes;
 
     protected $fillable = [
-        'employer_id', 'language',
+        'employer_id', 'company_name', 'language',
         'title_uz', 'title_ru', 'category',
         'description_uz', 'description_ru',
         'requirements_uz', 'requirements_ru',
         'responsibilities_uz', 'responsibilities_ru',
-        'salary_min', 'salary_max', 'salary_type',
+        'salary_min', 'salary_max', 'salary_type', 'currency',
         'work_type', 'experience_required', 'city', 'district',
         'latitude', 'longitude', 'contact_phone', 'contact_method',
         'views_count', 'applications_count', 'status', 'is_top', 'is_urgent',

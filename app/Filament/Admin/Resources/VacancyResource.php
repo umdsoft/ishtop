@@ -36,22 +36,34 @@ class VacancyResource extends Resource
             ->schema([
                 Forms\Components\Section::make('Asosiy ma\'lumotlar')
                     ->schema([
-                        Forms\Components\TextInput::make('title')
-                            ->label('Sarlavha')
+                        Forms\Components\TextInput::make('title_uz')
+                            ->label('Sarlavha (UZ)')
                             ->required()
-                            ->maxLength(200),
+                            ->maxLength(300),
+                        Forms\Components\TextInput::make('title_ru')
+                            ->label('Sarlavha (RU)')
+                            ->maxLength(300),
                         Forms\Components\TextInput::make('category')
                             ->label('Kategoriya')
                             ->required(),
-                        Forms\Components\Textarea::make('description')
-                            ->label('Tavsif')
+                        Forms\Components\Textarea::make('description_uz')
+                            ->label('Tavsif (UZ)')
                             ->required()
                             ->rows(5),
-                        Forms\Components\Textarea::make('requirements')
-                            ->label('Talablar')
+                        Forms\Components\Textarea::make('description_ru')
+                            ->label('Tavsif (RU)')
+                            ->rows(5),
+                        Forms\Components\Textarea::make('requirements_uz')
+                            ->label('Talablar (UZ)')
                             ->rows(3),
-                        Forms\Components\Textarea::make('responsibilities')
-                            ->label('Mas\'uliyatlar')
+                        Forms\Components\Textarea::make('requirements_ru')
+                            ->label('Talablar (RU)')
+                            ->rows(3),
+                        Forms\Components\Textarea::make('responsibilities_uz')
+                            ->label('Mas\'uliyatlar (UZ)')
+                            ->rows(3),
+                        Forms\Components\Textarea::make('responsibilities_ru')
+                            ->label('Mas\'uliyatlar (RU)')
                             ->rows(3),
                     ]),
 
@@ -117,7 +129,7 @@ class VacancyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')
+                Tables\Columns\TextColumn::make('title_uz')
                     ->label('Sarlavha')
                     ->searchable()
                     ->sortable()

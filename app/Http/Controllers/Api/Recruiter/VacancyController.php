@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Recruiter;
 use App\Http\Controllers\Controller;
 use App\Models\Vacancy;
 use App\Services\AiService;
+use App\Services\MatchingService;
 use App\Services\SubscriptionLimitService;
 use App\Services\VacancyService;
 use Illuminate\Http\JsonResponse;
@@ -16,6 +17,7 @@ class VacancyController extends Controller
         private VacancyService $vacancyService,
         private AiService $aiService,
         private SubscriptionLimitService $limitService,
+        private MatchingService $matchingService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -52,6 +54,12 @@ class VacancyController extends Controller
             ->with('employer:id,company_name')
             ->orderByDesc('created_at')
             ->paginate($request->per_page ?? 20);
+
+        // Add recommended candidates count to each vacancy
+        $vacancies->getCollection()->transform(function ($vacancy) {
+            $vacancy->recommended_count = $this->matchingService->countRecommendedCandidates($vacancy);
+            return $vacancy;
+        });
 
         // Subscription limits info
         $user = $request->user();

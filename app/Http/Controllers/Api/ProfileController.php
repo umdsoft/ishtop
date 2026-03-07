@@ -22,7 +22,7 @@ class ProfileController extends Controller
                 'full_name', 'birth_date', 'gender', 'city', 'district',
                 'education_level', 'specialty', 'experience_years', 'skills',
                 'expected_salary_min', 'expected_salary_max', 'work_types',
-                'bio', 'latitude', 'longitude',
+                'bio', 'linkedin_url', 'latitude', 'longitude',
             ])
         );
 

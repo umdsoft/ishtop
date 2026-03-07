@@ -18,7 +18,15 @@ Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/verify-otp', [Api\AuthController::class, 'verifyOtp']);
 });
 
-Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
+// Public endpoints (no auth required)
+Route::get('/vacancies', [Api\VacancyController::class, 'index'])->name('api.vacancies.index');
+Route::get('/vacancies/{vacancy}', [Api\VacancyController::class, 'show'])
+    ->name('api.vacancies.show')
+    ->whereUuid('vacancy');
+Route::get('/categories', [Api\SearchController::class, 'categories']);
+Route::get('/cities', [Api\SearchController::class, 'cities']);
+
+Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
     Route::get('/me', [Api\AuthController::class, 'me']);
     Route::put('/me', [Api\AuthController::class, 'updateProfile']);
     Route::post('/logout', [Api\AuthController::class, 'logout']);
@@ -32,15 +40,18 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
         Route::put('/employer', [Api\ProfileController::class, 'employerUpdate']);
         Route::get('/employer/resume', [Api\ProfileController::class, 'employerResumeShow']);
         Route::put('/employer/resume', [Api\ProfileController::class, 'employerResumeUpdate']);
+
+        // LinkedIn PDF Import
+        Route::post('/linkedin/parse-pdf', [Api\LinkedInImportController::class, 'parsePdf']);
+        Route::post('/linkedin/apply-import', [Api\LinkedInImportController::class, 'applyImport']);
     });
 
-    // Vacancies
-    Route::apiResource('vacancies', Api\VacancyController::class)
-        ->names('api.vacancies')
-        ->except(['store']);
+    // Vacancies (write operations)
     Route::post('vacancies', [Api\VacancyController::class, 'store'])
         ->name('api.vacancies.store')
         ->middleware('throttle:vacancy-create');
+    Route::put('vacancies/{vacancy}', [Api\VacancyController::class, 'update'])->name('api.vacancies.update');
+    Route::delete('vacancies/{vacancy}', [Api\VacancyController::class, 'destroy'])->name('api.vacancies.destroy');
     Route::get('/vacancies/nearby', [Api\VacancyController::class, 'nearby']);
     Route::get('/vacancies/recommended', [Api\VacancyController::class, 'recommended']);
 
@@ -99,9 +110,6 @@ Route::middleware(['auth:sanctum', 'throttle:api'])->group(function () {
     Route::put('/notifications/{notification}/read', [Api\NotificationController::class, 'markRead']);
     Route::put('/notifications/mark-all-read', [Api\NotificationController::class, 'markAllRead']);
 
-    // Categories & Cities
-    Route::get('/categories', [Api\SearchController::class, 'categories']);
-    Route::get('/cities', [Api\SearchController::class, 'cities']);
 });
 
 /*
@@ -150,6 +158,7 @@ Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->
 
     // Applications & Pipeline
     Route::get('/vacancies/{vacancy}/applications', [Recruiter\ApplicationController::class, 'index']);
+    Route::get('/applications/{application}', [Recruiter\ApplicationController::class, 'show']);
     Route::put('/applications/{application}/stage', [Recruiter\PipelineController::class, 'updateStage']);
     Route::put('/applications/{application}/rate', [Recruiter\PipelineController::class, 'rate']);
     Route::post('/applications/{application}/note', [Recruiter\PipelineController::class, 'addNote']);

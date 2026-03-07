@@ -220,6 +220,18 @@
           </div>
         </template>
 
+        <template #cell-recommended_count="{ row }">
+          <div
+            class="flex items-center gap-1.5 cursor-pointer hover:opacity-80 transition-opacity"
+            @click.stop="viewRecommended(row.id)"
+          >
+            <SparklesIcon class="h-4 w-4 text-brand-500 dark:text-brand-400" />
+            <span class="text-sm font-medium text-brand-600 dark:text-brand-400">
+              {{ row.recommended_count ?? 0 }}
+            </span>
+          </div>
+        </template>
+
         <template #cell-created_at="{ row }">
           <span class="text-sm text-surface-600 dark:text-surface-400">
             {{ formatDate(row.created_at) }}
@@ -234,6 +246,15 @@
                 @click="viewVacancy(row.id)"
               >
                 <EyeIcon class="h-5 w-5" />
+              </button>
+            </AppTooltip>
+
+            <AppTooltip content="Mos nomzodlar" position="top">
+              <button
+                class="p-1.5 rounded-md hover:bg-brand-50 dark:hover:bg-brand-900/20 text-brand-500 dark:text-brand-400 transition-colors"
+                @click="viewRecommended(row.id)"
+              >
+                <SparklesIcon class="h-5 w-5" />
               </button>
             </AppTooltip>
 
@@ -308,6 +329,7 @@ import {
   UsersIcon,
   ExclamationTriangleIcon,
   ArrowUpCircleIcon,
+  SparklesIcon,
 } from '@heroicons/vue/24/outline';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
@@ -380,6 +402,7 @@ const columns = [
   { key: 'work_type', label: 'Bandlik turi', sortable: false },
   { key: 'salary', label: 'Maosh', sortable: false },
   { key: 'applications_count', label: 'Arizalar', sortable: true },
+  { key: 'recommended_count', label: 'Mos nomzodlar', sortable: false },
   { key: 'created_at', label: 'Yaratilgan', sortable: true },
   { key: 'actions', label: '', sortable: false },
 ];
@@ -526,6 +549,10 @@ function handleRowClick(row) {
 
 function viewVacancy(id) {
   router.push(`/dashboard/vacancies/${id}`);
+}
+
+function viewRecommended(id) {
+  router.push({ name: 'vacancy-detail', params: { id }, query: { tab: 'recommended' } });
 }
 
 function editVacancy(id) {

@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Models\Vacancy;
 use App\Telegram\Conversations\RegistrationConversation;
 use App\Telegram\Keyboards\MainMenuKeyboard;
+use App\Telegram\Keyboards\PersistentMenuKeyboard;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
@@ -48,15 +49,15 @@ class StartHandler
                 return;
             }
 
-            // Oddiy welcome
+            // Oddiy welcome — persistent keyboard o'rnatish
             $welcome = $userLang === 'ru'
-                ? "👋 Здравствуйте, {$user->first_name}!\n\n*IshTop* — Найди работу не выходя из Telegram!\n\n📌 /menu — Главное меню"
-                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*IshTop* — Telegramdan chiqmay ish top!\n\n📌 /menu — Bosh menyu";
+                ? "👋 Здравствуйте, {$user->first_name}!\n\n*IshTop* — Найди работу не выходя из Telegram!\n\n📌 Используйте кнопки ниже для быстрого доступа"
+                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*IshTop* — Telegramdan chiqmay ish top!\n\n📌 Pastdagi tugmalardan foydalaning";
 
             $bot->sendMessage(
                 text: $welcome,
                 parse_mode: ParseMode::MARKDOWN_LEGACY,
-                reply_markup: MainMenuKeyboard::make($userLang),
+                reply_markup: PersistentMenuKeyboard::make($userLang),
             );
             return;
         }
@@ -118,7 +119,7 @@ class StartHandler
         $workType = $vacancy->work_type?->label() ?? '-';
         $company = $vacancy->employer?->company_name ?? '-';
         $top = $vacancy->isTopActive() ? '🔥 TOP ' : '';
-        $title = $vacancy->title($lang) ?: $vacancy->title;
+        $title = $vacancy->title($lang);
 
         $text = "{$top}📌 *{$title}*\n\n";
         $text .= "🏢 " . ($isRu ? 'Компания' : 'Kompaniya') . ": {$company}\n";

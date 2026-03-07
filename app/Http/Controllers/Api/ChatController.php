@@ -20,7 +20,7 @@ class ChatController extends Controller
                 'latestMessage',
                 'workerUser:id,first_name,last_name,username',
                 'employerUser:id,first_name,last_name,username',
-                'application.vacancy:id,title',
+                'application.vacancy:id,title_uz,title_ru',
             ])
             ->orderByDesc('last_message_at')
             ->paginate(20);

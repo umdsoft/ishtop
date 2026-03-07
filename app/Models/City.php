@@ -11,7 +11,7 @@ class City extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'name_uz', 'name_ru', 'region', 'latitude', 'longitude', 'is_active',
+        'name_uz', 'name_ru', 'region', 'type', 'latitude', 'longitude', 'is_active',
     ];
 
     protected function casts(): array

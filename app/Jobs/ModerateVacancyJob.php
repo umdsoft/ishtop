@@ -38,7 +38,7 @@ class ModerateVacancyJob implements ShouldQueue
 
     private function isSpam(): bool
     {
-        $text = $this->vacancy->title . ' ' . $this->vacancy->description;
+        $text = $this->vacancy->title() . ' ' . $this->vacancy->description();
         $suspicious = ['casino', 'forex', 'mlm', 'piramida'];
 
         foreach ($suspicious as $word) {
@@ -52,7 +52,7 @@ class ModerateVacancyJob implements ShouldQueue
     {
         return Vacancy::where('employer_id', $this->vacancy->employer_id)
             ->where('id', '!=', $this->vacancy->id)
-            ->where('title', $this->vacancy->title)
+            ->where('title_uz', $this->vacancy->title_uz)
             ->where('created_at', '>=', now()->subDays(7))
             ->exists();
     }

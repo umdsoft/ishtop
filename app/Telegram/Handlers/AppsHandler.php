@@ -4,8 +4,10 @@ namespace App\Telegram\Handlers;
 
 use App\Enums\ApplicationStage;
 use App\Models\Application;
+use App\Models\Notification as NotificationModel;
 use App\Models\User;
 use App\Telegram\Conversations\QuestionnaireConversation;
+use Illuminate\Support\Facades\Log;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
@@ -15,81 +17,110 @@ class AppsHandler
 {
     public function __invoke(Nutgram $bot): void
     {
-        $user = $this->getUser($bot);
-        if (!$user) {
-            $bot->sendMessage(text: "Avval /start buyrug'ini yuboring.");
-            return;
+        try {
+            $user = $this->getUser($bot);
+            if (!$user) {
+                $bot->sendMessage(text: "Avval /start buyrug'ini yuboring.");
+                return;
+            }
+
+            $lang = $user->language?->value ?? 'uz';
+            $workerProfile = $user->workerProfile;
+
+            if (!$workerProfile) {
+                $this->showNoProfileMessage($bot, $lang);
+                return;
+            }
+
+            $applications = Application::with('vacancy.employer')
+                ->where('worker_id', $workerProfile->id)
+                ->orderBy('created_at', 'desc')
+                ->limit(20)
+                ->get()
+                ->filter(fn($app) => $app->vacancy !== null);
+
+            if ($applications->isEmpty()) {
+                $this->showNoApplications($bot, $lang);
+                return;
+            }
+
+            $this->showApplicationsList($bot, $applications, $lang);
+        } catch (\Throwable $e) {
+            Log::error('AppsHandler error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $bot->sendMessage(text: "Xatolik yuz berdi. Iltimos qaytadan urinib ko'ring. /menu");
         }
-
-        $lang = $user->language?->value ?? 'uz';
-        $workerProfile = $user->workerProfile;
-
-        if (!$workerProfile) {
-            $this->showNoProfileMessage($bot, $lang);
-            return;
-        }
-
-        $applications = Application::with('vacancy.employer')
-            ->where('worker_id', $workerProfile->id)
-            ->orderBy('created_at', 'desc')
-            ->limit(20)
-            ->get();
-
-        if ($applications->isEmpty()) {
-            $this->showNoApplications($bot, $lang);
-            return;
-        }
-
-        $this->showApplicationsList($bot, $applications, $lang);
     }
 
     public function handleCallback(Nutgram $bot): void
     {
-        $data = $bot->callbackQuery()->data ?? '';
-        $bot->answerCallbackQuery();
+        try {
+            $data = $bot->callbackQuery()->data ?? '';
+            $bot->answerCallbackQuery();
 
-        $user = $this->getUser($bot);
-        if (!$user) {
-            $bot->sendMessage(text: "Avval /start buyrug'ini yuboring.");
-            return;
-        }
-
-        $lang = $user->language?->value ?? 'uz';
-
-        // app:back
-        if ($data === 'app:back') {
-            $this->__invoke($bot);
-            return;
-        }
-
-        // app:view:{id}
-        if (str_starts_with($data, 'app:view:')) {
-            $appId = str_replace('app:view:', '', $data);
-            $app = Application::with('vacancy.employer')->find($appId);
-            if ($app) {
-                $this->showApplicationDetails($bot, $app, $lang);
+            $user = $this->getUser($bot);
+            if (!$user) {
+                $bot->sendMessage(text: "Avval /start buyrug'ini yuboring.");
+                return;
             }
-            return;
-        }
 
-        // app:quest:{id}
-        if (str_starts_with($data, 'app:quest:')) {
-            $appId = str_replace('app:quest:', '', $data);
-            (new QuestionnaireConversation())->begin($bot, $appId);
-            return;
-        }
+            $lang = $user->language?->value ?? 'uz';
 
-        // app:withdraw:{id}
-        if (str_starts_with($data, 'app:withdraw:')) {
-            $appId = str_replace('app:withdraw:', '', $data);
-            $app = Application::with('vacancy.employer')->find($appId);
-            if ($app) {
-                $app->update(['stage' => ApplicationStage::WITHDRAWN]);
-                $msg = $lang === 'ru' ? '🚫 Заявка отозвана' : '🚫 Ariza bekor qilindi';
-                $bot->answerCallbackQuery(text: $msg, show_alert: true);
-                $this->showApplicationDetails($bot, $app->fresh(), $lang);
+            // app:back
+            if ($data === 'app:back') {
+                $this->__invoke($bot);
+                return;
             }
-            return;
+
+            // app:view:{id}
+            if (str_starts_with($data, 'app:view:')) {
+                $appId = str_replace('app:view:', '', $data);
+                $app = Application::with('vacancy.employer')->find($appId);
+                if ($app && $app->vacancy) {
+                    $this->showApplicationDetails($bot, $app, $lang);
+                }
+                return;
+            }
+
+            // app:quest:{id}
+            if (str_starts_with($data, 'app:quest:')) {
+                $appId = str_replace('app:quest:', '', $data);
+                $conversation = new QuestionnaireConversation();
+                $conversation->applicationId = $appId;
+                $conversation->begin($bot);
+                return;
+            }
+
+            // app:withdraw:{id}
+            if (str_starts_with($data, 'app:withdraw:')) {
+                $appId = str_replace('app:withdraw:', '', $data);
+                $app = Application::with(['vacancy.employer', 'worker'])->find($appId);
+                if ($app) {
+                    $app->update(['stage' => ApplicationStage::WITHDRAWN]);
+
+                    // Notify recruiter
+                    if ($app->vacancy?->employer?->user_id) {
+                        NotificationModel::create([
+                            'user_id' => $app->vacancy->employer->user_id,
+                            'type' => 'application_withdrawn',
+                            'title' => 'Ariza bekor qilindi',
+                            'message' => "{$app->worker->full_name} \"{$app->vacancy->title()}\" vakansiyasiga yuborgan arizasini bekor qildi",
+                            'data' => [
+                                'application_id' => $app->id,
+                                'vacancy_id' => $app->vacancy_id,
+                                'worker_name' => $app->worker->full_name,
+                            ],
+                        ]);
+                    }
+
+                    $msg = $lang === 'ru' ? '🚫 Заявка отозвана' : '🚫 Ariza bekor qilindi';
+                    $bot->answerCallbackQuery(text: $msg, show_alert: true);
+                    $this->showApplicationDetails($bot, $app->fresh('vacancy.employer'), $lang);
+                }
+                return;
+            }
+        } catch (\Throwable $e) {
+            Log::error('AppsHandler callback error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $bot->sendMessage(text: "Xatolik yuz berdi. /menu");
         }
     }
 
@@ -145,8 +176,8 @@ class AppsHandler
 
         $text = $header;
 
-        // Group by stage
-        $grouped = $applications->groupBy('stage');
+        // Group by stage value
+        $grouped = $applications->groupBy(fn($app) => $app->stage instanceof ApplicationStage ? $app->stage->value : $app->stage);
 
         foreach ($grouped as $stage => $apps) {
             $stageEnum = ApplicationStage::tryFrom($stage);
@@ -163,7 +194,7 @@ class AppsHandler
 
         foreach ($applications->take(8) as $app) {
             $statusIcon = $this->getStatusIcon($app->stage);
-            $vacancyTitle = mb_substr($app->vacancy->title ?? 'Vakansiya', 0, 25);
+            $vacancyTitle = mb_substr($app->vacancy?->title() ?: 'Vakansiya', 0, 25);
 
             $keyboard->addRow(
                 InlineKeyboardButton::make(
@@ -200,6 +231,11 @@ class AppsHandler
     protected function showApplicationDetails(Nutgram $bot, Application $app, string $lang): void
     {
         $vacancy = $app->vacancy;
+        if (!$vacancy) {
+            $bot->sendMessage(text: $lang === 'ru' ? 'Вакансия не найдена.' : 'Vakansiya topilmadi.');
+            return;
+        }
+
         $statusIcon = $this->getStatusIcon($app->stage);
         $statusText = $this->getStatusLabel($app->stage, $lang);
 
@@ -211,8 +247,11 @@ class AppsHandler
             $salary = number_format($vacancy->salary_min) . ' - ' . number_format($vacancy->salary_max) . " {$currency}";
         }
 
-        $text = "{$statusIcon} *{$vacancy->title}*\n\n"
-            . "🏢 " . ($vacancy->employer->company_name ?? '-') . "\n"
+        $vacancyTitle = $this->escapeMarkdown($vacancy->title() ?: 'Vakansiya');
+        $companyName = $this->escapeMarkdown($vacancy->employer->company_name ?? '-');
+
+        $text = "{$statusIcon} *{$vacancyTitle}*\n\n"
+            . "🏢 {$companyName}\n"
             . "📍 " . ($vacancy->city ?? '-') . "\n"
             . "💰 {$salary}\n"
             . "📊 " . ($lang === 'ru' ? 'Статус' : 'Holat') . ": {$statusText}\n"
@@ -302,5 +341,10 @@ class AppsHandler
     private function getUser(Nutgram $bot): ?User
     {
         return User::where('telegram_id', $bot->user()->id)->first();
+    }
+
+    private function escapeMarkdown(string $text): string
+    {
+        return str_replace(['_', '*', '`', '['], ['\_', '\*', '\`', '\['], $text);
     }
 }

@@ -20,7 +20,8 @@ class WorkerProfile extends Model implements HasMedia
         'user_id', 'full_name', 'birth_date', 'gender', 'city', 'district',
         'education_level', 'specialty', 'experience_years', 'skills',
         'expected_salary_min', 'expected_salary_max', 'work_types', 'bio',
-        'photo_url', 'resume_file_url', 'search_status', 'latitude', 'longitude',
+        'photo_url', 'resume_file_url', 'linkedin_url', 'linkedin_import_data',
+        'linkedin_imported_at', 'search_status', 'latitude', 'longitude',
         'views_count',
     ];
 
@@ -36,6 +37,8 @@ class WorkerProfile extends Model implements HasMedia
             'views_count' => 'integer',
             'latitude' => 'decimal:7',
             'longitude' => 'decimal:7',
+            'linkedin_import_data' => 'array',
+            'linkedin_imported_at' => 'datetime',
             'search_status' => SearchStatus::class,
         ];
     }

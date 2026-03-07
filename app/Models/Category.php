@@ -11,7 +11,7 @@ class Category extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'slug', 'name_uz', 'name_ru', 'icon', 'sort_order', 'is_active',
+        'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array
@@ -22,9 +22,24 @@ class Category extends Model
         ];
     }
 
+    public function parent()
+    {
+        return $this->belongsTo(Category::class, 'parent_id');
+    }
+
+    public function children()
+    {
+        return $this->hasMany(Category::class, 'parent_id')->orderBy('sort_order');
+    }
+
     public function scopeActive($query)
     {
         return $query->where('is_active', true)->orderBy('sort_order');
+    }
+
+    public function scopeRoot($query)
+    {
+        return $query->whereNull('parent_id');
     }
 
     public function name(string $lang = 'uz'): string

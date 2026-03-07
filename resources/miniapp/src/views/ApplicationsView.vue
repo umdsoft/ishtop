@@ -1,92 +1,153 @@
 <template>
-  <div class="applications-view p-4 pb-20">
+  <div class="pb-20" style="background-color: var(--tg-theme-bg-color);">
     <!-- Header -->
-    <h1 class="text-2xl font-bold mb-4">{{ t('apps.title') }}</h1>
+    <div class="px-5 pt-6 pb-4">
+      <h1 class="text-[22px] font-bold tracking-tight" style="color: var(--tg-theme-text-color);">
+        {{ t('apps.title') }}
+      </h1>
+    </div>
 
     <!-- Filter Tabs -->
-    <div class="flex gap-2 mb-4 overflow-x-auto">
-      <button
-        v-for="tab in tabs"
-        :key="tab.value"
-        class="px-4 py-2 rounded-lg font-medium whitespace-nowrap transition-colors"
-        :class="activeTab === tab.value ? 'bg-tg-button text-tg-button-text' : 'bg-tg-secondary-bg'"
-        @click="activeTab = tab.value"
-      >
-        {{ tab.label }}
-        <span v-if="tab.count > 0" class="ml-1 text-xs opacity-80">({{ tab.count }})</span>
-      </button>
+    <div class="px-5 mb-4">
+      <div class="flex gap-1.5 overflow-x-auto no-scrollbar">
+        <button
+          v-for="tab in tabs"
+          :key="tab.value"
+          class="flex-shrink-0 px-3.5 py-1.5 rounded-lg text-[13px] font-medium transition-all active:scale-[0.96]"
+          :style="activeTab === tab.value
+            ? { backgroundColor: 'var(--tg-theme-button-color)', color: 'var(--tg-theme-button-text-color)' }
+            : { backgroundColor: 'var(--tg-theme-secondary-bg-color)', color: 'var(--tg-theme-hint-color)' }"
+          @click="switchTab(tab.value)"
+        >
+          {{ tab.label }}
+          <span
+            v-if="tab.count > 0"
+            class="ml-1 text-[11px]"
+            :style="{ opacity: activeTab === tab.value ? 0.8 : 0.6 }"
+          >{{ tab.count }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- Loading -->
-    <LoadingSpinner v-if="loading" />
+    <div v-if="loading" class="flex items-center justify-center py-20">
+      <LoadingSpinner />
+    </div>
 
     <!-- Empty State -->
-    <div v-else-if="filteredApplications.length === 0" class="text-center py-12">
-      <p class="text-4xl mb-3">📝</p>
-      <p class="text-lg font-medium mb-2">{{ t('apps.empty_title') }}</p>
-      <p class="text-sm text-tg-hint mb-4">{{ t('apps.empty_hint') }}</p>
-      <button class="btn-primary" @click="router.push('/search')">
+    <div v-else-if="filteredApplications.length === 0" class="flex flex-col items-center justify-center py-16 px-6">
+      <div
+        class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
+        style="background-color: var(--tg-theme-secondary-bg-color);"
+      >
+        <svg class="w-8 h-8" style="color: var(--tg-theme-hint-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+        </svg>
+      </div>
+      <p class="text-[16px] font-semibold mb-1" style="color: var(--tg-theme-text-color);">{{ t('apps.empty_title') }}</p>
+      <p class="text-[13px] text-center mb-5" style="color: var(--tg-theme-hint-color);">{{ t('apps.empty_hint') }}</p>
+      <button
+        class="px-6 py-2.5 rounded-xl text-[14px] font-semibold active:scale-[0.97] transition-transform"
+        style="background-color: var(--tg-theme-button-color); color: var(--tg-theme-button-text-color);"
+        @click="router.push('/search')"
+      >
         {{ t('apps.search_btn') }}
       </button>
     </div>
 
     <!-- Applications List -->
-    <div v-else class="space-y-3">
+    <div v-else class="px-5 space-y-2.5">
       <div
         v-for="app in filteredApplications"
         :key="app.id"
-        class="card cursor-pointer hover:shadow-md transition-shadow"
+        class="rounded-xl p-3.5 cursor-pointer active:scale-[0.98] transition-transform"
+        style="background-color: var(--tg-theme-secondary-bg-color);"
         @click="viewApplication(app)"
       >
-        <!-- Header -->
-        <div class="flex items-start gap-3 mb-3">
-          <img
-            v-if="app.vacancy?.employer?.logo_url"
-            :src="app.vacancy.employer.logo_url"
-            class="w-12 h-12 rounded-lg object-cover"
-          />
-          <div class="flex-1 min-w-0">
-            <h3 class="font-semibold line-clamp-2">{{ app.vacancy?.title }}</h3>
-            <p class="text-sm text-tg-hint">{{ app.vacancy?.employer?.company_name }}</p>
+        <!-- Top row: Company + Stage badge -->
+        <div class="flex items-center justify-between mb-2.5">
+          <div class="flex items-center gap-2.5 flex-1 min-w-0">
+            <img
+              v-if="app.vacancy?.employer?.logo_url"
+              :src="app.vacancy.employer.logo_url"
+              class="w-10 h-10 rounded-lg object-cover flex-shrink-0"
+            />
+            <div
+              v-else
+              class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
+              style="background-color: rgba(var(--tg-button-rgb, 59,130,246), 0.1);"
+            >
+              <span class="text-sm font-bold" style="color: var(--tg-theme-button-color);">
+                {{ getInitial(app.vacancy?.employer?.company_name) }}
+              </span>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h3 class="text-[14px] font-semibold leading-tight truncate" style="color: var(--tg-theme-text-color);">
+                {{ app.vacancy?.title }}
+              </h3>
+              <p class="text-[12px] truncate" style="color: var(--tg-theme-hint-color);">
+                {{ app.vacancy?.employer?.company_name || app.vacancy?.category }}
+              </p>
+            </div>
           </div>
-        </div>
-
-        <!-- Stage Badge -->
-        <div class="mb-3">
           <span
-            class="inline-block px-3 py-1 rounded-full text-xs font-medium"
-            :class="getStageClass(app.stage)"
+            class="flex-shrink-0 ml-2 px-2.5 py-1 rounded-md text-[11px] font-semibold"
+            :style="getStageStyle(app.stage)"
           >
             {{ getStageLabel(app.stage) }}
           </span>
         </div>
 
-        <!-- Score and Rating -->
-        <div class="flex items-center gap-4 text-sm mb-3">
+        <!-- Info row: salary + city -->
+        <div class="flex items-center gap-2 text-[12px] mb-2" style="color: var(--tg-theme-hint-color);">
+          <span v-if="app.vacancy?.salary_min || app.vacancy?.salary_max" class="font-semibold" style="color: var(--tg-theme-button-color);">
+            {{ formatSalary(app.vacancy) }}
+          </span>
+          <span v-if="app.vacancy?.city && (app.vacancy?.salary_min || app.vacancy?.salary_max)">·</span>
+          <span v-if="app.vacancy?.city" class="flex items-center gap-0.5">
+            <svg class="w-3 h-3 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+            </svg>
+            {{ app.vacancy.city }}
+          </span>
+        </div>
+
+        <!-- Scores row -->
+        <div v-if="app.questionnaire_score || app.matching_score" class="flex items-center gap-3 mb-2">
           <div v-if="app.questionnaire_score" class="flex items-center gap-1">
-            <span>📊</span>
-            <span class="font-medium">{{ app.questionnaire_score }}%</span>
-            <span class="text-tg-hint">{{ t('apps.score') }}</span>
+            <svg class="w-3.5 h-3.5" style="color: var(--tg-theme-button-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+            </svg>
+            <span class="text-[12px] font-medium" style="color: var(--tg-theme-text-color);">{{ app.questionnaire_score }}%</span>
+            <span class="text-[11px]" style="color: var(--tg-theme-hint-color);">{{ t('apps.score') }}</span>
           </div>
           <div v-if="app.matching_score" class="flex items-center gap-1">
-            <span>🎯</span>
-            <span class="font-medium">{{ app.matching_score }}%</span>
-            <span class="text-tg-hint">{{ t('apps.match') }}</span>
-          </div>
-          <div v-if="app.recruiter_rating" class="flex items-center gap-1">
-            <span>⭐</span>
-            <span class="font-medium">{{ app.recruiter_rating }}/5</span>
+            <svg class="w-3.5 h-3.5" style="color: #10b981;" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span class="text-[12px] font-medium" style="color: var(--tg-theme-text-color);">{{ app.matching_score }}%</span>
+            <span class="text-[11px]" style="color: var(--tg-theme-hint-color);">{{ t('apps.match') }}</span>
           </div>
         </div>
 
-        <!-- Timeline -->
-        <div class="flex items-center justify-between text-xs text-tg-hint">
+        <!-- Footer: Date + Viewed -->
+        <div class="flex items-center justify-between text-[11px]" style="color: var(--tg-theme-hint-color);">
           <span>{{ t('apps.submitted') }} {{ formatDate(app.created_at) }}</span>
-          <span v-if="app.viewed_at">{{ t('apps.viewed') }} ✓</span>
+          <span v-if="app.viewed_at" class="flex items-center gap-0.5">
+            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            {{ t('apps.viewed') }}
+          </span>
         </div>
 
-        <!-- Rejection Reason -->
-        <div v-if="app.stage === 'rejected' && app.rejected_reason" class="mt-3 p-2 bg-red-50 rounded text-sm text-red-700">
+        <!-- Rejection reason -->
+        <div
+          v-if="app.stage === 'rejected' && app.rejected_reason"
+          class="mt-2.5 px-3 py-2 rounded-lg text-[12px]"
+          style="background-color: rgba(239, 68, 68, 0.08); color: #ef4444;"
+        >
           {{ app.rejected_reason }}
         </div>
       </div>
@@ -148,7 +209,7 @@ async function loadApplications() {
   loading.value = true
   try {
     const response = await api.get('/applications/my')
-    applications.value = response.data.applications || []
+    applications.value = response.data.data || response.data.applications || []
   } catch (error) {
     telegram.showAlert(t('apps.load_error'))
   } finally {
@@ -156,9 +217,18 @@ async function loadApplications() {
   }
 }
 
+function switchTab(value) {
+  telegram.hapticFeedback('soft')
+  activeTab.value = value
+}
+
 function viewApplication(app) {
   telegram.hapticFeedback('soft')
   router.push(`/vacancies/${app.vacancy_id}`)
+}
+
+function getInitial(name) {
+  return name ? name.charAt(0).toUpperCase() : '?'
 }
 
 function getStageLabel(stage) {
@@ -167,23 +237,47 @@ function getStageLabel(stage) {
   return label !== key ? label : stage
 }
 
-function getStageClass(stage) {
-  const classes = {
-    new: 'bg-blue-100 text-blue-800',
-    reviewed: 'bg-purple-100 text-purple-800',
-    shortlisted: 'bg-yellow-100 text-yellow-800',
-    interview: 'bg-orange-100 text-orange-800',
-    offered: 'bg-green-100 text-green-800',
-    hired: 'bg-green-100 text-green-800',
-    rejected: 'bg-red-100 text-red-800',
+function getStageStyle(stage) {
+  const styles = {
+    new: { backgroundColor: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' },
+    reviewed: { backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6' },
+    shortlisted: { backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' },
+    interview: { backgroundColor: 'rgba(249, 115, 22, 0.12)', color: '#f97316' },
+    offered: { backgroundColor: 'rgba(16, 185, 129, 0.12)', color: '#10b981' },
+    hired: { backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#059669' },
+    rejected: { backgroundColor: 'rgba(239, 68, 68, 0.12)', color: '#ef4444' },
   }
-  return classes[stage] || 'bg-gray-100 text-gray-800'
+  return styles[stage] || { backgroundColor: 'rgba(128,128,128,0.1)', color: 'var(--tg-theme-hint-color)' }
+}
+
+function formatSalary(vacancy) {
+  if (!vacancy) return ''
+  const fmt = (n) => new Intl.NumberFormat('uz-UZ').format(n)
+  if (vacancy.salary_min && vacancy.salary_max) {
+    return `${fmt(vacancy.salary_min)} - ${fmt(vacancy.salary_max)}`
+  } else if (vacancy.salary_min) {
+    return `${fmt(vacancy.salary_min)}+`
+  } else if (vacancy.salary_max) {
+    return `${fmt(vacancy.salary_max)} gacha`
+  }
+  return ''
 }
 
 function formatDate(date) {
+  if (!date) return ''
   return new Date(date).toLocaleDateString('uz-UZ', {
     day: 'numeric',
     month: 'short',
   })
 }
 </script>
+
+<style scoped>
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+</style>

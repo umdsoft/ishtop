@@ -37,7 +37,7 @@ class TelegramNotificationService
         }
 
         $lang = $user->language?->value ?? 'uz';
-        $vacancyTitle = $application->vacancy->title;
+        $vacancyTitle = $application->vacancy->title();
 
         $stageMessages = [
             'reviewed' => [
@@ -112,7 +112,7 @@ class TelegramNotificationService
 
         $lang = $user->language?->value ?? 'uz';
         $workerName = $application->worker->full_name ?? 'Nomzod';
-        $vacancyTitle = $application->vacancy->title;
+        $vacancyTitle = $application->vacancy->title();
 
         $title = $lang === 'ru' ? 'Новая заявка' : 'Yangi ariza';
         $message = $lang === 'ru'
@@ -158,14 +158,14 @@ class TelegramNotificationService
         if ($approved) {
             $title = $lang === 'ru' ? 'Вакансия одобрена' : 'Vakansiya tasdiqlandi';
             $message = $lang === 'ru'
-                ? "Ваша вакансия \"{$vacancy->title}\" одобрена и опубликована!"
-                : "\"{$vacancy->title}\" vakansiyangiz tasdiqlandi va e'lon qilindi!";
+                ? "Ваша вакансия \"{{$vacancy->title()}\" одобрена и опубликована!"
+                : "\"{{$vacancy->title()}\" vakansiyangiz tasdiqlandi va e'lon qilindi!";
             $icon = '✅';
         } else {
             $title = $lang === 'ru' ? 'Вакансия отклонена' : 'Vakansiya rad etildi';
             $message = $lang === 'ru'
-                ? "Ваша вакансия \"{$vacancy->title}\" отклонена."
-                : "\"{$vacancy->title}\" vakansiyangiz rad etildi.";
+                ? "Ваша вакансия \"{{$vacancy->title()}\" отклонена."
+                : "\"{{$vacancy->title()}\" vakansiyangiz rad etildi.";
             if ($reason) {
                 $reasonLabel = $lang === 'ru' ? 'Причина' : 'Sabab';
                 $message .= "\n\n📝 {$reasonLabel}: {$reason}";
@@ -211,8 +211,8 @@ class TelegramNotificationService
 
         $title = $lang === 'ru' ? 'Подходящая вакансия' : 'Sizga mos vakansiya';
         $message = $lang === 'ru'
-            ? "Вакансия \"{$vacancy->title}\" подходит вам на {$score}%"
-            : "\"{$vacancy->title}\" vakansiyasi sizga {$score}% mos keladi";
+            ? "Вакансия \"{{$vacancy->title()}\" подходит вам на {$score}%"
+            : "\"{{$vacancy->title()}\" vakansiyasi sizga {$score}% mos keladi";
 
         $salary = '';
         if ($vacancy->salary_type === 'negotiable') {

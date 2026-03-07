@@ -54,6 +54,8 @@ return [
 
     'url' => env('APP_URL', 'http://localhost'),
 
+    'miniapp_enabled' => env('MINIAPP_ENABLED', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application Timezone

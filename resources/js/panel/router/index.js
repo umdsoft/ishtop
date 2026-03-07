@@ -84,6 +84,12 @@ const routes = [
         meta: { title: 'Vakansiya' },
       },
       {
+        path: 'vacancies/:id/applications/:applicationId',
+        name: 'application-detail',
+        component: () => import('../views/vacancies/ApplicationDetail.vue'),
+        meta: { title: 'Ariza tafsilotlari' },
+      },
+      {
         path: 'vacancies/:id/edit',
         name: 'vacancy-edit',
         component: () => import('../views/vacancies/VacancyEdit.vue'),

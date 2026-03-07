@@ -32,10 +32,20 @@ class MainMenuKeyboard
                     $isRu ? '📋 Мои заявки' : '📋 Arizalarim',
                     callback_data: 'menu:apps'
                 ),
+            )
+            ->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '🤍 Сохранённые' : '🤍 Saqlanganlar',
+                    callback_data: 'menu:saved'
+                ),
+                InlineKeyboardButton::make(
+                    $isRu ? '🔔 Уведомления' : '🔔 Bildirishnomalar',
+                    callback_data: 'menu:notifications'
+                ),
             );
 
         $appUrl = config('app.url');
-        if (!str_contains($appUrl, 'localhost')) {
+        if (config('app.miniapp_enabled', false)) {
             $keyboard->addRow(
                 InlineKeyboardButton::make(
                     '🌐 Mini App',

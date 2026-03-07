@@ -21,13 +21,14 @@ class CandidateController extends Controller
     {
         $user = $request->user();
 
+        // TODO: Tekshirgandan so'ng qayta yoqish kerak
         // Check subscription feature
-        if (!$this->limitService->hasFeature($user, 'talent_pool')) {
-            return response()->json([
-                'message' => 'Nomzodlar bazasi faqat Recruiter Pro va undan yuqori rejalarda mavjud.',
-                'limit_reached' => true,
-            ], 403);
-        }
+        // if (!$this->limitService->hasFeature($user, 'talent_pool')) {
+        //     return response()->json([
+        //         'message' => 'Nomzodlar bazasi faqat Recruiter Pro va undan yuqori rejalarda mavjud.',
+        //         'limit_reached' => true,
+        //     ], 403);
+        // }
 
         $request->validate([
             'vacancy_id' => 'required|uuid',

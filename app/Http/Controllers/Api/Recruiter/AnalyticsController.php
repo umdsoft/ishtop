@@ -95,13 +95,13 @@ class AnalyticsController extends Controller
 
         $byVacancy = Application::whereIn('vacancy_id', $vacancyIds)
             ->where('stage', 'hired')
-            ->with('vacancy:id,title')
+            ->with('vacancy:id,title_uz,title_ru')
             ->get()
             ->groupBy('vacancy_id')
             ->map(function ($apps) {
                 $avg = $apps->avg(fn($a) => $a->created_at->diffInDays($a->updated_at));
                 return [
-                    'vacancy' => $apps->first()->vacancy?->title,
+                    'vacancy' => $apps->first()->vacancy?->title_uz,
                     'avg_days' => round($avg, 1),
                     'count' => $apps->count(),
                 ];

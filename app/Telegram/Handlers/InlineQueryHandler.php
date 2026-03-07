@@ -46,7 +46,7 @@ class InlineQueryHandler
         $botUsername = config('nutgram.bot_username');
 
         foreach ($vacancies as $vacancy) {
-            $title = $vacancy->title($lang) ?: $vacancy->title;
+            $title = $vacancy->title($lang);
             $top = $vacancy->isTopActive() ? '🔥 ' : '';
             $salary = $vacancy->salaryFormatted();
             $company = $vacancy->employer?->company_name ?? '-';

@@ -80,7 +80,7 @@
                   :options="categories"
                   label="Kategoriya"
                   label-key="name"
-                  value-key="id"
+                  value-key="slug"
                   placeholder="Kategoriya tanlang"
                   searchable
                   required
@@ -454,16 +454,7 @@ const errors = ref({});
 const loading = ref(false);
 const loadingPhase = ref(''); // 'translating' | 'saving' | ''
 
-const categories = ref([
-  { id: 1, name: 'IT va Texnologiya' },
-  { id: 2, name: 'Savdo va Marketing' },
-  { id: 3, name: 'Moliya va Buxgalteriya' },
-  { id: 4, name: 'Qurilish' },
-  { id: 5, name: 'Ovqatlanish' },
-  { id: 6, name: 'Transport' },
-  { id: 7, name: 'Ta\'lim' },
-  { id: 8, name: 'Sog\'liqni saqlash' },
-]);
+const categories = ref([]);
 
 // regions va districts are imported from ../../data/regions.js
 
@@ -509,6 +500,25 @@ onMounted(async () => {
   } catch {
     // Continue even if check fails
   }
+
+  // Load categories from API
+  try {
+    const { data } = await axios.get('/api/categories');
+    const opts = [];
+    (data.categories || []).forEach(cat => {
+      if (cat.children && cat.children.length > 0) {
+        cat.children.forEach(child => {
+          opts.push({ slug: child.slug, name: `${cat.name_uz} → ${child.name_uz}` });
+        });
+      } else {
+        opts.push({ slug: cat.slug, name: cat.name_uz });
+      }
+    });
+    categories.value = opts;
+  } catch {
+    // Fallback if API fails
+  }
+
   await loadVacancy();
 });
 
@@ -539,7 +549,7 @@ async function loadVacancy() {
     form.value.employment_type = employmentTypes.find(t => t.value === v.work_type) || employmentTypes[0];
     form.value.experience_level = experienceLevels.find(t => t.value === v.experience_required) || experienceLevels[2];
     form.value.status = statusOptions.find(t => t.value === v.status) || statusOptions[0];
-    form.value.category_id = categories.value.find(c => c.name === v.category) || null;
+    form.value.category_id = categories.value.find(c => c.slug === v.category) || null;
     form.value.region_id = regions.find(r => r.name === v.city) || null;
     form.value.district_id = districts.find(d => d.name === v.district) || null;
   } catch (error) {
@@ -566,12 +576,11 @@ function getFormData() {
   delete data.requirements;
   delete data.responsibilities;
 
-  // Map category_id to category (backend expects string name)
+  // Map category_id to category slug
   if (data.category_id) {
-    const cat = typeof data.category_id === 'object'
-      ? data.category_id
-      : categories.value.find(c => c.id === data.category_id);
-    data.category = cat?.name || '';
+    data.category = typeof data.category_id === 'object'
+      ? data.category_id.slug
+      : data.category_id;
   }
   delete data.category_id;
 

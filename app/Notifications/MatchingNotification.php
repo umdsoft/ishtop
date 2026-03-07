@@ -26,7 +26,7 @@ class MatchingNotification extends Notification
             'vacancy_id' => $this->vacancy->id,
             'match_score' => $this->matchScore,
             'title' => 'Sizga mos vakansiya topildi',
-            'message' => "\"{$this->vacancy->title}\" vakansiyasi sizga {$this->matchScore}% mos keladi",
+            'message' => "\"{$this->vacancy->title()}\" vakansiyasi sizga {$this->matchScore}% mos keladi",
         ];
     }
 
@@ -39,11 +39,11 @@ class MatchingNotification extends Notification
             'user_id' => $worker->user_id,
             'type' => 'matching_vacancy',
             'title' => 'Sizga mos vakansiya topildi',
-            'message' => "\"{$vacancy->title}\" vakansiyasi sizga {$matchScore}% mos keladi",
+            'message' => "\"{$vacancy->title()}\" vakansiyasi sizga {$matchScore}% mos keladi",
             'data' => [
                 'vacancy_id' => $vacancy->id,
                 'match_score' => $matchScore,
-                'vacancy_title' => $vacancy->title,
+                'vacancy_title' => $vacancy->title(),
                 'employer_name' => $vacancy->employer->company_name,
             ],
         ]);
@@ -58,7 +58,7 @@ class MatchingNotification extends Notification
             'user_id' => $vacancy->employer->user_id,
             'type' => 'matching_worker',
             'title' => 'Sizga mos nomzod topildi',
-            'message' => "{$worker->full_name} \"{$vacancy->title}\" vakansiyangizga {$matchScore}% mos keladi",
+            'message' => "{$worker->full_name} \"{$vacancy->title()}\" vakansiyangizga {$matchScore}% mos keladi",
             'data' => [
                 'worker_id' => $worker->id,
                 'vacancy_id' => $vacancy->id,

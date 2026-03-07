@@ -22,7 +22,7 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 class QuestionnaireConversation extends Conversation
 {
     protected string $lang = 'uz';
-    protected ?string $applicationId = null;
+    public ?string $applicationId = null;
     protected array $answers = [];
     protected array $questions = [];
     protected int $currentIndex = 0;
@@ -39,9 +39,9 @@ class QuestionnaireConversation extends Conversation
         }
 
         $this->lang = $user->language?->value ?? 'uz';
-        $this->applicationId = $applicationId;
+        $this->applicationId = $applicationId ?? $this->applicationId;
 
-        $application = Application::with('vacancy.employer')->find($applicationId);
+        $application = Application::with('vacancy.employer')->find($this->applicationId);
 
         if (!$application) {
             $bot->sendMessage(text: $this->t('❌ Ariza topilmadi.', '❌ Заявка не найдена.'));
@@ -79,7 +79,7 @@ class QuestionnaireConversation extends Conversation
         $this->answers = $application->questionnaire_answers ?? [];
         $this->currentIndex = count($this->answers);
 
-        $vacancyTitle = $application->vacancy->title;
+        $vacancyTitle = $application->vacancy->title();
         $total = count($this->questions);
 
         $intro = $this->t(

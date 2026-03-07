@@ -23,7 +23,7 @@ class NewApplicationNotification extends Notification
             'vacancy_id' => $this->application->vacancy_id,
             'worker_id' => $this->application->worker_id,
             'title' => 'Yangi ariza',
-            'message' => "{$this->application->worker->full_name} \"{$this->application->vacancy->title}\" vakansiyasiga ariza yubordi",
+            'message' => "{$this->application->worker->full_name} \"{$this->application->vacancy->title()}\" vakansiyasiga ariza yubordi",
         ];
     }
 
@@ -31,7 +31,7 @@ class NewApplicationNotification extends Notification
     {
         return [
             'application_id' => $this->application->id,
-            'vacancy_title' => $this->application->vacancy->title,
+            'vacancy_title' => $this->application->vacancy->title(),
             'worker_name' => $this->application->worker->full_name,
         ];
     }
@@ -45,7 +45,7 @@ class NewApplicationNotification extends Notification
             'user_id' => $application->vacancy->employer->user_id,
             'type' => 'new_application',
             'title' => 'Yangi ariza',
-            'message' => "{$application->worker->full_name} \"{$application->vacancy->title}\" vakansiyasiga ariza yubordi",
+            'message' => "{$application->worker->full_name} \"{$application->vacancy->title()}\" vakansiyasiga ariza yubordi",
             'data' => [
                 'application_id' => $application->id,
                 'vacancy_id' => $application->vacancy_id,

@@ -52,7 +52,7 @@ class DashboardController extends Controller
 
         $applications = Application::whereIn('vacancy_id', $vacancyIds)
             ->with([
-                'vacancy:id,title,city',
+                'vacancy:id,title_uz,title_ru,city',
                 'worker:id,full_name,specialty,city',
             ])
             ->orderByDesc('created_at')

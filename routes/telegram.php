@@ -5,9 +5,11 @@ use App\Telegram\Conversations\ResumeBuilderConversation;
 use App\Telegram\Handlers\AppsHandler;
 use App\Telegram\Handlers\HelpHandler;
 use App\Telegram\Handlers\MenuHandler;
+use App\Telegram\Handlers\NotificationsHandler;
 use App\Telegram\Handlers\PostHandler;
 use App\Telegram\Handlers\ResumeHandler;
 use App\Telegram\Handlers\InlineQueryHandler;
+use App\Telegram\Handlers\SavedHandler;
 use App\Telegram\Handlers\SearchHandler;
 use App\Telegram\Handlers\SettingsHandler;
 use App\Telegram\Handlers\StartHandler;
@@ -28,6 +30,8 @@ $bot->onCommand('post', function (Nutgram $bot) {
     (new PostVacancyConversation())->begin($bot);
 });
 $bot->onCommand('apps', AppsHandler::class);
+$bot->onCommand('saved', SavedHandler::class);
+$bot->onCommand('notifications', NotificationsHandler::class);
 $bot->onCommand('settings', SettingsHandler::class);
 $bot->onCommand('web', [MenuHandler::class, 'web']);
 $bot->onCommand('cancel', function (Nutgram $bot) {
@@ -36,6 +40,18 @@ $bot->onCommand('cancel', function (Nutgram $bot) {
     $text = $lang === 'ru' ? '❌ Отменено. /menu — Главное меню' : '❌ Bekor qilindi. /menu — Bosh menyu';
     $bot->sendMessage($text);
 });
+
+// ── Persistent keyboard text handlers ──
+$bot->onText('🔍 Ish qidirish', fn(Nutgram $bot) => (new SearchHandler())($bot));
+$bot->onText('🔍 Поиск работы', fn(Nutgram $bot) => (new SearchHandler())($bot));
+$bot->onText('📝 Rezume', function (Nutgram $bot) { (new MenuHandler())->resume($bot); });
+$bot->onText('📝 Резюме', function (Nutgram $bot) { (new MenuHandler())->resume($bot); });
+$bot->onText('📋 Arizalarim', fn(Nutgram $bot) => (new AppsHandler())($bot));
+$bot->onText('📋 Мои заявки', fn(Nutgram $bot) => (new AppsHandler())($bot));
+$bot->onText('🤍 Saqlanganlar', fn(Nutgram $bot) => (new SavedHandler())($bot));
+$bot->onText('🤍 Сохранённые', fn(Nutgram $bot) => (new SavedHandler())($bot));
+$bot->onText('📌 Menyu', fn(Nutgram $bot) => (new MenuHandler())($bot));
+$bot->onText('📌 Меню', fn(Nutgram $bot) => (new MenuHandler())($bot));
 
 // ── Callback Queries ──
 
@@ -48,7 +64,10 @@ $bot->onCallbackQueryData('menu:{action}', [MenuHandler::class, 'handleCallback'
 // Search callbacks
 $bot->onCallbackQueryData('search:{action}', [SearchHandler::class, 'handleCallback']);
 $bot->onCallbackQueryData('search_cat:{slug}', [SearchHandler::class, 'handleCallback']);
-$bot->onCallbackQueryData('search_city:{city}', [SearchHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('search_subcat:{slug}', [SearchHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('search_region:{region}', [SearchHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('search_districts:{region}', [SearchHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('search_district:{data}', [SearchHandler::class, 'handleCallback']);
 $bot->onCallbackQueryData('search_page:{data}', [SearchHandler::class, 'handleCallback']);
 
 // Vacancy callbacks (from search)
@@ -63,6 +82,58 @@ $bot->onCallbackQueryData('resume:create', function (Nutgram $bot) {
 $bot->onCallbackQueryData('resume:view', [MenuHandler::class, 'viewResume']);
 $bot->onCallbackQueryData('resume:edit', [ResumeHandler::class, 'handleCallback']);
 $bot->onCallbackQueryData('resume:toggle_search', [ResumeHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('resume:linkedin_pdf', function (Nutgram $bot) {
+    $bot->answerCallbackQuery();
+    (new \App\Telegram\Conversations\LinkedInPdfConversation())->begin($bot);
+});
+
+// LinkedIn import callbacks
+$bot->onCallbackQueryData('linkedin_import:apply_all', function (Nutgram $bot) {
+    $bot->answerCallbackQuery();
+    $user = \App\Models\User::where('telegram_id', $bot->user()->id)->first();
+    if (!$user) return;
+
+    $cached = cache()->get("linkedin_import_{$user->id}");
+    if (!$cached) {
+        $lang = $user->language?->value ?? 'uz';
+        $bot->editMessageText(
+            text: $lang === 'ru' ? '❌ Данные истекли. Загрузите PDF снова.' : '❌ Ma\'lumotlar eskirgan. PDF ni qaytadan yuklang.',
+            message_id: $bot->callbackQuery()->message->message_id,
+        );
+        return;
+    }
+
+    $profile = $user->workerProfile;
+    if ($profile) {
+        $updateData = $cached['mapped'];
+        $updateData['linkedin_import_data'] = $cached['raw'];
+        $updateData['linkedin_imported_at'] = now();
+        $profile->update($updateData);
+    }
+
+    cache()->forget("linkedin_import_{$user->id}");
+
+    $lang = $user->language?->value ?? 'uz';
+    $bot->editMessageText(
+        text: $lang === 'ru'
+            ? '✅ LinkedIn данные успешно импортированы в профиль!'
+            : '✅ LinkedIn ma\'lumotlari profilga muvaffaqiyatli import qilindi!',
+        message_id: $bot->callbackQuery()->message->message_id,
+    );
+});
+
+$bot->onCallbackQueryData('linkedin_import:cancel', function (Nutgram $bot) {
+    $bot->answerCallbackQuery();
+    $user = \App\Models\User::where('telegram_id', $bot->user()->id)->first();
+    if ($user) {
+        cache()->forget("linkedin_import_{$user->id}");
+    }
+    $lang = $user?->language?->value ?? 'uz';
+    $bot->editMessageText(
+        text: $lang === 'ru' ? '❌ Импорт отменён.' : '❌ Import bekor qilindi.',
+        message_id: $bot->callbackQuery()->message->message_id,
+    );
+});
 
 // Post/Vacancy management callbacks
 $bot->onCallbackQueryData('post:create', [PostHandler::class, 'handleCallback']);
@@ -90,6 +161,17 @@ $bot->onCallbackQueryData('app:view:{id}', [AppsHandler::class, 'handleCallback'
 $bot->onCallbackQueryData('app:quest:{id}', [AppsHandler::class, 'handleCallback']);
 $bot->onCallbackQueryData('app:withdraw:{id}', [AppsHandler::class, 'handleCallback']);
 $bot->onCallbackQueryData('app:back', [AppsHandler::class, 'handleCallback']);
+
+// Saved vacancies callbacks
+$bot->onCallbackQueryData('saved:list', [SavedHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('saved:toggle:{id}', [SavedHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('saved:remove:{id}', [SavedHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('saved:view:{id}', [SavedHandler::class, 'handleCallback']);
+
+// Notifications callbacks
+$bot->onCallbackQueryData('notif:list', [NotificationsHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('notif:read_all', [NotificationsHandler::class, 'handleCallback']);
+$bot->onCallbackQueryData('notif:view:{id}', [NotificationsHandler::class, 'handleCallback']);
 
 // Inline query
 $bot->onInlineQuery(InlineQueryHandler::class);

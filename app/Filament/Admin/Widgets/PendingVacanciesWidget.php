@@ -20,7 +20,7 @@ class PendingVacanciesWidget extends BaseWidget
         return $table
             ->query(Vacancy::query()->where('status', 'pending')->latest())
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('Sarlavha')->limit(30),
+                Tables\Columns\TextColumn::make('title_uz')->label('Sarlavha')->limit(30),
                 Tables\Columns\TextColumn::make('employer.company_name')->label('Kompaniya'),
                 Tables\Columns\TextColumn::make('category')->label('Kategoriya'),
                 Tables\Columns\TextColumn::make('created_at')->label('Sana')->dateTime(),

@@ -6,8 +6,10 @@ use App\Enums\ApplicationStage;
 use App\Models\Application;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\SavedItem;
 use App\Models\User;
 use App\Models\Vacancy;
+use Illuminate\Support\Facades\Log;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
@@ -15,7 +17,7 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 
 class SearchHandler
 {
-    protected int $perPage = 5;
+    protected int $perPage = 10;
 
     public function __invoke(Nutgram $bot): void
     {
@@ -27,28 +29,39 @@ class SearchHandler
         $data = $bot->callbackQuery()->data ?? '';
         $bot->answerCallbackQuery();
 
-        if (str_starts_with($data, 'search_cat:')) {
-            $this->searchByCategory($bot, str_replace('search_cat:', '', $data));
-        } elseif (str_starts_with($data, 'search_city:')) {
-            $this->searchByCity($bot, str_replace('search_city:', '', $data));
-        } elseif (str_starts_with($data, 'search_page:')) {
-            $parts = explode(':', $data);
-            $page = (int) ($parts[1] ?? 1);
-            $filter = $parts[2] ?? 'all';
-            $value = $parts[3] ?? '';
-            $this->showVacancies($bot, $page, $filter, $value);
-        } elseif ($data === 'search:main') {
-            $this->showMainSearch($bot, true);
-        } elseif ($data === 'search:categories') {
-            $this->showCategories($bot);
-        } elseif ($data === 'search:cities') {
-            $this->showCities($bot);
-        } elseif ($data === 'search:all') {
-            $this->showVacancies($bot, 1, 'all', '');
-        } elseif (str_starts_with($data, 'vacancy_view:')) {
-            $this->showVacancyDetail($bot, str_replace('vacancy_view:', '', $data));
-        } elseif (str_starts_with($data, 'vacancy_apply:')) {
-            $this->applyToVacancy($bot, str_replace('vacancy_apply:', '', $data));
+        try {
+            if (str_starts_with($data, 'search_subcat:')) {
+                $this->showSubCategories($bot, str_replace('search_subcat:', '', $data));
+            } elseif (str_starts_with($data, 'search_cat:')) {
+                $this->searchByCategory($bot, str_replace('search_cat:', '', $data));
+            } elseif (str_starts_with($data, 'search_region:')) {
+                $this->searchByRegion($bot, str_replace('search_region:', '', $data));
+            } elseif (str_starts_with($data, 'search_districts:')) {
+                $this->showDistricts($bot, str_replace('search_districts:', '', $data));
+            } elseif (str_starts_with($data, 'search_district:')) {
+                $this->searchByDistrict($bot, str_replace('search_district:', '', $data));
+            } elseif (str_starts_with($data, 'search_page:')) {
+                $parts = explode(':', $data);
+                $page = (int) ($parts[1] ?? 1);
+                $filter = $parts[2] ?? 'all';
+                $value = $parts[3] ?? '';
+                $this->showVacancies($bot, $page, $filter, $value);
+            } elseif ($data === 'search:main') {
+                $this->showMainSearch($bot, true);
+            } elseif ($data === 'search:categories') {
+                $this->showCategories($bot);
+            } elseif ($data === 'search:regions') {
+                $this->showRegions($bot);
+            } elseif ($data === 'search:all') {
+                $this->showVacancies($bot, 1, 'all', '');
+            } elseif (str_starts_with($data, 'vacancy_view:')) {
+                $this->showVacancyDetail($bot, str_replace('vacancy_view:', '', $data));
+            } elseif (str_starts_with($data, 'vacancy_apply:')) {
+                $this->applyToVacancy($bot, str_replace('vacancy_apply:', '', $data));
+            }
+        } catch (\Throwable $e) {
+            Log::error('SearchHandler error: ' . $e->getMessage(), ['trace' => $e->getTraceAsString()]);
+            $bot->sendMessage(text: "Xatolik yuz berdi. /menu");
         }
     }
 
@@ -68,8 +81,8 @@ class SearchHandler
                     callback_data: 'search:categories'
                 ),
                 InlineKeyboardButton::make(
-                    $lang === 'ru' ? '📍 По городу' : '📍 Shahar bo\'yicha',
-                    callback_data: 'search:cities'
+                    $lang === 'ru' ? '📍 По региону' : '📍 Viloyat bo\'yicha',
+                    callback_data: 'search:regions'
                 ),
             )
             ->addRow(
@@ -112,21 +125,52 @@ class SearchHandler
         }
     }
 
+    protected function getCategoryEmoji(string $slug): string
+    {
+        return match ($slug) {
+            'it' => '💻',
+            'sales' => '🛒',
+            'shop-seller' => '🏪',
+            'sales-manager' => '💼',
+            'call-center' => '📞',
+            'food' => '🍽',
+            'driver' => '🚗',
+            'construction' => '🔧',
+            'beauty' => '💇',
+            'education' => '🎓',
+            'finance' => '💰',
+            'marketing' => '📢',
+            'logistics' => '📦',
+            'security' => '🛡',
+            'cleaning' => '✨',
+            'admin' => '🏢',
+            'production' => '⚙️',
+            'other' => '📋',
+            default => '📁',
+        };
+    }
+
     protected function showCategories(Nutgram $bot): void
     {
         $lang = $this->getUserLang($bot);
-        $categories = Category::active()->get();
+        $categories = Category::active()->root()->withCount(['children' => fn($q) => $q->where('is_active', true)])->get();
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
-        foreach ($categories as $i => $cat) {
+        foreach ($categories as $cat) {
             $name = $lang === 'ru' ? ($cat->name_ru ?? $cat->name_uz) : $cat->name_uz;
-            $label = ($cat->icon ? $cat->icon . ' ' : '') . $name;
-            $row[] = InlineKeyboardButton::make($label, callback_data: 'search_cat:' . $cat->slug);
-            if (count($row) === 2 || $i === $categories->count() - 1) {
+            $emoji = $this->getCategoryEmoji($cat->slug);
+            $count = $this->getCategoryVacancyCount($cat);
+            $label = "{$emoji} {$name} ({$count})";
+            $callback = $cat->children_count > 0 ? 'search_subcat:' . $cat->slug : 'search_cat:' . $cat->slug;
+            $row[] = InlineKeyboardButton::make($label, callback_data: $callback);
+            if (count($row) === 2) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }
+        }
+        if (!empty($row)) {
+            $keyboard->addRow(...$row);
         }
         $keyboard->addRow(InlineKeyboardButton::make(
             $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
@@ -141,21 +185,76 @@ class SearchHandler
         );
     }
 
-    protected function showCities(Nutgram $bot): void
+    protected function showSubCategories(Nutgram $bot, string $parentSlug): void
     {
         $lang = $this->getUserLang($bot);
-        $cities = City::active()->get();
+        $parent = Category::where('slug', $parentSlug)->first();
+        if (!$parent) return;
+
+        $children = Category::active()->where('parent_id', $parent->id)->get();
+        $parentEmoji = $this->getCategoryEmoji($parent->slug);
+        $parentName = $lang === 'ru' ? ($parent->name_ru ?? $parent->name_uz) : $parent->name_uz;
+
+        $keyboard = InlineKeyboardMarkup::make();
+
+        // "Barcha" tugmasi — parent kategoriyaning barcha vakansiyalari
+        $totalCount = $this->getCategoryVacancyCount($parent);
+        $allLabel = $lang === 'ru'
+            ? "📋 Все «{$parentName}» ({$totalCount})"
+            : "📋 Barcha «{$parentName}» ({$totalCount})";
+        $keyboard->addRow(InlineKeyboardButton::make($allLabel, callback_data: 'search_cat:' . $parent->slug));
+
+        foreach ($children as $child) {
+            $name = $lang === 'ru' ? ($child->name_ru ?? $child->name_uz) : $child->name_uz;
+            $emoji = $this->getCategoryEmoji($child->slug);
+            $count = Vacancy::where('status', 'active')->where('category', $child->slug)->count();
+            $label = "{$emoji} {$name} ({$count})";
+            $keyboard->addRow(InlineKeyboardButton::make($label, callback_data: 'search_cat:' . $child->slug));
+        }
+
+        $keyboard->addRow(InlineKeyboardButton::make(
+            $lang === 'ru' ? '◀️ Категории' : '◀️ Kategoriyalar',
+            callback_data: 'search:categories'
+        ));
+
+        $title = $lang === 'ru'
+            ? "{$parentEmoji} *{$parentName}* — выберите направление:"
+            : "{$parentEmoji} *{$parentName}* — yo'nalishni tanlang:";
+
+        $bot->editMessageText(
+            text: $title,
+            message_id: $bot->callbackQuery()->message->message_id,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
+            reply_markup: $keyboard,
+        );
+    }
+
+    protected function getCategoryVacancyCount(Category $category): int
+    {
+        $slugs = [$category->slug];
+        $children = Category::where('parent_id', $category->id)->where('is_active', true)->pluck('slug');
+        $slugs = array_merge($slugs, $children->toArray());
+        return Vacancy::where('status', 'active')->whereIn('category', $slugs)->count();
+    }
+
+    protected function showRegions(Nutgram $bot): void
+    {
+        $lang = $this->getUserLang($bot);
+        $regions = City::active()
+            ->select('region')
+            ->distinct()
+            ->orderBy('region')
+            ->pluck('region');
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
-        foreach ($cities as $i => $city) {
-            $count = Vacancy::active()->where('city', $city->name_uz)->count();
-            $name = $lang === 'ru' ? ($city->name_ru ?? $city->name_uz) : $city->name_uz;
+        foreach ($regions as $i => $region) {
+            $count = Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count();
             $row[] = InlineKeyboardButton::make(
-                $name . " ({$count})",
-                callback_data: 'search_city:' . $city->name_uz
+                $region . " ({$count})",
+                callback_data: 'search_region:' . $region
             );
-            if (count($row) === 2 || $i === $cities->count() - 1) {
+            if (count($row) === 2 || $i === $regions->count() - 1) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }
@@ -166,7 +265,7 @@ class SearchHandler
         ));
 
         $bot->editMessageText(
-            text: $lang === 'ru' ? "📍 *Выберите город:*" : "📍 *Shaharni tanlang:*",
+            text: $lang === 'ru' ? "📍 *Выберите регион:*" : "📍 *Viloyatni tanlang:*",
             message_id: $bot->callbackQuery()->message->message_id,
             parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
@@ -178,9 +277,62 @@ class SearchHandler
         $this->showVacancies($bot, 1, 'category', $slug);
     }
 
-    protected function searchByCity(Nutgram $bot, string $city): void
+    protected function searchByRegion(Nutgram $bot, string $region): void
     {
-        $this->showVacancies($bot, 1, 'city', $city);
+        $this->showVacancies($bot, 1, 'region', $region);
+    }
+
+    protected function showDistricts(Nutgram $bot, string $region): void
+    {
+        $lang = $this->getUserLang($bot);
+        $isRu = $lang === 'ru';
+
+        $cities = City::active()
+            ->where('region', $region)
+            ->orderBy('name_uz')
+            ->get();
+
+        $keyboard = InlineKeyboardMarkup::make();
+
+        // "All in region" button first
+        $allCount = Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count();
+        $keyboard->addRow(InlineKeyboardButton::make(
+            ($isRu ? "📍 Все в {$region}" : "📍 Barcha {$region}") . " ({$allCount})",
+            callback_data: 'search_region:' . $region
+        ));
+
+        $row = [];
+        foreach ($cities as $i => $city) {
+            $count = Vacancy::active()->where('city', 'LIKE', "%{$city->name_uz}%")->count();
+            $name = $isRu ? ($city->name_ru ?? $city->name_uz) : $city->name_uz;
+            $row[] = InlineKeyboardButton::make(
+                $name . " ({$count})",
+                callback_data: 'search_district:' . $region . '|' . $city->name_uz
+            );
+            if (count($row) === 2 || $i === $cities->count() - 1) {
+                $keyboard->addRow(...$row);
+                $row = [];
+            }
+        }
+
+        $keyboard->addRow(InlineKeyboardButton::make(
+            $isRu ? '◀️ К регионам' : '◀️ Viloyatlarga',
+            callback_data: 'search:regions'
+        ));
+
+        $title = $isRu ? "🏘 *{$region} — районы/города:*" : "🏘 *{$region} — tuman/shaharlar:*";
+
+        $bot->editMessageText(
+            text: $title,
+            message_id: $bot->callbackQuery()->message->message_id,
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
+            reply_markup: $keyboard,
+        );
+    }
+
+    protected function searchByDistrict(Nutgram $bot, string $value): void
+    {
+        $this->showVacancies($bot, 1, 'district', $value);
     }
 
     protected function showVacancies(Nutgram $bot, int $page, string $filter, string $value): void
@@ -191,10 +343,19 @@ class SearchHandler
         if ($filter === 'category') {
             $category = Category::where('slug', $value)->first();
             if ($category) {
-                $query->where('category', $category->name_uz);
+                // Parent kategoriya bo'lsa, bolalarining vakansiyalarini ham qo'shish
+                $slugs = [$category->slug];
+                $childSlugs = Category::where('parent_id', $category->id)->where('is_active', true)->pluck('slug');
+                $slugs = array_merge($slugs, $childSlugs->toArray());
+                $query->whereIn('category', $slugs);
             }
-        } elseif ($filter === 'city') {
-            $query->where('city', $value);
+        } elseif ($filter === 'region') {
+            $query->where('city', 'LIKE', "%{$value}%");
+        } elseif ($filter === 'district') {
+            // value format: "regionName|cityName"
+            $parts = explode('|', $value);
+            $cityName = $parts[1] ?? $parts[0];
+            $query->where('city', 'LIKE', "%{$cityName}%");
         }
 
         $total = $query->count();
@@ -232,16 +393,26 @@ class SearchHandler
             $salary = $v->salaryFormatted();
             $top = $v->isTopActive() ? '🔥 ' : '';
             $company = $v->employer?->company_name ?? '-';
-            $text .= "{$top}*{$num}. {$v->title}*\n📍 {$v->city} | 💰 {$salary}\n🏢 {$company}\n\n";
+            $text .= "{$top}*{$num}. {$v->title()}*\n📍 {$v->city} | 💰 {$salary}\n🏢 {$company}\n\n";
         }
 
         $keyboard = InlineKeyboardMarkup::make();
-        foreach ($vacancies as $v) {
-            $keyboard->addRow(
-                InlineKeyboardButton::make("👁 {$v->title}", callback_data: "vacancy_view:{$v->id}")
-            );
+
+        // Number buttons in rows of 5
+        $numRow = [];
+        foreach ($vacancies as $i => $v) {
+            $num = $offset + $i + 1;
+            $numRow[] = InlineKeyboardButton::make((string) $num, callback_data: "vacancy_view:{$v->id}");
+            if (count($numRow) === 5) {
+                $keyboard->addRow(...$numRow);
+                $numRow = [];
+            }
+        }
+        if (count($numRow) > 0) {
+            $keyboard->addRow(...$numRow);
         }
 
+        // Pagination
         $navRow = [];
         if ($page > 1) {
             $navRow[] = InlineKeyboardButton::make('◀️', callback_data: "search_page:" . ($page - 1) . ":{$filter}:{$value}");
@@ -254,10 +425,29 @@ class SearchHandler
             $keyboard->addRow(...$navRow);
         }
 
-        $keyboard->addRow(InlineKeyboardButton::make(
-            $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
-            callback_data: 'search:main'
-        ));
+        // Sub-filter: districts within region
+        if ($filter === 'region') {
+            $keyboard->addRow(InlineKeyboardButton::make(
+                $lang === 'ru' ? '🏘 По районам/городам' : '🏘 Tuman/shahar bo\'yicha',
+                callback_data: 'search_districts:' . $value
+            ));
+            $keyboard->addRow(InlineKeyboardButton::make(
+                $lang === 'ru' ? '◀️ К регионам' : '◀️ Viloyatlarga',
+                callback_data: 'search:regions'
+            ));
+        } elseif ($filter === 'district') {
+            // Back to region — extract region name from value
+            $regionName = explode('|', $value)[0] ?? '';
+            $keyboard->addRow(InlineKeyboardButton::make(
+                $lang === 'ru' ? '◀️ К районам' : '◀️ Tumanlarga',
+                callback_data: 'search_districts:' . $regionName
+            ));
+        } else {
+            $keyboard->addRow(InlineKeyboardButton::make(
+                $lang === 'ru' ? '◀️ Назад' : '◀️ Orqaga',
+                callback_data: 'search:main'
+            ));
+        }
 
         $bot->editMessageText(
             text: $text,
@@ -289,7 +479,7 @@ class SearchHandler
 
         $isRu = $lang === 'ru';
 
-        $text = "{$top}📌 *{$vacancy->title}*\n\n";
+        $text = "{$top}📌 *{$vacancy->title()}*\n\n";
         $text .= "🏢 " . ($isRu ? 'Компания' : 'Kompaniya') . ": {$company}\n";
         $text .= "📂 " . ($isRu ? 'Категория' : 'Kategoriya') . ": {$vacancy->category}\n";
         $text .= "📍 " . ($isRu ? 'Город' : 'Shahar') . ": {$vacancy->city}\n";
@@ -300,18 +490,29 @@ class SearchHandler
             $text .= "⏱ " . ($isRu ? 'Опыт' : 'Tajriba') . ": {$vacancy->experience_required}\n";
         }
 
-        $text .= "\n📝 *" . ($isRu ? 'Описание' : 'Tavsif') . ":*\n{$vacancy->description}\n";
+        $text .= "\n📝 *" . ($isRu ? 'Описание' : 'Tavsif') . ":*\n{$vacancy->description($lang)}\n";
 
-        if ($vacancy->requirements) {
-            $text .= "\n📋 *" . ($isRu ? 'Требования' : 'Talablar') . ":*\n{$vacancy->requirements}\n";
+        if ($vacancy->requirements($lang)) {
+            $text .= "\n📋 *" . ($isRu ? 'Требования' : 'Talablar') . ":*\n{$vacancy->requirements($lang)}\n";
         }
-        if ($vacancy->responsibilities) {
-            $text .= "\n✅ *" . ($isRu ? 'Обязанности' : 'Vazifalar') . ":*\n{$vacancy->responsibilities}\n";
+        if ($vacancy->responsibilities($lang)) {
+            $text .= "\n✅ *" . ($isRu ? 'Обязанности' : 'Vazifalar') . ":*\n{$vacancy->responsibilities($lang)}\n";
         }
 
         $viewsLabel = $isRu ? 'Просмотры' : "Ko'rishlar";
         $appsLabel = $isRu ? 'Заявки' : 'Arizalar';
         $text .= "\n👁 {$viewsLabel}: {$vacancy->views_count} | 📝 {$appsLabel}: {$vacancy->applications_count}";
+
+        // Check if vacancy is saved
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+        $isSaved = $user ? SavedItem::where('user_id', $user->id)
+            ->where('saveable_type', Vacancy::class)
+            ->where('saveable_id', $vacancy->id)
+            ->exists() : false;
+
+        $saveLabel = $isSaved
+            ? ($isRu ? '❤️ Сохранено' : '❤️ Saqlangan')
+            : ($isRu ? '🤍 Сохранить' : '🤍 Saqlash');
 
         $keyboard = InlineKeyboardMarkup::make()
             ->addRow(
@@ -320,11 +521,15 @@ class SearchHandler
                     callback_data: "vacancy_apply:{$vacancy->id}"
                 ),
                 InlineKeyboardButton::make(
-                    $isRu ? '🔗 Поделиться' : '🔗 Ulashish',
-                    switch_inline_query: $vacancy->title
+                    $saveLabel,
+                    callback_data: "saved:toggle:{$vacancy->id}"
                 ),
             )
             ->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '🔗 Поделиться' : '🔗 Ulashish',
+                    switch_inline_query: $vacancy->title()
+                ),
                 InlineKeyboardButton::make(
                     $isRu ? '◀️ Назад' : '◀️ Orqaga',
                     callback_data: 'search:main'
@@ -408,8 +613,8 @@ class SearchHandler
         $vacancy->increment('applications_count');
 
         $text = $isRu
-            ? "✅ *Заявка отправлена!*\n\n📌 {$vacancy->title}\n\nРаботодатель рассмотрит вашу заявку."
-            : "✅ *Ariza yuborildi!*\n\n📌 {$vacancy->title}\n\nIsh beruvchi sizning arizangizni ko'rib chiqadi.";
+            ? "✅ *Заявка отправлена!*\n\n📌 {$vacancy->title('ru')}\n\nРаботодатель рассмотрит вашу заявку."
+            : "✅ *Ariza yuborildi!*\n\n📌 {$vacancy->title()}\n\nIsh beruvchi sizning arizangizni ko'rib chiqadi.";
 
         $bot->editMessageText(
             text: $text,

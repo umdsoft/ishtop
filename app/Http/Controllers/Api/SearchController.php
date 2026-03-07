@@ -114,8 +114,10 @@ class SearchController extends Controller
     public function categories(Request $request): JsonResponse
     {
         $categories = Category::active()
+            ->root()
+            ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
             ->orderBy('sort_order')
-            ->get(['id', 'slug', 'name_uz', 'name_ru', 'icon', 'sort_order']);
+            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order']);
 
         return response()->json(['categories' => $categories]);
     }
@@ -124,7 +126,7 @@ class SearchController extends Controller
     {
         $cities = City::active()
             ->orderBy('name_uz')
-            ->get(['id', 'name_uz', 'name_ru', 'region', 'lat', 'lng']);
+            ->get(['id', 'name_uz', 'name_ru', 'region', 'type', 'latitude', 'longitude']);
 
         return response()->json(['cities' => $cities]);
     }

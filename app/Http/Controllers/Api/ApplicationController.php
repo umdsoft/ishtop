@@ -49,7 +49,7 @@ class ApplicationController extends Controller
     {
         $worker = $request->user()->workerProfile;
         $applications = Application::where('worker_id', $worker?->id)
-            ->with('vacancy:id,title,category,city,salary_min,salary_max')
+            ->with(['vacancy:id,title_uz,title_ru,category,city,salary_min,salary_max,employer_id', 'vacancy.employer:id,company_name,logo_url'])
             ->latest()
             ->paginate(20);
 
@@ -60,7 +60,7 @@ class ApplicationController extends Controller
     {
         $employer = $request->user()->employerProfile;
         $applications = Application::whereHas('vacancy', fn($q) => $q->where('employer_id', $employer?->id))
-            ->with(['worker:id,full_name,city,experience_years', 'vacancy:id,title'])
+            ->with(['worker:id,full_name,city,experience_years', 'vacancy:id,title_uz,title_ru'])
             ->latest()
             ->paginate(20);
 

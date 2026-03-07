@@ -31,11 +31,15 @@ class MyVacancyResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Asosiy ma\'lumotlar')->schema([
-                Forms\Components\TextInput::make('title')->label('Sarlavha')->required()->maxLength(200),
+                Forms\Components\TextInput::make('title_uz')->label('Sarlavha (UZ)')->required()->maxLength(300),
+                Forms\Components\TextInput::make('title_ru')->label('Sarlavha (RU)')->maxLength(300),
                 Forms\Components\TextInput::make('category')->label('Kategoriya')->required(),
-                Forms\Components\Textarea::make('description')->label('Tavsif')->required()->rows(5),
-                Forms\Components\Textarea::make('requirements')->label('Talablar')->rows(3),
-                Forms\Components\Textarea::make('responsibilities')->label('Vazifalar')->rows(3),
+                Forms\Components\Textarea::make('description_uz')->label('Tavsif (UZ)')->required()->rows(5),
+                Forms\Components\Textarea::make('description_ru')->label('Tavsif (RU)')->rows(5),
+                Forms\Components\Textarea::make('requirements_uz')->label('Talablar (UZ)')->rows(3),
+                Forms\Components\Textarea::make('requirements_ru')->label('Talablar (RU)')->rows(3),
+                Forms\Components\Textarea::make('responsibilities_uz')->label('Vazifalar (UZ)')->rows(3),
+                Forms\Components\Textarea::make('responsibilities_ru')->label('Vazifalar (RU)')->rows(3),
             ]),
             Forms\Components\Section::make('Maosh va ish turi')->schema([
                 Forms\Components\TextInput::make('salary_min')->label('Maosh (min)')->numeric(),
@@ -57,7 +61,7 @@ class MyVacancyResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('title')->label('Sarlavha')->searchable()->sortable()->limit(40),
+                Tables\Columns\TextColumn::make('title_uz')->label('Sarlavha')->searchable()->sortable()->limit(40),
                 Tables\Columns\TextColumn::make('category')->label('Kategoriya'),
                 Tables\Columns\TextColumn::make('city')->label('Shahar'),
                 Tables\Columns\TextColumn::make('status')->label('Status')->badge()

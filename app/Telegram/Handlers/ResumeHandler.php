@@ -167,6 +167,10 @@ class ResumeHandler
                 . "📊 Qidiruv holati: {$status}";
         }
 
+        if ($profile->linkedin_url) {
+            $text .= "\n🔗 LinkedIn: {$profile->linkedin_url}";
+        }
+
         if ($profile->bio) {
             $text .= "\n\n📋 " . ($lang === 'ru' ? 'О себе' : 'O\'zim haqimda') . ": {$profile->bio}";
         }
@@ -184,6 +188,12 @@ class ResumeHandler
                         ? '⏸ ' . ($lang === 'ru' ? 'Приостановить поиск' : 'Qidiruvni to\'xtatish')
                         : '▶️ ' . ($lang === 'ru' ? 'Активировать поиск' : 'Qidiruvni faollashtirish'),
                     callback_data: 'resume:toggle_search'
+                )
+            )
+            ->addRow(
+                InlineKeyboardButton::make(
+                    '📄 ' . ($lang === 'ru' ? 'Импорт из LinkedIn PDF' : 'LinkedIn PDF dan import'),
+                    callback_data: 'resume:linkedin_pdf'
                 )
             )
             ->addRow(

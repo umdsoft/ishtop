@@ -180,7 +180,7 @@ class PostHandler
             $viewsCount = $vacancy->views_count ?? 0;
             $appsCount = $vacancy->applications_count ?? 0;
 
-            $text .= "{$statusIcon} *{$vacancy->title}*\n";
+            $text .= "{$statusIcon} *{$vacancy->title()}*\n";
             $text .= "   📊 {$statusText} • 👁 {$viewsCount} • 📝 {$appsCount}\n";
             $text .= "   📅 " . $vacancy->created_at->format('d.m.Y') . "\n\n";
         }
@@ -196,7 +196,7 @@ class PostHandler
         foreach ($vacancies->take(5) as $vacancy) {
             $keyboard->addRow(
                 InlineKeyboardButton::make(
-                    '📌 ' . mb_substr($vacancy->title, 0, 30),
+                    '📌 ' . mb_substr($vacancy->title(), 0, 30),
                     callback_data: 'post:view:' . $vacancy->id
                 )
             );
@@ -257,12 +257,12 @@ class PostHandler
             $salary = number_format($vacancy->salary_min) . "+ {$currency}";
         }
 
-        $text = "{$statusIcon} *{$vacancy->title}*\n\n"
+        $text = "{$statusIcon} *{$vacancy->title()}*\n\n"
             . "📂 " . ($vacancy->category ?? '-') . "\n"
             . "📍 " . ($vacancy->city ?? '-') . "\n"
             . "💰 {$salary}\n"
             . "📊 " . ($lang === 'ru' ? 'Статус' : 'Holat') . ": {$statusText}\n\n"
-            . "📝 " . ($lang === 'ru' ? 'Описание' : 'Tavsif') . ":\n" . mb_substr($vacancy->description, 0, 200) . "...\n\n"
+            . "📝 " . ($lang === 'ru' ? 'Описание' : 'Tavsif') . ":\n" . mb_substr($vacancy->description($lang), 0, 200) . "...\n\n"
             . "📊 " . ($lang === 'ru' ? 'Статистика' : 'Statistika') . ":\n"
             . "👁 " . ($vacancy->views_count ?? 0) . " " . ($lang === 'ru' ? 'просмотров' : 'ko\'rildi') . "\n"
             . "📝 " . ($vacancy->applications_count ?? 0) . " " . ($lang === 'ru' ? 'заявок' : 'ariza');
