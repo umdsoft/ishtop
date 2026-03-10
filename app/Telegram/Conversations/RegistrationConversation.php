@@ -4,6 +4,7 @@ namespace App\Telegram\Conversations;
 
 use App\Models\User;
 use App\Telegram\Keyboards\MainMenuKeyboard;
+use App\Telegram\Keyboards\PersistentMenuKeyboard;
 use SergiX44\Nutgram\Conversations\Conversation;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
@@ -90,6 +91,16 @@ class RegistrationConversation extends Conversation
             text: $welcome,
             parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: MainMenuKeyboard::make($lang, $bot->user()->id),
+        );
+
+        // Persistent keyboard (pastdagi tugmalar) ni ham o'rnatish
+        $hint = $lang === 'ru'
+            ? '📌 Используйте кнопки ниже для быстрого доступа'
+            : '📌 Pastdagi tugmalardan foydalaning';
+
+        $bot->sendMessage(
+            text: $hint,
+            reply_markup: PersistentMenuKeyboard::make($lang, $bot->user()->id),
         );
 
         $this->end();
