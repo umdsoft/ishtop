@@ -12,16 +12,16 @@
       <!-- Regions -->
       <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
         <router-link
-          v-for="(count, region) in regions"
-          :key="region"
-          :to="{ path: '/vacancies', query: { region } }"
+          v-for="reg in regions"
+          :key="reg.name"
+          :to="{ path: '/vacancies', query: { region: reg.name } }"
           class="flex items-center justify-between px-4 py-3 rounded-xl border border-surface-100 hover:border-brand-200 hover:bg-brand-50 transition-all group"
         >
           <span class="text-sm font-medium text-surface-700 group-hover:text-brand-600">
-            {{ regionName(region) }}
+            {{ regionName(reg.name) }}
           </span>
           <span class="text-[11px] text-surface-400 bg-surface-100 group-hover:bg-brand-100 group-hover:text-brand-600 px-1.5 py-0.5 rounded-full font-medium">
-            {{ count }}
+            {{ reg.count }}
           </span>
         </router-link>
       </div>
@@ -33,7 +33,7 @@
 import { useI18n } from 'vue-i18n';
 
 defineProps({
-  regions: { type: Object, default: () => ({}) },
+  regions: { type: Array, default: () => [] },
   loading: { type: Boolean, default: true },
 });
 

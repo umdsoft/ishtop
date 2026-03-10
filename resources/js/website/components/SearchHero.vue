@@ -106,8 +106,8 @@
             class="w-full py-3.5 px-4 rounded-xl border-0 bg-surface-50 text-surface-900 focus:ring-2 focus:ring-brand-500 text-sm appearance-none"
           >
             <option value="">{{ $t('all_cities') }}</option>
-            <option v-for="(count, region) in regions" :key="region" :value="region">
-              {{ regionName(region) }}
+            <option v-for="reg in regions" :key="reg.name" :value="reg.name">
+              {{ regionName(reg.name) }}
             </option>
           </select>
         </div>
@@ -164,7 +164,7 @@ const { tm } = useI18n();
 
 const props = defineProps({
   stats: { type: Object, default: null },
-  regions: { type: Object, default: () => ({}) },
+  regions: { type: Array, default: () => [] },
   loading: { type: Boolean, default: true },
 });
 
