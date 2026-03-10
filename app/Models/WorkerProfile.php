@@ -19,7 +19,7 @@ class WorkerProfile extends Model implements HasMedia
     protected $fillable = [
         'user_id', 'full_name', 'birth_date', 'gender', 'city', 'district',
         'education_level', 'specialty', 'experience_years', 'skills',
-        'expected_salary_min', 'expected_salary_max', 'work_types', 'bio',
+        'expected_salary_min', 'expected_salary_max', 'work_types', 'preferred_categories', 'bio', 'work_experience',
         'photo_url', 'resume_file_url', 'linkedin_url', 'linkedin_import_data',
         'linkedin_imported_at', 'search_status', 'latitude', 'longitude',
         'views_count',
@@ -31,6 +31,8 @@ class WorkerProfile extends Model implements HasMedia
             'birth_date' => 'date',
             'skills' => 'array',
             'work_types' => 'array',
+            'preferred_categories' => 'array',
+            'work_experience' => 'array',
             'experience_years' => 'integer',
             'expected_salary_min' => 'integer',
             'expected_salary_max' => 'integer',
@@ -70,7 +72,7 @@ class WorkerProfile extends Model implements HasMedia
 
     public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 10)
     {
-        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $haversine = \App\Services\GeoService::haversineFormula();
         return $query
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')

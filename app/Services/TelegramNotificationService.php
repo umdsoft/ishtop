@@ -20,7 +20,7 @@ class TelegramNotificationService
     public function __construct()
     {
         $this->botToken = config('nutgram.token');
-        $this->botUsername = config('nutgram.bot_username', 'ishtop_bot');
+        $this->botUsername = config('nutgram.bot_username', 'kadrgo_bot');
         $this->appUrl = config('app.url');
     }
 

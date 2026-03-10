@@ -64,7 +64,7 @@ async function loadSaved() {
   loading.value = true
   try {
     const response = await api.get('/saved', {
-      params: { saveable_type: 'Vacancy' },
+      params: { type: 'vacancy' },
     })
     vacancies.value = response.data.items || response.data.data || []
   } catch (error) {

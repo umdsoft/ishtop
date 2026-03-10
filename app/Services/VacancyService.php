@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\VacancyStatus;
 use App\Models\Vacancy;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class VacancyService
@@ -59,6 +60,14 @@ class VacancyService
 
     public function incrementViews(Vacancy $vacancy): void
     {
+        $ip = request()->ip();
+        $cacheKey = "vacancy_view:{$vacancy->id}:{$ip}";
+
+        if (Cache::has($cacheKey)) {
+            return;
+        }
+
+        Cache::put($cacheKey, true, now()->addHour());
         $vacancy->increment('views_count');
     }
 }

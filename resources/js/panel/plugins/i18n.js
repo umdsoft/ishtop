@@ -10,7 +10,7 @@ import ru from '../locales/ru.json';
 
 const i18n = createI18n({
   legacy: false,
-  locale: localStorage.getItem('ishtop-locale') || 'uz',
+  locale: localStorage.getItem('kadrgo-locale') || 'uz',
   fallbackLocale: 'uz',
   messages: {
     uz,

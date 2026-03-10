@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\WorkType;
+use App\Models\City;
 use App\Models\Vacancy;
 use App\Models\WorkerProfile;
 use Illuminate\Support\Collection;
@@ -31,35 +32,80 @@ class MatchingService
 
     public function findMatchesForWorker(WorkerProfile $worker, int $limit = 10): Collection
     {
-        $query = Vacancy::active();
+        $query = Vacancy::active()
+            ->with('employer:id,company_name,logo_url,verification_level');
 
-        // Soft filter: same city or no city specified
-        if ($worker->city) {
-            $query->where(function ($q) use ($worker) {
-                $q->where('city', $worker->city)
-                  ->orWhereNull('city');
+        // Category filter: parent-child aware
+        // Sub-category selected (it-frontend) → match: it-frontend, it (parent), NULL
+        // Parent selected (it) → match: it, it-frontend, it-backend, ... (all children), NULL
+        $preferredCategories = $worker->preferred_categories ?? [];
+        if (!empty($preferredCategories)) {
+            $expandedSlugs = [];
+            $selectedParents = [];
+
+            foreach ($preferredCategories as $cat) {
+                $cat = mb_strtolower($cat);
+                $expandedSlugs[] = $cat;
+                $parent = $this->extractParentSlug($cat);
+                if ($parent !== $cat) {
+                    // Sub-category: also include its parent
+                    $expandedSlugs[] = $parent;
+                } else {
+                    // Main category explicitly selected
+                    $selectedParents[] = $cat;
+                }
+            }
+
+            $expandedSlugs = array_unique($expandedSlugs);
+
+            $query->where(function ($q) use ($expandedSlugs, $selectedParents) {
+                $q->whereIn('category', $expandedSlugs)
+                  ->orWhereNull('category');
+                // Explicitly selected parents also match all their children
+                foreach ($selectedParents as $parent) {
+                    $q->orWhere('category', 'LIKE', $parent . '-%');
+                }
             });
         }
 
-        $candidates = $query->orderByDesc('published_at')->limit($limit * 3)->get();
+        // Salary: only exclude vacancies drastically below expectations
+        if ($worker->expected_salary_min) {
+            $query->where(function ($q) use ($worker) {
+                $q->whereNull('salary_max')
+                  ->orWhere('salary_max', '>=', (int) ($worker->expected_salary_min * 0.5));
+            });
+        }
+
+        // Add distance if worker has coordinates
+        if ($worker->latitude && $worker->longitude) {
+            $haversine = GeoService::haversineFormula();
+            $query->selectRaw("vacancies.*, {$haversine} as distance_km", [
+                (float) $worker->latitude, (float) $worker->longitude, (float) $worker->latitude,
+            ]);
+        }
+
+        $candidates = $query->orderByDesc('published_at')->limit($limit * 5)->get();
 
         return $candidates->map(function ($vacancy) use ($worker) {
             $vacancy->match_score = $this->calculateMatchScore($worker, $vacancy);
             return $vacancy;
-        })->sortByDesc('match_score')->take($limit)->values();
+        })->sort(function ($a, $b) {
+            $scoreDiff = ($b->match_score ?? 0) - ($a->match_score ?? 0);
+            if ($scoreDiff !== 0) return $scoreDiff;
+            // Same score — nearest first
+            return ($a->distance_km ?? PHP_INT_MAX) <=> ($b->distance_km ?? PHP_INT_MAX);
+        })->take($limit)->values();
     }
 
     public function findMatchesForVacancy(Vacancy $vacancy, int $limit = 20): Collection
     {
         $query = WorkerProfile::active();
 
-        // Soft filter: same city or no city
-        if ($vacancy->city) {
-            $query->where(function ($q) use ($vacancy) {
-                $q->where('city', $vacancy->city)
-                  ->orWhereNull('city');
-            });
-        }
+        // Category filter: parent-child aware
+        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
+
+        // Location filter: same viloyat (region) for on-site, no filter for remote
+        $this->applyLocationFilterForWorkers($query, $vacancy);
 
         $candidates = $query->limit($limit * 3)->get();
 
@@ -78,8 +124,14 @@ class MatchingService
             ->whereIn('search_status', ['open', 'passive'])
             ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id));
 
+        // Category filter: parent-child aware
+        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
+
+        // Location filter: same viloyat for on-site, no filter for remote
+        $this->applyLocationFilterForWorkers($query, $vacancy);
+
         $workers = $query
-            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'photo_url', 'search_status', 'latitude', 'longitude')
+            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'preferred_categories', 'photo_url', 'search_status', 'latitude', 'longitude')
             ->paginate($perPage);
 
         // Calculate match score for each worker
@@ -104,14 +156,33 @@ class MatchingService
             ->whereIn('search_status', ['open', 'passive'])
             ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id));
 
-        if ($vacancy->city) {
-            $query->where(function ($q) use ($vacancy) {
-                $q->where('city', $vacancy->city)
-                  ->orWhereNull('city');
-            });
-        }
+        // Category filter: parent-child aware (same as getRecommendedCandidates)
+        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
+
+        // Location filter: same viloyat for on-site, no filter for remote
+        $this->applyLocationFilterForWorkers($query, $vacancy);
 
         return $query->count();
+    }
+
+    /**
+     * Batch count recommended candidates for multiple vacancies.
+     * Uses individual counts with category-aware filtering for consistency.
+     *
+     * @return array<string, int> vacancy_id => count
+     */
+    public function countRecommendedCandidatesBatch(Collection $vacancies): array
+    {
+        if ($vacancies->isEmpty()) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($vacancies as $vacancy) {
+            $result[$vacancy->id] = $this->countRecommendedCandidates($vacancy);
+        }
+
+        return $result;
     }
 
     // ══════════════════════════════════════════════════════════════
@@ -328,8 +399,11 @@ class MatchingService
     {
         $score = 0.0;
 
-        $cityMatch = $worker->city && $vacancy->city
-            && mb_strtolower($worker->city) === mb_strtolower($vacancy->city);
+        $workerCity = $worker->city ? $this->normalizeCityName($worker->city) : null;
+        $vacancyCity = $vacancy->city ? $this->normalizeCityName($vacancy->city) : null;
+
+        $cityMatch = $workerCity && $vacancyCity
+            && mb_strtolower($workerCity) === mb_strtolower($vacancyCity);
 
         if ($cityMatch) {
             $score += 10;
@@ -425,32 +499,198 @@ class MatchingService
 
     /**
      * 5. Category/Specialty match (max 15 pts)
-     * Keyword-based matching between vacancy category and worker specialty.
+     * Two strategies: preferred_categories slug matching + specialty keyword matching.
+     * Takes the higher score.
      */
     private function categorySpecialtyScore(WorkerProfile $worker, Vacancy $vacancy): float
     {
-        $specialty = mb_strtolower($worker->specialty ?? '');
         $category = mb_strtolower($vacancy->category ?? '');
+        if (empty($category)) return 0;
 
-        if (empty($specialty) || empty($category)) return 0;
+        $score = 0.0;
 
-        // Direct category name in specialty
-        if (mb_strpos($specialty, $category) !== false) return 15;
+        // Strategy 1: preferred_categories slug matching (parent-child aware)
+        $preferredCategories = $worker->preferred_categories ?? [];
+        if (!empty($preferredCategories)) {
+            $catParent = $this->extractParentSlug($category);
 
-        $keywords = self::CATEGORY_KEYWORDS[$category] ?? [];
-        if (empty($keywords)) return 0;
+            foreach ($preferredCategories as $pref) {
+                $pref = mb_strtolower($pref);
 
-        $matchCount = 0;
-        foreach ($keywords as $keyword) {
-            if (mb_strpos($specialty, $keyword) !== false) {
-                $matchCount++;
+                // Exact match (e.g., it-frontend = it-frontend)
+                if ($pref === $category) {
+                    $score = 15;
+                    break;
+                }
+
+                $prefParent = $this->extractParentSlug($pref);
+
+                // Parent-child (e.g., worker: it-frontend, vacancy: it — or vice versa)
+                if ($pref === $catParent || $prefParent === $category) {
+                    $score = max($score, 12);
+                }
+                // Siblings under same parent (e.g., worker: it-frontend, vacancy: it-backend)
+                elseif ($prefParent === $catParent) {
+                    $score = max($score, 8);
+                }
             }
         }
 
-        if ($matchCount >= 2) return 15;
-        if ($matchCount === 1) return 10;
+        // Strategy 2: specialty text vs category keywords (fallback)
+        $specialty = mb_strtolower($worker->specialty ?? '');
+        if (!empty($specialty) && $score < 15) {
+            if (mb_strpos($specialty, $category) !== false) {
+                $score = max($score, 15);
+            } else {
+                $keywords = self::CATEGORY_KEYWORDS[$category] ?? [];
+                // For sub-categories, also check parent's keywords
+                if (empty($keywords)) {
+                    $parentSlug = $this->extractParentSlug($category);
+                    if ($parentSlug !== $category) {
+                        $keywords = self::CATEGORY_KEYWORDS[$parentSlug] ?? [];
+                    }
+                }
 
-        return 0;
+                $matchCount = 0;
+                foreach ($keywords as $keyword) {
+                    if (mb_strpos($specialty, $keyword) !== false) {
+                        $matchCount++;
+                    }
+                }
+
+                if ($matchCount >= 2) $score = max($score, 15);
+                elseif ($matchCount === 1) $score = max($score, 10);
+            }
+        }
+
+        return $score;
+    }
+
+    /**
+     * Apply category-aware filter to WorkerProfile query based on vacancy category.
+     *
+     * - Vacancy is subcategory (e.g., marketing-sales-manager):
+     *   Match ONLY exact subcategory + no-preference. NO parent, NO siblings.
+     * - Vacancy is parent category (e.g., marketing):
+     *   Match parent + all children (marketing-*) + no-preference.
+     */
+    private function applyCategoryFilterForWorkers($query, ?string $vacancyCategory): void
+    {
+        if (empty($vacancyCategory)) return;
+
+        $category = mb_strtolower($vacancyCategory);
+        $parent = $this->extractParentSlug($category);
+        $isSubCategory = $parent !== $category;
+
+        $query->where(function ($q) use ($parent, $category, $isSubCategory) {
+            // Workers with no preference → open to all categories
+            $q->whereNull('preferred_categories')
+              ->orWhere('preferred_categories', '[]');
+
+            // Exact category match
+            $q->orWhereJsonContains('preferred_categories', $category);
+
+            if (!$isSubCategory) {
+                // Vacancy is parent category → also match workers who selected any child
+                $q->orWhere('preferred_categories', 'LIKE', '%"' . $parent . '-%');
+            }
+            // Subcategory: NO parent match, NO sibling match — exact only
+        });
+    }
+
+    /**
+     * Apply region-aware location filter to WorkerProfile query.
+     *
+     * - remote vacancies: no location filter (scoring handles priority)
+     * - on-site vacancies: only workers from same viloyat (region) or no city
+     */
+    private function applyLocationFilterForWorkers($query, Vacancy $vacancy): void
+    {
+        if (empty($vacancy->city)) return;
+
+        // Remote jobs accept candidates from anywhere — scoring prioritizes local
+        $workType = $vacancy->work_type instanceof WorkType
+            ? $vacancy->work_type
+            : WorkType::tryFrom($vacancy->work_type ?? '');
+
+        if ($workType === WorkType::REMOTE) return;
+
+        // Find the region for this vacancy's city
+        $regionCities = $this->getRegionCitiesForCity($vacancy->city);
+
+        if (empty($regionCities)) {
+            // Fallback: exact city match (try both original and normalized)
+            $normalized = $this->normalizeCityName($vacancy->city);
+            $query->where(function ($q) use ($vacancy, $normalized) {
+                $q->where('city', $vacancy->city)
+                  ->orWhere('city', $normalized)
+                  ->orWhereNull('city')
+                  ->orWhere('city', '');
+            });
+            return;
+        }
+
+        $query->where(function ($q) use ($regionCities) {
+            $q->whereIn('city', $regionCities)
+              ->orWhereNull('city')
+              ->orWhere('city', '');
+        });
+    }
+
+    /**
+     * Get all city names in the same region as the given city.
+     * Cached for 1 hour since cities rarely change.
+     *
+     * @return string[] city names in the same viloyat
+     */
+    private function getRegionCitiesForCity(string $cityName): array
+    {
+        return cache()->remember("region_cities_{$cityName}", 3600, function () use ($cityName) {
+            $city = City::where('name_uz', $cityName)
+                ->orWhere('name_ru', $cityName)
+                ->first();
+
+            // Fallback: strip common suffixes like "sh.", "shahar", "shahri", "tumani", "t."
+            if (!$city) {
+                $cleaned = $this->normalizeCityName($cityName);
+                if ($cleaned !== $cityName) {
+                    $city = City::where('name_uz', $cleaned)
+                        ->orWhere('name_ru', $cleaned)
+                        ->first();
+                }
+            }
+
+            if (!$city || !$city->region) return [];
+
+            return City::where('region', $city->region)
+                ->pluck('name_uz')
+                ->merge(
+                    City::where('region', $city->region)->pluck('name_ru')
+                )
+                ->filter()
+                ->unique()
+                ->values()
+                ->all();
+        });
+    }
+
+    /**
+     * Normalize city name by stripping common Uzbek/Russian suffixes.
+     * "Urganch sh." → "Urganch", "Toshkent shahri" → "Toshkent"
+     */
+    private function normalizeCityName(string $name): string
+    {
+        return trim(preg_replace('/\s+(sh\.?|shahar|shahri|tumani|t\.|город|г\.)$/ui', '', trim($name)));
+    }
+
+    /**
+     * Extract parent slug from a category slug.
+     * e.g., 'it-frontend' → 'it', 'sales-shop' → 'sales', 'it' → 'it'
+     */
+    private function extractParentSlug(string $slug): string
+    {
+        $pos = strpos($slug, '-');
+        return $pos !== false ? substr($slug, 0, $pos) : $slug;
     }
 
     /**

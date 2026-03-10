@@ -17,13 +17,13 @@ class MenuHandler
         $lang = $this->getUserLang($bot);
 
         $text = $lang === 'ru'
-            ? "📌 *IshTop — Главное меню*\n\nВыберите нужный раздел:"
-            : "📌 *IshTop — Bosh menyu*\n\nKerakli bo'limni tanlang:";
+            ? "📌 *KadrGo — Главное меню*\n\nВыберите нужный раздел:"
+            : "📌 *KadrGo — Bosh menyu*\n\nKerakli bo'limni tanlang:";
 
         $bot->sendMessage(
             text: $text,
             parse_mode: ParseMode::MARKDOWN_LEGACY,
-            reply_markup: MainMenuKeyboard::make($lang),
+            reply_markup: MainMenuKeyboard::make($lang, $bot->user()->id),
         );
     }
 

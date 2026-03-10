@@ -1,6 +1,10 @@
 <template>
   <div id="app" class="min-h-screen">
-    <RouterView />
+    <RouterView v-slot="{ Component }">
+      <keep-alive :include="['HomeView', 'SearchView', 'ProfileView']">
+        <component :is="Component" />
+      </keep-alive>
+    </RouterView>
     <BottomNav v-if="showNav" />
   </div>
 </template>
@@ -15,7 +19,7 @@ const route = useRoute()
 const telegram = useTelegram()
 
 const showNav = computed(() => {
-  const noNavRoutes = ['login', 'questionnaire', 'map', 'vacancy-detail']
+  const noNavRoutes = ['login', 'questionnaire', 'vacancy-detail']
   return !noNavRoutes.includes(route.name)
 })
 

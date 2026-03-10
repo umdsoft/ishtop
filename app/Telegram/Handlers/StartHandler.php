@@ -29,10 +29,9 @@ class StartHandler
             ]
         );
 
-        // Yangi yaratilgan user uchun tilni Telegram'dan o'rnatish
+        // Yangi yaratilgan user uchun default til — O'zbek
         if ($user->wasRecentlyCreated) {
-            $lang = in_array($tgUser->language_code, ['uz', 'ru']) ? $tgUser->language_code : 'uz';
-            $user->update(['language' => $lang]);
+            $user->update(['language' => 'uz']);
         }
 
         // 2. Deep link payload'ni tekshirish
@@ -51,13 +50,13 @@ class StartHandler
 
             // Oddiy welcome — persistent keyboard o'rnatish
             $welcome = $userLang === 'ru'
-                ? "👋 Здравствуйте, {$user->first_name}!\n\n*IshTop* — Найди работу не выходя из Telegram!\n\n📌 Используйте кнопки ниже для быстрого доступа"
-                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*IshTop* — Telegramdan chiqmay ish top!\n\n📌 Pastdagi tugmalardan foydalaning";
+                ? "👋 Здравствуйте, {$user->first_name}!\n\n*KadrGo* — Найди работу не выходя из Telegram!\n\n📌 Используйте кнопки ниже для быстрого доступа"
+                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*KadrGo* — Kadrlar harakatda! Ish va ishchi — bir joyda.\n\n📌 Pastdagi tugmalardan foydalaning";
 
             $bot->sendMessage(
                 text: $welcome,
                 parse_mode: ParseMode::MARKDOWN_LEGACY,
-                reply_markup: PersistentMenuKeyboard::make($userLang),
+                reply_markup: PersistentMenuKeyboard::make($userLang, $tgUser->id),
             );
             return;
         }
@@ -107,7 +106,7 @@ class StartHandler
 
             $bot->sendMessage(
                 text: $text,
-                reply_markup: MainMenuKeyboard::make($lang),
+                reply_markup: MainMenuKeyboard::make($lang, $bot->user()->id),
             );
             return;
         }

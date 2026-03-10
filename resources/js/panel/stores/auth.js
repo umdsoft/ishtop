@@ -9,7 +9,7 @@ import axios from 'axios';
 export const useAuthStore = defineStore('auth', () => {
   // State
   const user = ref(null);
-  const token = ref(localStorage.getItem('ishtop-token') || null);
+  const token = ref(localStorage.getItem('kadrgo-token') || null);
   const loading = ref(false);
   const initialized = ref(false);
   const companies = ref([]);
@@ -54,7 +54,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token;
       user.value = response.data.user;
 
-      localStorage.setItem('ishtop-token', token.value);
+      localStorage.setItem('kadrgo-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
       // Fetch full user data including companies
@@ -79,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token;
       user.value = response.data.user;
 
-      localStorage.setItem('ishtop-token', token.value);
+      localStorage.setItem('kadrgo-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
       // Fetch full user data including companies
@@ -124,7 +124,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token;
       user.value = response.data.user;
 
-      localStorage.setItem('ishtop-token', token.value);
+      localStorage.setItem('kadrgo-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
       // Fetch full user data including companies
@@ -151,7 +151,7 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = response.data.token;
       user.value = response.data.user;
 
-      localStorage.setItem('ishtop-token', token.value);
+      localStorage.setItem('kadrgo-token', token.value);
       axios.defaults.headers.common['Authorization'] = `Bearer ${token.value}`;
 
       // Fetch full user data including companies
@@ -205,7 +205,7 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = null;
     companies.value = [];
     activeCompany.value = null;
-    localStorage.removeItem('ishtop-token');
+    localStorage.removeItem('kadrgo-token');
     delete axios.defaults.headers.common['Authorization'];
   }
 

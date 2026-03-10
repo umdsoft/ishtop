@@ -1,6 +1,6 @@
-# IshTop - Production Deployment Guide
+# KadrGo - Production Deployment Guide
 
-Bu qo'llanma IshTop loyihasini production serverga deploy qilish bo'yicha to'liq ko'rsatmalar beradi.
+Bu qo'llanma KadrGo loyihasini production serverga deploy qilish bo'yicha to'liq ko'rsatmalar beradi.
 
 ## 📋 Server Requirements
 
@@ -43,9 +43,9 @@ sudo mysql_secure_installation
 
 Create database:
 ```sql
-CREATE DATABASE ishtop CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE USER 'ishtop_user'@'localhost' IDENTIFIED BY 'strong_password_here';
-GRANT ALL PRIVILEGES ON ishtop.* TO 'ishtop_user'@'localhost';
+CREATE DATABASE kadrgo CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE USER 'kadrgo_user'@'localhost' IDENTIFIED BY 'strong_password_here';
+GRANT ALL PRIVILEGES ON kadrgo.* TO 'kadrgo_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -74,9 +74,9 @@ sudo mv composer.phar /usr/local/bin/composer
 ### 1. Clone Repository
 ```bash
 cd /var/www
-sudo git clone https://github.com/yourusername/ishtop.git
-sudo chown -R www-data:www-data ishtop
-cd ishtop
+sudo git clone https://github.com/yourusername/kadrgo.git
+sudo chown -R www-data:www-data kadrgo
+cd kadrgo
 ```
 
 ### 2. Install Dependencies
@@ -99,15 +99,15 @@ php artisan key:generate
 
 Edit `.env`:
 ```env
-APP_NAME=IshTop
+APP_NAME=KadrGo
 APP_ENV=production
 APP_DEBUG=false
-APP_URL=https://ishtop.uz
+APP_URL=https://kadrgo.uz
 
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
-DB_DATABASE=ishtop
-DB_USERNAME=ishtop_user
+DB_DATABASE=kadrgo
+DB_USERNAME=kadrgo_user
 DB_PASSWORD=strong_password_here
 
 CACHE_STORE=redis
@@ -143,25 +143,25 @@ php artisan event:cache
 
 ## 🌐 Nginx Configuration
 
-Create `/etc/nginx/sites-available/ishtop.uz`:
+Create `/etc/nginx/sites-available/kadrgo.uz`:
 
 ```nginx
 server {
     listen 80;
     listen [::]:80;
-    server_name ishtop.uz www.ishtop.uz;
+    server_name kadrgo.uz www.kadrgo.uz;
     return 301 https://$server_name$request_uri;
 }
 
 server {
     listen 443 ssl http2;
     listen [::]:443 ssl http2;
-    server_name ishtop.uz www.ishtop.uz;
-    root /var/www/ishtop/public;
+    server_name kadrgo.uz www.kadrgo.uz;
+    root /var/www/kadrgo/public;
 
     # SSL Configuration
-    ssl_certificate /etc/letsencrypt/live/ishtop.uz/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/ishtop.uz/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/kadrgo.uz/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/kadrgo.uz/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
 
@@ -216,7 +216,7 @@ server {
 
 Enable site:
 ```bash
-sudo ln -s /etc/nginx/sites-available/ishtop.uz /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/kadrgo.uz /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -225,7 +225,7 @@ sudo systemctl reload nginx
 
 ```bash
 sudo apt install certbot python3-certbot-nginx -y
-sudo certbot --nginx -d ishtop.uz -d www.ishtop.uz
+sudo certbot --nginx -d kadrgo.uz -d www.kadrgo.uz
 ```
 
 Auto-renewal:
@@ -235,12 +235,12 @@ sudo certbot renew --dry-run
 
 ## 🔄 Queue Workers (Supervisor)
 
-Create `/etc/supervisor/conf.d/ishtop-worker.conf`:
+Create `/etc/supervisor/conf.d/kadrgo-worker.conf`:
 
 ```ini
-[program:ishtop-worker]
+[program:kadrgo-worker]
 process_name=%(program_name)s_%(process_num)02d
-command=php /var/www/ishtop/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
+command=php /var/www/kadrgo/artisan queue:work redis --sleep=3 --tries=3 --max-time=3600
 autostart=true
 autorestart=true
 stopasgroup=true
@@ -248,7 +248,7 @@ killasgroup=true
 user=www-data
 numprocs=2
 redirect_stderr=true
-stdout_logfile=/var/www/ishtop/storage/logs/worker.log
+stdout_logfile=/var/www/kadrgo/storage/logs/worker.log
 stopwaitsecs=3600
 ```
 
@@ -256,7 +256,7 @@ Start supervisor:
 ```bash
 sudo supervisorctl reread
 sudo supervisorctl update
-sudo supervisorctl start ishtop-worker:*
+sudo supervisorctl start kadrgo-worker:*
 ```
 
 ## ⏰ Cron Jobs
@@ -268,7 +268,7 @@ sudo crontab -e -u www-data
 
 Add line:
 ```
-* * * * * cd /var/www/ishtop && php artisan schedule:run >> /dev/null 2>&1
+* * * * * cd /var/www/kadrgo && php artisan schedule:run >> /dev/null 2>&1
 ```
 
 ## 📊 Laravel Horizon (Optional)
@@ -280,23 +280,23 @@ php artisan horizon:install
 php artisan migrate
 ```
 
-Create `/etc/supervisor/conf.d/ishtop-horizon.conf`:
+Create `/etc/supervisor/conf.d/kadrgo-horizon.conf`:
 
 ```ini
-[program:ishtop-horizon]
+[program:kadrgo-horizon]
 process_name=%(program_name)s
-command=php /var/www/ishtop/artisan horizon
+command=php /var/www/kadrgo/artisan horizon
 autostart=true
 autorestart=true
 user=www-data
 redirect_stderr=true
-stdout_logfile=/var/www/ishtop/storage/logs/horizon.log
+stdout_logfile=/var/www/kadrgo/storage/logs/horizon.log
 stopwaitsecs=3600
 ```
 
 ## 🔄 Deployment Script
 
-Create `/var/www/ishtop/deploy.sh`:
+Create `/var/www/kadrgo/deploy.sh`:
 
 ```bash
 #!/bin/bash
@@ -327,7 +327,7 @@ php artisan view:cache
 php artisan event:cache
 
 # Restart services
-sudo supervisorctl restart ishtop-worker:*
+sudo supervisorctl restart kadrgo-worker:*
 
 echo "Deployment completed successfully!"
 ```
@@ -374,12 +374,12 @@ sudo supervisorctl status
 ### Database Backup
 ```bash
 #!/bin/bash
-BACKUP_DIR="/var/backups/ishtop"
+BACKUP_DIR="/var/backups/kadrgo"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 mkdir -p $BACKUP_DIR
 
-mysqldump -u ishtop_user -p ishtop > $BACKUP_DIR/db_$DATE.sql
+mysqldump -u kadrgo_user -p kadrgo > $BACKUP_DIR/db_$DATE.sql
 gzip $BACKUP_DIR/db_$DATE.sql
 
 # Keep only last 7 days
@@ -403,7 +403,7 @@ php artisan view:clear
 
 ### Reset Permissions
 ```bash
-sudo chown -R www-data:www-data /var/www/ishtop
+sudo chown -R www-data:www-data /var/www/kadrgo
 sudo chmod -R 775 storage bootstrap/cache
 ```
 
@@ -426,8 +426,8 @@ sudo supervisorctl restart all
 5. Monitor logs for errors
 6. Run smoke tests
 
-**Production URL**: https://ishtop.uz
-**Admin Panel**: https://ishtop.uz/admin
-**Recruiter Panel**: https://ishtop.uz/recruiter
+**Production URL**: https://kadrgo.uz
+**Admin Panel**: https://kadrgo.uz/admin
+**Recruiter Panel**: https://kadrgo.uz/recruiter
 
 Good luck! 🚀

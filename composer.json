@@ -14,8 +14,7 @@
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "nutgram/nutgram": "^4.0",
-        "pusher/pusher-php-server": "^7.0",
-        "smalot/pdfparser": "*",
+        "smalot/pdfparser": "^2.0",
         "spatie/laravel-activitylog": "^4.0",
         "spatie/laravel-medialibrary": "^11.0",
         "spatie/laravel-permission": "^6.0"

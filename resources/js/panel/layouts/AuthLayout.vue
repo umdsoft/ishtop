@@ -1,5 +1,5 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-brand-50 via-surface-50 to-info-50 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950 flex items-center justify-center p-4">
+  <div class="min-h-screen bg-gradient-to-br from-brand-50 via-surface-50 to-brand-50 dark:from-surface-950 dark:via-surface-900 dark:to-surface-950 flex items-center justify-center p-4">
     <div class="w-full max-w-md">
       <router-view v-slot="{ Component }">
         <transition name="scale" mode="out-in">

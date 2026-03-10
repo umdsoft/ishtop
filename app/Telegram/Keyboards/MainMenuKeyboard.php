@@ -8,11 +8,28 @@ use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class MainMenuKeyboard
 {
-    public static function make(string $lang = 'uz'): InlineKeyboardMarkup
+    public static function make(string $lang = 'uz', ?int $telegramId = null): InlineKeyboardMarkup
     {
         $isRu = $lang === 'ru';
 
-        $keyboard = InlineKeyboardMarkup::make()
+        $keyboard = InlineKeyboardMarkup::make();
+
+        $appUrl = config('app.url');
+        if (config('app.miniapp_enabled', false)) {
+            $miniappUrl = $appUrl . '/miniapp';
+            if ($telegramId) {
+                $token = encrypt((string) $telegramId);
+                $miniappUrl .= '?auth_token=' . urlencode($token);
+            }
+            $keyboard->addRow(
+                InlineKeyboardButton::make(
+                    $isRu ? '📱 Открыть приложение' : "📱 Ilovani ochish",
+                    web_app: new WebAppInfo($miniappUrl)
+                ),
+            );
+        }
+
+        $keyboard
             ->addRow(
                 InlineKeyboardButton::make(
                     $isRu ? '🔍 Поиск работы' : '🔍 Ish qidirish',
@@ -42,19 +59,8 @@ class MainMenuKeyboard
                     $isRu ? '🔔 Уведомления' : '🔔 Bildirishnomalar',
                     callback_data: 'menu:notifications'
                 ),
-            );
-
-        $appUrl = config('app.url');
-        if (config('app.miniapp_enabled', false)) {
-            $keyboard->addRow(
-                InlineKeyboardButton::make(
-                    '🌐 Mini App',
-                    web_app: new WebAppInfo($appUrl . '/miniapp')
-                ),
-            );
-        }
-
-        $keyboard->addRow(
+            )
+            ->addRow(
                 InlineKeyboardButton::make(
                     $isRu ? '⚙️ Настройки' : '⚙️ Sozlamalar',
                     callback_data: 'menu:settings'

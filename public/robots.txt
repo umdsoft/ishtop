@@ -1,2 +1,6 @@
 User-agent: *
-Disallow:
+Disallow: /panel/
+Disallow: /miniapp/
+Disallow: /api/
+
+Sitemap: https://ishtop.uz/sitemap.xml

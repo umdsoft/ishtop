@@ -107,7 +107,7 @@
             class="w-full p-4 rounded-xl text-left transition-all duration-200 active:scale-[0.98]"
             :style="currentAnswer === option.value
               ? {
-                  backgroundColor: 'rgba(var(--tg-button-rgb, 59,130,246), 0.1)',
+                  backgroundColor: 'rgba(var(--tg-button-rgb, 13,148,136), 0.1)',
                   border: '2px solid var(--tg-theme-button-color)',
                 }
               : {
@@ -144,7 +144,7 @@
             class="w-full p-4 rounded-xl text-left transition-all duration-200 active:scale-[0.98]"
             :style="isSelected(option.value)
               ? {
-                  backgroundColor: 'rgba(var(--tg-button-rgb, 59,130,246), 0.1)',
+                  backgroundColor: 'rgba(var(--tg-button-rgb, 13,148,136), 0.1)',
                   border: '2px solid var(--tg-theme-button-color)',
                 }
               : {

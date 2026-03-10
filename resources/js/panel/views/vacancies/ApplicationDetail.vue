@@ -200,7 +200,7 @@
                   </a>
                 </div>
                 <div v-if="application.worker.linkedin_imported_at" class="mt-1">
-                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400">
                     LinkedIn dan import qilindi
                   </span>
                 </div>

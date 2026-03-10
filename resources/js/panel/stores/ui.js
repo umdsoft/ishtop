@@ -18,7 +18,7 @@ export const useUIStore = defineStore('ui', () => {
   // Actions
   function initializeTheme() {
     // Check localStorage first
-    const storedTheme = localStorage.getItem('ishtop-theme');
+    const storedTheme = localStorage.getItem('kadrgo-theme');
     if (storedTheme) {
       isDark.value = storedTheme === 'dark';
     } else {
@@ -29,17 +29,17 @@ export const useUIStore = defineStore('ui', () => {
 
   function toggleTheme() {
     isDark.value = !isDark.value;
-    localStorage.setItem('ishtop-theme', isDark.value ? 'dark' : 'light');
+    localStorage.setItem('kadrgo-theme', isDark.value ? 'dark' : 'light');
   }
 
   function setTheme(theme) {
     isDark.value = theme === 'dark';
-    localStorage.setItem('ishtop-theme', theme);
+    localStorage.setItem('kadrgo-theme', theme);
   }
 
   function toggleSidebar() {
     sidebarCollapsed.value = !sidebarCollapsed.value;
-    localStorage.setItem('ishtop-sidebar-collapsed', sidebarCollapsed.value ? '1' : '0');
+    localStorage.setItem('kadrgo-sidebar-collapsed', sidebarCollapsed.value ? '1' : '0');
   }
 
   function toggleMobileSidebar() {
@@ -51,7 +51,7 @@ export const useUIStore = defineStore('ui', () => {
   }
 
   function initializeSidebar() {
-    const collapsed = localStorage.getItem('ishtop-sidebar-collapsed');
+    const collapsed = localStorage.getItem('kadrgo-sidebar-collapsed');
     if (collapsed) {
       sidebarCollapsed.value = collapsed === '1';
     }
@@ -59,11 +59,11 @@ export const useUIStore = defineStore('ui', () => {
 
   function setLocale(newLocale) {
     locale.value = newLocale;
-    localStorage.setItem('ishtop-locale', newLocale);
+    localStorage.setItem('kadrgo-locale', newLocale);
   }
 
   function initializeLocale() {
-    const stored = localStorage.getItem('ishtop-locale');
+    const stored = localStorage.getItem('kadrgo-locale');
     if (stored) {
       locale.value = stored;
     }

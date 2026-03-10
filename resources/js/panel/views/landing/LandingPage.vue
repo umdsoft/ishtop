@@ -1,7 +1,7 @@
 <template>
   <div class="min-h-screen">
     <!-- Hero Section -->
-    <section class="relative overflow-hidden bg-gradient-to-br from-brand-500 via-brand-600 to-info-600 text-white">
+    <section class="relative overflow-hidden bg-gradient-to-br from-brand-700 to-surface-900 text-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
         <div class="text-center">
           <h1 class="text-4xl md:text-6xl font-bold mb-6">
@@ -248,7 +248,7 @@
             Mijozlar fikri
           </h2>
           <p class="text-lg text-surface-600 dark:text-surface-400 max-w-2xl mx-auto">
-            IshTop yordamida o'z jamoalarini to'ldirayotgan kompaniyalar
+            KadrGo yordamida o'z jamoalarini to'ldirayotgan kompaniyalar
           </p>
         </div>
         <div class="grid md:grid-cols-3 gap-8">
@@ -257,7 +257,7 @@
               <StarIcon v-for="i in 5" :key="i" class="h-5 w-5 text-warning-500 fill-current" />
             </div>
             <p class="text-surface-700 dark:text-surface-300 mb-6">
-              "IshTop bizga oyiga 50 tagacha yangi xodimni topishda yordam berdi. Jarayon ancha tezlashdi va sifat ham yaxshi."
+              "KadrGo bizga oyiga 50 tagacha yangi xodimni topishda yordam berdi. Jarayon ancha tezlashdi va sifat ham yaxshi."
             </p>
             <div class="flex items-center gap-3">
               <AppAvatar name="Aziz Karimov" color="brand" />
@@ -347,7 +347,7 @@
     </section>
 
     <!-- CTA Section -->
-    <section class="py-20 bg-gradient-to-br from-brand-500 via-brand-600 to-info-600 text-white">
+    <section class="py-20 bg-gradient-to-br from-brand-500 to-brand-600 text-white">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 class="text-3xl md:text-4xl font-bold mb-6">
           Bugun boshlab ko'ring
@@ -381,7 +381,7 @@
               <div class="w-10 h-10 rounded-xl bg-brand-600 flex items-center justify-center text-white font-bold text-lg">
                 I
               </div>
-              <span class="text-xl font-bold text-white">IshTop</span>
+              <span class="text-xl font-bold text-white">KadrGo</span>
             </div>
             <p class="text-sm">
               Telegram orqali ishga joylashish platformasi
@@ -420,7 +420,7 @@
 
         <div class="border-t border-surface-800 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p class="text-sm">
-            © 2024 IshTop. Barcha huquqlar himoyalangan.
+            © 2024 KadrGo. Barcha huquqlar himoyalangan.
           </p>
           <div class="flex gap-4">
             <a href="#" class="hover:text-brand-400 transition-colors">
@@ -453,8 +453,8 @@ const openFaqIndex = ref(null);
 
 const faqs = [
   {
-    question: 'IshTop qanday ishlaydi?',
-    answer: 'IshTop orqali siz vakansiya yaratib, Telegram kanalimizda e\'lon qilasiz. Qiziquvchi nomzodlar savolnomangizga javob berishadi, siz ularni Kanban pipeline orqali boshqarasiz va eng yaxshilarini tanlab, ish bilan ta\'minlaysiz.',
+    question: 'KadrGo qanday ishlaydi?',
+    answer: 'KadrGo orqali siz vakansiya yaratib, Telegram kanalimizda e\'lon qilasiz. Qiziquvchi nomzodlar savolnomangizga javob berishadi, siz ularni Kanban pipeline orqali boshqarasiz va eng yaxshilarini tanlab, ish bilan ta\'minlaysiz.',
   },
   {
     question: 'To\'lov qanday amalga oshiriladi?',

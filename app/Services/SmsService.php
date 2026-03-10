@@ -20,9 +20,9 @@ class SmsService
     public function __construct()
     {
         $this->apiUrl = 'https://notify.eskiz.uz/api';
-        $this->email = config('services.sms.email', '');
-        $this->password = config('services.sms.password', '');
-        $this->from = config('services.sms.from', '4546');
+        $this->email = config('services.sms.email') ?? '';
+        $this->password = config('services.sms.password') ?? '';
+        $this->from = config('services.sms.from') ?? '4546';
     }
 
     /**
@@ -38,7 +38,7 @@ class SmsService
         Cache::put("otp_attempts:{$normalizedPhone}", 0, now()->addMinutes(5));
 
         // Send SMS
-        $message = "IshTop tasdiqlash kodi: {$code}\n\nBu kodni hech kimga bermang!";
+        $message = "KadrGo tasdiqlash kodi: {$code}\n\nBu kodni hech kimga bermang!";
 
         if (app()->environment('production')) {
             $this->send($phone, $message);
@@ -130,15 +130,15 @@ class SmsService
     public function sendApplicationStatus(string $phone, string $vacancyTitle, string $status): bool
     {
         $messages = [
-            'new' => "IshTop: Arizangiz qabul qilindi!\nVakansiya: {$vacancyTitle}",
-            'under_review' => "IshTop: Arizangiz ko'rib chiqilmoqda.\nVakansiya: {$vacancyTitle}",
-            'shortlisted' => "IshTop: Siz qisqa ro'yxatga kirgansiz! 🎉\nVakansiya: {$vacancyTitle}",
-            'interview' => "IshTop: Siz intervyuga taklif qilindingiz! 🎯\nVakansiya: {$vacancyTitle}",
-            'rejected' => "IshTop: Afsuski, bu safar mos kelmadingiz.\nVakansiya: {$vacancyTitle}",
-            'accepted' => "IshTop: Tabriklaymiz! Siz ishga qabul qilindingiz! 🎊\nVakansiya: {$vacancyTitle}",
+            'new' => "KadrGo: Arizangiz qabul qilindi!\nVakansiya: {$vacancyTitle}",
+            'under_review' => "KadrGo: Arizangiz ko'rib chiqilmoqda.\nVakansiya: {$vacancyTitle}",
+            'shortlisted' => "KadrGo: Siz qisqa ro'yxatga kirgansiz! 🎉\nVakansiya: {$vacancyTitle}",
+            'interview' => "KadrGo: Siz intervyuga taklif qilindingiz! 🎯\nVakansiya: {$vacancyTitle}",
+            'rejected' => "KadrGo: Afsuski, bu safar mos kelmadingiz.\nVakansiya: {$vacancyTitle}",
+            'accepted' => "KadrGo: Tabriklaymiz! Siz ishga qabul qilindingiz! 🎊\nVakansiya: {$vacancyTitle}",
         ];
 
-        $message = $messages[$status] ?? "IshTop: Ariza holati o'zgartirildi.\nVakansiya: {$vacancyTitle}";
+        $message = $messages[$status] ?? "KadrGo: Ariza holati o'zgartirildi.\nVakansiya: {$vacancyTitle}";
 
         return $this->send($phone, $message);
     }
@@ -156,7 +156,7 @@ class SmsService
         ];
 
         $typeLabel = $types[$type] ?? 'To\'lov';
-        $message = "IshTop: {$typeLabel}\nSumma: " . number_format($amount, 0, ',', ' ') . " so'm\n\nRahmat!";
+        $message = "KadrGo: {$typeLabel}\nSumma: " . number_format($amount, 0, ',', ' ') . " so'm\n\nRahmat!";
 
         return $this->send($phone, $message);
     }

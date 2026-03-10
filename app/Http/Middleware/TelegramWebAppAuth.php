@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use App\Models\User;
+use App\Services\TelegramAuthService;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -11,16 +12,18 @@ use Symfony\Component\HttpFoundation\Response;
 
 class TelegramWebAppAuth
 {
+    public function __construct(private TelegramAuthService $telegramAuth) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         // 1) Bearer token — PersonalAccessToken orqali to'g'ridan-to'g'ri tekshirish
-        //    (auth('sanctum') guard NI ishlatmaymiz, chunki statefulApi() bilan conflict qiladi)
         $bearerToken = $request->bearerToken();
         if ($bearerToken) {
             $accessToken = PersonalAccessToken::findToken($bearerToken);
             if ($accessToken) {
                 $user = $accessToken->tokenable;
                 if ($user) {
+                    $user->withAccessToken($accessToken);
                     auth()->setUser($user);
                     return $next($request);
                 }
@@ -51,7 +54,7 @@ class TelegramWebAppAuth
     private function resolveUserFromInitData(string $initData): ?User
     {
         // Production da hash tekshirish
-        if (app()->environment('production') && !$this->validateInitData($initData)) {
+        if (app()->environment('production') && !$this->telegramAuth->validateInitData($initData)) {
             Log::warning('TelegramWebAppAuth: initData validation failed');
             return null;
         }
@@ -78,26 +81,5 @@ class TelegramWebAppAuth
         }
 
         return $user;
-    }
-
-    private function validateInitData(string $initData): bool
-    {
-        $botToken = config('nutgram.token');
-        if (!$botToken) return false;
-
-        parse_str($initData, $data);
-
-        $hash = $data['hash'] ?? '';
-        unset($data['hash']);
-
-        ksort($data);
-        $dataCheckString = collect($data)
-            ->map(fn($v, $k) => "{$k}={$v}")
-            ->implode("\n");
-
-        $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
-        $calculatedHash = bin2hex(hash_hmac('sha256', $dataCheckString, $secretKey, true));
-
-        return hash_equals($calculatedHash, $hash);
     }
 }

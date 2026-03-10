@@ -8,10 +8,14 @@ return new class extends Migration
 {
     public function up(): void
     {
+        $isSqlite = config('database.default') === 'sqlite';
+
         // Step 1: Drop FULLTEXT index (must be dropped before renaming columns it references)
-        Schema::table('vacancies', function (Blueprint $table) {
-            $table->dropFullText('vacancies_title_description_fulltext');
-        });
+        if (!$isSqlite) {
+            Schema::table('vacancies', function (Blueprint $table) {
+                $table->dropFullText('vacancies_title_description_fulltext');
+            });
+        }
 
         // Step 2: Rename existing columns to _uz variants
         Schema::table('vacancies', function (Blueprint $table) {
@@ -22,7 +26,7 @@ return new class extends Migration
         });
 
         // Step 3: Add language column, _ru counterparts, and new FULLTEXT
-        Schema::table('vacancies', function (Blueprint $table) {
+        Schema::table('vacancies', function (Blueprint $table) use ($isSqlite) {
             $table->string('language', 5)->default('uz')->after('employer_id');
 
             $table->string('title_ru', 300)->nullable()->after('title_uz');
@@ -30,14 +34,23 @@ return new class extends Migration
             $table->text('requirements_ru')->nullable()->after('requirements_uz');
             $table->text('responsibilities_ru')->nullable()->after('responsibilities_uz');
 
-            $table->fullText(['title_uz', 'title_ru', 'description_uz', 'description_ru'], 'vacancies_bilingual_fulltext');
+            if (!$isSqlite) {
+                $table->fullText(['title_uz', 'title_ru', 'description_uz', 'description_ru'], 'vacancies_bilingual_fulltext');
+            }
         });
     }
 
     public function down(): void
     {
+        $isSqlite = config('database.default') === 'sqlite';
+
+        if (!$isSqlite) {
+            Schema::table('vacancies', function (Blueprint $table) {
+                $table->dropFullText('vacancies_bilingual_fulltext');
+            });
+        }
+
         Schema::table('vacancies', function (Blueprint $table) {
-            $table->dropFullText('vacancies_bilingual_fulltext');
             $table->dropColumn(['title_ru', 'description_ru', 'requirements_ru', 'responsibilities_ru', 'language']);
         });
 
@@ -48,8 +61,10 @@ return new class extends Migration
             $table->renameColumn('responsibilities_uz', 'responsibilities');
         });
 
-        Schema::table('vacancies', function (Blueprint $table) {
-            $table->fullText(['title', 'description']);
-        });
+        if (!$isSqlite) {
+            Schema::table('vacancies', function (Blueprint $table) {
+                $table->fullText(['title', 'description']);
+            });
+        }
     }
 };

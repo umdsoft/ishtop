@@ -26,7 +26,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           'vendor': ['vue', 'vue-router', 'pinia'],
-          'telegram': ['@telegram-apps/sdk'],
+          'leaflet': ['leaflet'],
         },
       },
     },

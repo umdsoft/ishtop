@@ -15,9 +15,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'telegram.auth' => \App\Http\Middleware\TelegramWebAppAuth::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
+            'employer' => \App\Http\Middleware\EnsureEmployerProfile::class,
+            'web.locale' => \App\Http\Middleware\SetLocaleMiddleware::class,
         ]);
-
-        $middleware->statefulApi();
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

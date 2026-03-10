@@ -40,7 +40,7 @@
         <label class="label">{{ t('post.category') }} *</label>
         <select v-model="form.category" class="input" required>
           <option value="" disabled>{{ t('post.select_category') }}</option>
-          <template v-for="cat in categories" :key="cat.slug">
+          <template v-for="cat in referenceStore.categories" :key="cat.slug">
             <option v-if="cat.children && cat.children.length" disabled class="font-bold">
               {{ lang === 'ru' ? cat.name_ru : cat.name_uz }}
             </option>
@@ -237,9 +237,9 @@
         <button
           class="w-full py-3 rounded-xl text-sm font-semibold"
           :style="{ backgroundColor: 'var(--tg-theme-button-color)', color: 'var(--tg-theme-button-text-color)' }"
-          @click="goHome"
+          @click="goToMyVacancies"
         >
-          {{ t('post.go_home') }}
+          {{ t('my_vacancies.go_to_list') }}
         </button>
       </div>
     </div>
@@ -252,17 +252,18 @@ import { useRouter } from 'vue-router'
 import { useLocale } from '@/composables/useLocale'
 import { useTelegram } from '@/composables/useTelegram'
 import { useVacancyStore } from '@/stores/vacancy'
-import api from '@/utils/api'
-import L from 'leaflet'
-import 'leaflet/dist/leaflet.css'
+import { useAuthStore } from '@/stores/auth'
+import { useReferenceStore } from '@/stores/reference'
+import { formatNumber } from '@/utils/formatters'
 
 const router = useRouter()
 const { t, lang } = useLocale()
 const telegram = useTelegram()
 const vacancyStore = useVacancyStore()
+const authStore = useAuthStore()
+const referenceStore = useReferenceStore()
 
-const categories = ref([])
-const cities = ref([])
+let L = null
 const selectedRegion = ref('')
 const submitting = ref(false)
 const showSuccess = ref(false)
@@ -309,12 +310,6 @@ function detectLanguage(text) {
   return cyrillic > 0 ? 'ru' : 'uz'
 }
 
-// --- Salary formatting ---
-function formatNumber(num) {
-  if (!num && num !== 0) return ''
-  return String(num).replace(/\B(?=(\d{3})+(?!\d))/g, ' ')
-}
-
 function parseNumber(str) {
   const cleaned = String(str).replace(/\s/g, '').replace(/[^\d]/g, '')
   return cleaned ? parseInt(cleaned, 10) : null
@@ -351,13 +346,13 @@ const experienceLevels = computed(() => [
 ])
 
 const regions = computed(() => {
-  const set = new Set(cities.value.map(c => c.region).filter(Boolean))
+  const set = new Set(referenceStore.cities.map(c => c.region).filter(Boolean))
   return [...set].sort()
 })
 
 const filteredCities = computed(() => {
   if (!selectedRegion.value) return []
-  return cities.value
+  return referenceStore.cities
     .filter(c => c.region === selectedRegion.value)
     .sort((a, b) => {
       if (a.type === b.type) return a.name_uz.localeCompare(b.name_uz)
@@ -395,10 +390,18 @@ watch(() => form.value.city, async (newCity) => {
   }
 })
 
-function initMap(lat, lng) {
+async function loadLeaflet() {
+  if (L) return
+  const leaflet = await import('leaflet')
+  await import('leaflet/dist/leaflet.css')
+  L = leaflet.default || leaflet
+}
+
+async function initMap(lat, lng) {
   destroyMap()
   if (!mapRef.value) return
 
+  await loadLeaflet()
   leafletMap = L.map(mapRef.value, {
     center: [lat, lng],
     zoom: 14,
@@ -426,7 +429,7 @@ function placeMarker(lat, lng) {
       draggable: true,
       icon: L.divIcon({
         className: 'custom-pin',
-        html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#3b82f6"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>',
+        html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#0D9488"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>',
         iconSize: [32, 32],
         iconAnchor: [16, 32],
       }),
@@ -471,21 +474,35 @@ onBeforeUnmount(() => {
 })
 
 onMounted(async () => {
-  try {
-    const [catRes, cityRes] = await Promise.all([
-      api.get('/categories'),
-      api.get('/cities'),
-    ])
-    categories.value = catRes.data.categories || catRes.data || []
-    cities.value = cityRes.data.cities || cityRes.data || []
-  } catch (e) {
-    console.error('Failed to load form data:', e)
-  }
+  await referenceStore.loadAll()
 })
+
+async function ensureAuth() {
+  if (authStore.isAuthenticated) return true
+
+  // initData bilan qayta login qilishga urinish
+  const tg = window.Telegram?.WebApp
+  if (tg?.initData) {
+    try {
+      await authStore.loginWithTelegram(tg.initData)
+      return true
+    } catch (e) {
+      // login muvaffaqiyatsiz
+    }
+  }
+  return false
+}
 
 async function submitVacancy() {
   if (!form.value.title || !form.value.category || !form.value.description || !form.value.work_type) {
     telegram.showAlert(t('post.fill_required'))
+    return
+  }
+
+  // Autentifikatsiyani tekshirish
+  const isAuthed = await ensureAuth()
+  if (!isAuthed) {
+    telegram.showAlert(t('post.session_expired'))
     return
   }
 
@@ -532,9 +549,9 @@ async function submitVacancy() {
   }
 }
 
-function goHome() {
+function goToMyVacancies() {
   showSuccess.value = false
-  router.push('/')
+  router.push('/post')
 }
 </script>
 

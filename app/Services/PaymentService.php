@@ -71,7 +71,8 @@ class PaymentService
             'subscription' => $this->activateSubscription($payment),
             'vacancy_top' => $this->activateVacancyTop($payment),
             'vacancy_urgent' => $this->activateVacancyUrgent($payment),
-            'vacancy_post' => null,
+            'vacancy_post' => $this->activateVacancyPost($payment),
+            'candidate_unlock' => null,
             default => null,
         };
     }
@@ -111,6 +112,16 @@ class PaymentService
                 'is_urgent' => true,
                 'urgent_until' => now()->addDays(3),
             ]);
+        }
+    }
+
+    private function activateVacancyPost(Payment $payment): void
+    {
+        if ($payment->payable_type === Vacancy::class && $payment->payable_id) {
+            $vacancy = Vacancy::find($payment->payable_id);
+            if ($vacancy) {
+                app(VacancyService::class)->approve($vacancy);
+            }
         }
     }
 }

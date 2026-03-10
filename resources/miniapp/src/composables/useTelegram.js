@@ -83,7 +83,12 @@ export function useTelegram() {
   }
 
   const hapticFeedback = (style = 'light') => {
-    tg?.HapticFeedback?.impactOccurred(style)
+    const notificationStyles = ['success', 'error', 'warning']
+    if (notificationStyles.includes(style)) {
+      tg?.HapticFeedback?.notificationOccurred(style)
+    } else {
+      tg?.HapticFeedback?.impactOccurred(style)
+    }
   }
 
   const openLink = (url, options = {}) => {

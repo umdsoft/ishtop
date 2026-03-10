@@ -20,8 +20,8 @@ class RegistrationConversation extends Conversation
         $lang = $this->getUserLang($bot);
 
         $text = $lang === 'ru'
-            ? "👋 Добро пожаловать в *IshTop*!\n\n📱 Для регистрации отправьте свой номер телефона.\n\nНажмите кнопку ниже или введите вручную: +998XXXXXXXXX"
-            : "👋 *IshTop*ga xush kelibsiz!\n\n📱 Ro'yxatdan o'tish uchun telefon raqamingizni yuboring.\n\nQuyidagi tugmani bosing yoki qo'lda kiriting: +998XXXXXXXXX";
+            ? "👋 Добро пожаловать в *KadrGo*!\n\n📱 Для регистрации отправьте свой номер телефона.\n\nНажмите кнопку ниже или введите вручную: +998XXXXXXXXX"
+            : "👋 *KadrGo*ga xush kelibsiz!\n\n📱 Ro'yxatdan o'tish uchun telefon raqamingizni yuboring.\n\nQuyidagi tugmani bosing yoki qo'lda kiriting: +998XXXXXXXXX";
 
         $btnText = $lang === 'ru' ? '📱 Отправить номер' : '📱 Raqamni yuborish';
 
@@ -83,13 +83,13 @@ class RegistrationConversation extends Conversation
         );
 
         $welcome = $lang === 'ru'
-            ? "🎉 *Регистрация завершена!*\n\nДобро пожаловать в IshTop, {$user->first_name}!\n\n📌 /menu — Главное меню"
-            : "🎉 *Ro'yxatdan o'tish yakunlandi!*\n\nIshTop ga xush kelibsiz, {$user->first_name}!\n\n📌 /menu — Bosh menyu";
+            ? "🎉 *Регистрация завершена!*\n\nДобро пожаловать в KadrGo, {$user->first_name}!\n\n📌 /menu — Главное меню"
+            : "🎉 *Ro'yxatdan o'tish yakunlandi!*\n\nKadrGo ga xush kelibsiz, {$user->first_name}!\n\n📌 /menu — Bosh menyu";
 
         $bot->sendMessage(
             text: $welcome,
             parse_mode: ParseMode::MARKDOWN_LEGACY,
-            reply_markup: MainMenuKeyboard::make($lang),
+            reply_markup: MainMenuKeyboard::make($lang, $bot->user()->id),
         );
 
         $this->end();

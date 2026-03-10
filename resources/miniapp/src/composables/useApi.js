@@ -15,7 +15,7 @@ export function useApi(fn) {
       data.value = response.data
       return response.data
     } catch (err) {
-      error.value = err.response?.data?.message || err.message || 'Xatolik yuz berdi'
+      error.value = err.response?.data?.message || err.message || 'Error'
       throw err
     } finally {
       loading.value = false

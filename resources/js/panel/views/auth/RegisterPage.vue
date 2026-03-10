@@ -8,7 +8,7 @@
         {{ $t('auth.register') }}
       </h1>
       <p class="mt-2 text-sm text-surface-600 dark:text-surface-400">
-        IshTop Recruiter Panel
+        KadrGo Recruiter Panel
       </p>
     </div>
 

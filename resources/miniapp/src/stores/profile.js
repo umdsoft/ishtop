@@ -11,8 +11,8 @@ export const useProfileStore = defineStore('profile', () => {
     loading.value = true
     try {
       const response = await api.get('/profile/worker')
-      workerProfile.value = response.data
-      return response.data
+      workerProfile.value = response.data.profile || response.data
+      return workerProfile.value
     } catch (error) {
       console.error('Fetch worker profile failed:', error)
       throw error
@@ -25,8 +25,8 @@ export const useProfileStore = defineStore('profile', () => {
     loading.value = true
     try {
       const response = await api.put('/profile/worker', data)
-      workerProfile.value = response.data
-      return response.data
+      workerProfile.value = response.data.profile || response.data
+      return workerProfile.value
     } catch (error) {
       console.error('Update worker profile failed:', error)
       throw error
@@ -39,8 +39,8 @@ export const useProfileStore = defineStore('profile', () => {
     loading.value = true
     try {
       const response = await api.get('/profile/employer')
-      employerProfile.value = response.data
-      return response.data
+      employerProfile.value = response.data.profile || response.data
+      return employerProfile.value
     } catch (error) {
       console.error('Fetch employer profile failed:', error)
       throw error
@@ -53,8 +53,8 @@ export const useProfileStore = defineStore('profile', () => {
     loading.value = true
     try {
       const response = await api.put('/profile/employer', data)
-      employerProfile.value = response.data
-      return response.data
+      employerProfile.value = response.data.profile || response.data
+      return employerProfile.value
     } catch (error) {
       console.error('Update employer profile failed:', error)
       throw error

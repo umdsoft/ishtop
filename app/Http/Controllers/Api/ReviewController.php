@@ -3,45 +3,48 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreReviewRequest;
 use App\Models\EmployerProfile;
 use App\Models\Review;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ReviewController extends Controller
 {
-    public function store(Request $request): JsonResponse
+    public function store(StoreReviewRequest $request): JsonResponse
     {
-        $request->validate([
-            'employer_profile_id' => 'required|uuid|exists:employer_profiles,id',
-            'rating' => 'required|integer|min:1|max:5',
-            'comment' => 'nullable|string|max:1000',
-        ]);
-
+        $validated = $request->validated();
         $userId = $request->user()->id;
 
-        $existing = Review::where('employer_profile_id', $request->employer_profile_id)
+        $existing = Review::where('employer_profile_id', $validated['employer_profile_id'])
             ->where('worker_user_id', $userId)
-            ->first();
+            ->exists();
 
         if ($existing) {
             return response()->json(['message' => 'Siz allaqachon sharh qoldirgansiz'], 422);
         }
 
-        $review = Review::create([
-            'employer_profile_id' => $request->employer_profile_id,
-            'worker_user_id' => $userId,
-            'rating' => $request->rating,
-            'comment' => $request->comment,
-        ]);
+        $review = DB::transaction(function () use ($validated, $userId) {
+            $review = Review::create([
+                'employer_profile_id' => $validated['employer_profile_id'],
+                'worker_user_id' => $userId,
+                'rating' => $validated['rating'],
+                'comment' => $validated['comment'] ?? null,
+            ]);
 
-        $employer = EmployerProfile::find($request->employer_profile_id);
-        $avgRating = Review::where('employer_profile_id', $employer->id)->avg('rating');
-        $ratingCount = Review::where('employer_profile_id', $employer->id)->count();
-        $employer->update([
-            'rating' => round($avgRating, 2),
-            'rating_count' => $ratingCount,
-        ]);
+            $employer = EmployerProfile::findOrFail($validated['employer_profile_id']);
+            $stats = Review::where('employer_profile_id', $employer->id)
+                ->selectRaw('AVG(rating) as avg_rating, COUNT(*) as total_count')
+                ->first();
+
+            $employer->update([
+                'rating' => round($stats->avg_rating, 2),
+                'rating_count' => $stats->total_count,
+            ]);
+
+            return $review;
+        });
 
         $review->load('worker:id,first_name,last_name');
 
@@ -55,7 +58,8 @@ class ReviewController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->per_page ?? 20);
 
-        $avgRating = Review::where('employer_profile_id', $employer)->avg('rating');
+        // Use denormalized rating from employer profile (updated on every review store)
+        $avgRating = EmployerProfile::where('id', $employer)->value('rating');
 
         return response()->json([
             'reviews' => $reviews,

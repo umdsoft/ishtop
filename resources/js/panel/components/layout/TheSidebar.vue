@@ -12,15 +12,21 @@
     <!-- Logo -->
     <div class="flex items-center justify-between px-6 py-5 border-b border-surface-200 dark:border-surface-800">
       <router-link to="/dashboard" class="flex items-center gap-3">
-        <div class="w-8 h-8 rounded-lg bg-brand-500 flex items-center justify-center text-white font-bold text-lg">
-          I
+        <div class="w-9 h-9 rounded-xl bg-brand-500 flex items-center justify-center flex-shrink-0">
+          <svg width="20" height="20" viewBox="0 0 48 48" fill="none">
+            <path d="M15 14L15 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 14" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M30 17L35 17L35 31L30 31" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+          </svg>
         </div>
-        <span
+        <div
           v-if="!sidebarCollapsed"
-          class="text-xl font-bold text-surface-900 dark:text-surface-100 transition-opacity duration-200"
+          class="flex flex-col leading-none transition-opacity duration-200"
         >
-          IshTop
-        </span>
+          <span class="text-[13px] font-extrabold tracking-[0.5px] text-brand-500">KADR</span>
+          <span class="text-[13px] font-black tracking-[1px] text-accent-500 flex items-center">GO<span class="w-[5px] h-[5px] rounded-full bg-accent-500 ml-1"></span></span>
+        </div>
       </router-link>
 
       <!-- Mobile close button -->

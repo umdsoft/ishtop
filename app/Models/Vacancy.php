@@ -18,7 +18,7 @@ class Vacancy extends Model
 
     protected $fillable = [
         'employer_id', 'company_name', 'language',
-        'title_uz', 'title_ru', 'category',
+        'title_uz', 'title_ru', 'category', 'category_id',
         'description_uz', 'description_ru',
         'requirements_uz', 'requirements_ru',
         'responsibilities_uz', 'responsibilities_ru',
@@ -54,6 +54,11 @@ class Vacancy extends Model
     public function employer(): BelongsTo
     {
         return $this->belongsTo(EmployerProfile::class, 'employer_id');
+    }
+
+    public function categoryRelation(): BelongsTo
+    {
+        return $this->belongsTo(Category::class, 'category_id');
     }
 
     public function applications(): HasMany
@@ -97,7 +102,7 @@ class Vacancy extends Model
 
     public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 10)
     {
-        $haversine = "(6371 * acos(cos(radians(?)) * cos(radians(latitude)) * cos(radians(longitude) - radians(?)) + sin(radians(?)) * sin(radians(latitude))))";
+        $haversine = \App\Services\GeoService::haversineFormula();
         return $query
             ->whereNotNull('latitude')
             ->whereNotNull('longitude')

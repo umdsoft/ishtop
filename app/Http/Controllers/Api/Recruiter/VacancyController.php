@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Recruiter;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreVacancyRequest;
+use App\Http\Requests\UpdateVacancyRequest;
 use App\Models\Vacancy;
 use App\Services\AiService;
 use App\Services\MatchingService;
@@ -30,13 +32,14 @@ class VacancyController extends Controller
 
         $query = Vacancy::where('employer_id', $employer->id);
 
-        // Stats across all vacancies (unfiltered)
+        // Stats across all vacancies (unfiltered) — single aggregate queries
         $stats = [
             'active' => (clone $query)->where('status', 'active')->count(),
             'pending' => (clone $query)->where('status', 'pending')->count(),
             'closed' => (clone $query)->whereIn('status', ['closed', 'expired'])->count(),
-            'total_applications' => (clone $query)->withCount('applications')
-                ->get()->sum('applications_count'),
+            'total_applications' => \App\Models\Application::whereIn(
+                'vacancy_id', (clone $query)->select('id')
+            )->count(),
         ];
 
         // Apply filters
@@ -55,9 +58,10 @@ class VacancyController extends Controller
             ->orderByDesc('created_at')
             ->paginate($request->per_page ?? 20);
 
-        // Add recommended candidates count to each vacancy
-        $vacancies->getCollection()->transform(function ($vacancy) {
-            $vacancy->recommended_count = $this->matchingService->countRecommendedCandidates($vacancy);
+        // Add recommended candidates count — batch query (N+1 → 4 queries)
+        $recommendedCounts = $this->matchingService->countRecommendedCandidatesBatch($vacancies->getCollection());
+        $vacancies->getCollection()->transform(function ($vacancy) use ($recommendedCounts) {
+            $vacancy->recommended_count = $recommendedCounts[$vacancy->id] ?? 0;
             return $vacancy;
         });
 
@@ -77,29 +81,9 @@ class VacancyController extends Controller
         ]);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreVacancyRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'language' => 'nullable|string|in:uz,ru',
-            'title_uz' => 'required_without:title_ru|nullable|string|max:300',
-            'title_ru' => 'required_without:title_uz|nullable|string|max:300',
-            'category' => 'required|string|max:50',
-            'description_uz' => 'required_without:description_ru|nullable|string',
-            'description_ru' => 'required_without:description_uz|nullable|string',
-            'requirements_uz' => 'nullable|string',
-            'requirements_ru' => 'nullable|string',
-            'responsibilities_uz' => 'nullable|string',
-            'responsibilities_ru' => 'nullable|string',
-            'work_type' => 'required|string',
-            'city' => 'nullable|string',
-            'district' => 'nullable|string',
-            'salary_min' => 'nullable|integer',
-            'salary_max' => 'nullable|integer',
-            'salary_type' => 'nullable|string|in:fixed,range,negotiable',
-            'experience_required' => 'nullable|string',
-            'contact_phone' => 'nullable|string|max:20',
-            'contact_method' => 'nullable|string|max:30',
-        ]);
+        $validated = $request->validated();
 
         $user = $request->user();
         $employer = $user->employerProfile;
@@ -150,35 +134,14 @@ class VacancyController extends Controller
         ]);
     }
 
-    public function update(Request $request, string $vacancy): JsonResponse
+    public function update(UpdateVacancyRequest $request, string $vacancy): JsonResponse
     {
         $employer = $request->user()->employerProfile;
         $vacancyModel = Vacancy::where('id', $vacancy)
             ->where('employer_id', $employer->id)
             ->firstOrFail();
 
-        $validated = $request->validate([
-            'language' => 'nullable|string|in:uz,ru',
-            'title_uz' => 'sometimes|string|max:300',
-            'title_ru' => 'nullable|string|max:300',
-            'category' => 'sometimes|string|max:50',
-            'description_uz' => 'sometimes|string',
-            'description_ru' => 'nullable|string',
-            'requirements_uz' => 'nullable|string',
-            'requirements_ru' => 'nullable|string',
-            'responsibilities_uz' => 'nullable|string',
-            'responsibilities_ru' => 'nullable|string',
-            'work_type' => 'sometimes|string',
-            'city' => 'nullable|string',
-            'district' => 'nullable|string',
-            'salary_min' => 'nullable|integer',
-            'salary_max' => 'nullable|integer',
-            'salary_type' => 'nullable|string|in:fixed,range,negotiable',
-            'experience_required' => 'nullable|string',
-            'contact_phone' => 'nullable|string|max:20',
-            'contact_method' => 'nullable|string|max:30',
-            'status' => 'nullable|string|in:draft,paused,closed',
-        ]);
+        $validated = $request->validated();
 
         $vacancyModel->update($validated);
 

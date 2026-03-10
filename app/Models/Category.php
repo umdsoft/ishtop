@@ -11,12 +11,13 @@ class Category extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order', 'is_active',
+        'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'default_skills', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array
     {
         return [
+            'default_skills' => 'array',
             'sort_order' => 'integer',
             'is_active' => 'boolean',
         ];

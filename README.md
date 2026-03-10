@@ -1,8 +1,8 @@
-# IshTop - Telegram Recruitment Platform
+# KadrGo - Telegram Recruitment Platform
 
-![IshTop](https://via.placeholder.com/800x200/3b82f6/ffffff?text=IshTop+-+Telegramdan+chiqmay+ish+top!)
+![KadrGo](https://via.placeholder.com/800x200/0D9488/ffffff?text=KadrGo+-+Kadrlar+harakatda!)
 
-IshTop - bu Telegram ekotizimi ichida ishlashga mo'ljallangan zamonaviy ishga joylashish platformasi. Bu loyiha Laravel 11, Filament 3, Nutgram 4 va Vue 3 texnologiyalaridan foydalangan holda qurilgan.
+KadrGo - bu Telegram ekotizimi ichida ishlashga mo'ljallangan zamonaviy ishga joylashish platformasi. Bu loyiha Laravel 11, Filament 3, Nutgram 4 va Vue 3 texnologiyalaridan foydalangan holda qurilgan.
 
 ## 🌟 Asosiy Xususiyatlar
 
@@ -70,8 +70,8 @@ IshTop - bu Telegram ekotizimi ichida ishlashga mo'ljallangan zamonaviy ishga jo
 
 ### 1. Loyihani klonlash
 ```bash
-git clone https://github.com/yourusername/ishtop.git
-cd ishtop
+git clone https://github.com/yourusername/kadrgo.git
+cd kadrgo
 ```
 
 ### 2. Dependencies o'rnatish
@@ -160,7 +160,7 @@ php artisan test --coverage
 ## 📁 Loyiha Strukturasi
 
 ```
-ishtop/
+kadrgo/
 ├── app/
 │   ├── Enums/              # 11 ta enum
 │   ├── Events/             # 6 ta event
@@ -241,13 +241,13 @@ See `DEPLOY.md` for detailed deployment instructions.
 
 ## 📝 License
 
-Proprietary - IshTop © 2026
+Proprietary - KadrGo © 2026
 
 ## 📞 Support
 
-- Email: support@ishtop.uz
-- Telegram: @ishtop_support
+- Email: support@kadrgo.uz
+- Telegram: @kadrgo_support
 
 ---
 
-**IshTop - Telegramdan chiqmay ish top!** 🚀
+**KadrGo - Kadrlar harakatda!** 🚀

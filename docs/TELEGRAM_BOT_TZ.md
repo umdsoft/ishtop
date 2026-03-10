@@ -1,9 +1,9 @@
-# IshTop Telegram Bot — To'liq Texnik Topshiriq (TZ)
+# KadrGo Telegram Bot — To'liq Texnik Topshiriq (TZ)
 
 ## 1. Umumiy ma'lumot
 
-**Loyiha:** IshTop — Telegram orqali ishga joylashish platformasi
-**Bot username:** @ishtop_bot
+**Loyiha:** KadrGo — Telegram orqali ishga joylashish platformasi
+**Bot username:** @kadrgo_bot
 **Texnologiyalar:** Laravel 11.48 + nutgram/nutgram v4.0 + Vue 3 (Mini App)
 **Til:** O'zbek (asosiy) + Rus
 
@@ -187,7 +187,7 @@ Foydalanuvchi /start bosadi
     ↓
 Bot: User ma'lumotlarini DB ga yozadi (telegram_id, first_name, last_name, username, language)
     ↓
-Bot: "Salom, [Ism]! IshTop ga xush kelibsiz!"
+Bot: "Salom, [Ism]! KadrGo ga xush kelibsiz!"
 Bot: "📱 Telefon raqamingizni tasdiqlang:"
     ↓
 [📱 Raqamni yuborish] — ReplyKeyboard tugma
@@ -443,7 +443,7 @@ Frontend: Token saqlanadi, keyingi so'rovlarda Authorization: Bearer <token>
 Bot → Mini App:
 ```javascript
 // Bot'dan Mini App'ga ma'lumot yuborish
-InlineKeyboardButton::make('🌐 Mini App', web_app: WebAppInfo::make(url: 'https://ishtop.uz/miniapp'))
+InlineKeyboardButton::make('🌐 Mini App', web_app: WebAppInfo::make(url: 'https://kadrgo.uz/miniapp'))
 ```
 
 Mini App → Bot:
@@ -682,7 +682,7 @@ php artisan nutgram:polling
 ### 12.2. Production
 ```bash
 # Webhook o'rnatish
-php artisan nutgram:hook:set https://ishtop.uz/telegram/webhook
+php artisan nutgram:hook:set https://kadrgo.uz/telegram/webhook
 
 # Webhook o'chirish
 php artisan nutgram:hook:remove
@@ -858,7 +858,7 @@ routes/
 
 ## 19. Xulosa
 
-IshTop Telegram bot — bu foydalanuvchilar uchun ikkita rejimda ishlaydigan platforma:
+KadrGo Telegram bot — bu foydalanuvchilar uchun ikkita rejimda ishlaydigan platforma:
 
 1. **Oddiy bot** — tez va qulay, Telegram'dan chiqmasdan barcha asosiy funksiyalar
 2. **Mini App** — boy UI, xarita, filtrlar, batafsil boshqaruv

@@ -31,8 +31,9 @@
 
       <!-- Balance Card -->
       <div
-        class="flex items-center justify-between px-4 py-3 rounded-2xl"
+        class="flex items-center justify-between px-4 py-3 rounded-2xl cursor-pointer active:opacity-70 transition-opacity"
         style="background-color: var(--tg-theme-bg-color);"
+        @click="router.push('/transactions')"
       >
         <div class="flex items-center gap-2">
           <svg class="w-5 h-5" style="color: var(--tg-theme-button-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -40,9 +41,14 @@
           </svg>
           <span class="text-[13px]" style="color: var(--tg-theme-hint-color);">{{ t('profile.balance') }}</span>
         </div>
-        <span class="font-bold text-[15px]" style="color: var(--tg-theme-text-color);">
-          {{ formatNumber(authStore.user?.balance || 0) }} {{ t('common.som') }}
-        </span>
+        <div class="flex items-center gap-2">
+          <span class="font-bold text-[15px]" style="color: var(--tg-theme-text-color);">
+            {{ formatNumber(authStore.user?.balance || 0) }} {{ t('common.som') }}
+          </span>
+          <svg class="w-4 h-4" style="color: var(--tg-theme-hint-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+          </svg>
+        </div>
       </div>
     </div>
 
@@ -126,6 +132,34 @@
           </div>
         </div>
 
+        <!-- Work Experience -->
+        <div v-if="workerProfile.work_experience?.length" class="rounded-2xl p-4" style="background-color: var(--tg-theme-secondary-bg-color);">
+          <h3 class="text-[14px] font-bold mb-3" style="color: var(--tg-theme-text-color);">{{ t('profile.work_experience') }}</h3>
+          <div class="space-y-3">
+            <div v-for="(exp, idx) in workerProfile.work_experience" :key="idx">
+              <div v-if="idx > 0" class="h-px mb-3" style="background-color: var(--separator-color);"></div>
+              <div class="flex items-start gap-3">
+                <div
+                  class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5"
+                  style="background-color: rgba(249,115,22,0.1);"
+                >
+                  <span class="text-[11px] font-bold" style="color: #f97316;">{{ idx + 1 }}</span>
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-[14px] font-semibold" style="color: var(--tg-theme-text-color);">{{ exp.position }}</div>
+                  <div class="text-[13px] mt-0.5" style="color: var(--tg-theme-hint-color);">{{ exp.company }}</div>
+                  <div class="text-[12px] mt-1" style="color: var(--tg-theme-hint-color); opacity: 0.7;">
+                    {{ formatExpDate(exp.start_date) }} — {{ exp.end_date ? formatExpDate(exp.end_date) : t('profile.present') }}
+                  </div>
+                  <div v-if="exp.description" class="text-[12px] mt-1.5" style="color: var(--tg-theme-hint-color);">
+                    {{ exp.description }}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Statistics -->
         <div class="rounded-2xl p-4" style="background-color: var(--tg-theme-secondary-bg-color);">
           <h3 class="text-[14px] font-bold mb-3" style="color: var(--tg-theme-text-color);">{{ t('profile.statistics') }}</h3>
@@ -175,7 +209,7 @@
             <div
               v-else
               class="w-12 h-12 rounded-xl flex items-center justify-center"
-              :style="{ backgroundColor: 'rgba(59, 130, 246, 0.12)' }"
+              :style="{ backgroundColor: 'rgba(13, 148, 136, 0.12)' }"
             >
               <span class="text-lg font-bold" style="color: var(--tg-theme-button-color);">
                 {{ employerProfile.company_name?.charAt(0)?.toUpperCase() || '?' }}
@@ -188,7 +222,7 @@
             <span
               v-if="employerProfile.verification_level === 'verified'"
               class="text-[12px] font-medium px-2 py-1 rounded-lg"
-              style="background-color: rgba(59, 130, 246, 0.12); color: var(--tg-theme-button-color);"
+              style="background-color: rgba(13, 148, 136, 0.12); color: var(--tg-theme-button-color);"
             >
               {{ t('common.verified') }}
             </span>
@@ -241,7 +275,7 @@
             <svg class="w-5 h-5" style="color: var(--tg-theme-hint-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 21l5.25-11.25L21 21m-9-3h7.5M3 5.621a48.474 48.474 0 016-.371m0 0c1.12 0 2.233.038 3.334.114M9 5.25V3m3.334 2.364C11.176 10.658 7.69 15.08 3 17.502m9.334-12.138c.896.061 1.785.147 2.666.257m-4.589 8.495a18.023 18.023 0 01-3.827-5.802" />
             </svg>
-            <span class="text-[14px]" style="color: var(--tg-theme-text-color);">Til / Язык</span>
+            <span class="text-[14px]" style="color: var(--tg-theme-text-color);">{{ t('profile.language') }}</span>
           </div>
           <div class="flex gap-1 p-0.5 rounded-xl" style="background-color: var(--tg-theme-bg-color);">
             <button
@@ -321,6 +355,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useProfileStore } from '@/stores/profile'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
+import { formatNumber, getInitial } from '@/utils/formatters'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import api from '@/utils/api'
 
@@ -384,11 +419,14 @@ onMounted(async () => {
 })
 
 function getUserInitial() {
-  return authStore.user?.first_name?.charAt(0)?.toUpperCase() || '?'
+  return getInitial(authStore.user?.first_name)
 }
 
-function formatNumber(num) {
-  return new Intl.NumberFormat('uz-UZ').format(num)
+function formatExpDate(dateStr) {
+  if (!dateStr) return ''
+  const [y, m] = dateStr.split('-').map(Number)
+  const months = t('edit_profile.months_short')
+  return `${months[m - 1]} ${y}`
 }
 
 function formatSalaryRange(profile) {

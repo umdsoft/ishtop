@@ -8,7 +8,7 @@
         Kirish
       </h1>
       <p class="mt-2 text-sm text-surface-600 dark:text-surface-400">
-        IshTop Recruiter Panel ga xush kelibsiz
+        KadrGo Recruiter Panel ga xush kelibsiz
       </p>
     </div>
 

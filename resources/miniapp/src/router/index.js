@@ -6,7 +6,7 @@ const routes = [
     path: '/',
     name: 'home',
     component: () => import('@/views/HomeView.vue'),
-    meta: { title: 'IshTop' },
+    meta: { title: 'KadrGo' },
   },
   {
     path: '/search',
@@ -17,8 +17,14 @@ const routes = [
   {
     path: '/post',
     name: 'post',
+    component: () => import('@/views/MyVacanciesView.vue'),
+    meta: { title: "Mening e'lonlarim", requiresAuth: true },
+  },
+  {
+    path: '/post/new',
+    name: 'post-new',
     component: () => import('@/views/PostVacancyView.vue'),
-    meta: { title: "E'lon berish" },
+    meta: { title: "E'lon berish", requiresAuth: true },
   },
   {
     path: '/map',
@@ -74,6 +80,18 @@ const routes = [
     component: () => import('@/views/EditEmployerProfileView.vue'),
     meta: { title: 'Profil tahrirlash', requiresAuth: true },
   },
+  {
+    path: '/transactions',
+    name: 'transactions',
+    component: () => import('@/views/TransactionsView.vue'),
+    meta: { title: 'Tranzaksiyalar', requiresAuth: true },
+  },
+  {
+    path: '/candidates/:id',
+    name: 'candidate-detail',
+    component: () => import('@/views/CandidateDetailView.vue'),
+    meta: { title: 'Nomzod', requiresAuth: true },
+  },
 ]
 
 const router = createRouter({
@@ -108,7 +126,7 @@ router.beforeEach(async (to, from, next) => {
 router.afterEach((to) => {
   // Set page title
   if (to.meta.title) {
-    document.title = to.meta.title + ' - IshTop'
+    document.title = to.meta.title + ' - KadrGo'
   }
 
   // Scroll to top

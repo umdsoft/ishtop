@@ -77,6 +77,7 @@ class PaymentServiceTest extends TestCase
             'user_id' => $user->id,
             'status' => PaymentStatus::PENDING,
             'amount' => 10000,
+            'type' => 'candidate_unlock',
         ]);
 
         $result = $this->paymentService->payWithBalance($user, $payment);
@@ -93,6 +94,7 @@ class PaymentServiceTest extends TestCase
             'user_id' => $user->id,
             'status' => PaymentStatus::PENDING,
             'amount' => 10000,
+            'type' => 'candidate_unlock',
         ]);
 
         $result = $this->paymentService->payWithBalance($user, $payment);

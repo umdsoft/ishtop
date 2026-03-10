@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Route;
 // Auth
 Route::prefix('auth')->middleware('throttle:auth')->group(function () {
     Route::post('/telegram', [Api\AuthController::class, 'telegram']);
+    Route::post('/telegram-init', [Api\AuthController::class, 'telegramInit']);
+    Route::post('/telegram-token', [Api\AuthController::class, 'telegramToken']);
     Route::post('/verify-phone', [Api\AuthController::class, 'verifyPhone']);
     Route::post('/verify-otp', [Api\AuthController::class, 'verifyOtp']);
 });
@@ -31,6 +33,9 @@ Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
     Route::put('/me', [Api\AuthController::class, 'updateProfile']);
     Route::post('/logout', [Api\AuthController::class, 'logout']);
 
+    // Worker detail (public for employers viewing candidates)
+    Route::get('/workers/{worker}', [Api\ProfileController::class, 'workerDetail'])->whereUuid('worker');
+
     // Profile
     Route::prefix('profile')->group(function () {
         Route::get('/worker', [Api\ProfileController::class, 'workerShow']);
@@ -46,7 +51,12 @@ Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
         Route::post('/linkedin/apply-import', [Api\LinkedInImportController::class, 'applyImport']);
     });
 
-    // Vacancies (write operations)
+    // Vacancies (authenticated)
+    Route::get('vacancies/my', [Api\VacancyController::class, 'my']);
+    Route::get('vacancies/pricing', [Api\VacancyController::class, 'pricing']);
+    Route::post('vacancies/{vacancy}/activate', [Api\VacancyController::class, 'activate']);
+    Route::get('vacancies/{vacancy}/candidates', [Api\VacancyController::class, 'candidates']);
+    Route::post('vacancies/{vacancy}/unlock-candidates', [Api\VacancyController::class, 'unlockCandidates']);
     Route::post('vacancies', [Api\VacancyController::class, 'store'])
         ->name('api.vacancies.store')
         ->middleware('throttle:vacancy-create');

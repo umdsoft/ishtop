@@ -43,7 +43,10 @@ return new class extends Migration
             $table->index(['category', 'city', 'status']);
             $table->index(['status', 'published_at']);
             $table->index(['latitude', 'longitude']);
-            $table->fullText(['title', 'description']);
+
+            if (config('database.default') !== 'sqlite') {
+                $table->fullText(['title', 'description']);
+            }
         });
     }
 

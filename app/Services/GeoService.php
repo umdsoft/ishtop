@@ -9,16 +9,17 @@ use Illuminate\Database\Eloquent\Builder;
 class GeoService
 {
     /**
-     * Haversine formula for MySQL (PostGIS ST_DWithin replacement)
+     * Haversine formula for MySQL (PostGIS ST_DWithin replacement).
+     * Public static so models can reuse without duplicating the formula.
      */
-    private function haversineFormula(string $latCol = 'latitude', string $lngCol = 'longitude'): string
+    public static function haversineFormula(string $latCol = 'latitude', string $lngCol = 'longitude'): string
     {
         return "(6371 * acos(cos(radians(?)) * cos(radians({$latCol})) * cos(radians({$lngCol}) - radians(?)) + sin(radians(?)) * sin(radians({$latCol}))))";
     }
 
     public function nearbyVacancies(float $lat, float $lng, int $radiusKm = 10): Builder
     {
-        $haversine = $this->haversineFormula();
+        $haversine = self::haversineFormula();
 
         return Vacancy::active()
             ->whereNotNull('latitude')
@@ -30,7 +31,7 @@ class GeoService
 
     public function nearbyWorkers(float $lat, float $lng, int $radiusKm = 10): Builder
     {
-        $haversine = $this->haversineFormula();
+        $haversine = self::haversineFormula();
 
         return WorkerProfile::active()
             ->whereNotNull('latitude')

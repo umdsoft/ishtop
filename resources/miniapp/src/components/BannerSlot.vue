@@ -8,7 +8,7 @@
         @click="handleClick"
       />
       <div v-if="banner.advertiser_name" class="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-        Reklama
+        {{ t('common.ad') }}
       </div>
     </div>
 
@@ -22,14 +22,14 @@
         />
         <div class="flex-1">
           <h3 class="font-semibold text-sm mb-1">{{ banner.title }}</h3>
-          <span class="text-xs text-tg-hint">Reklama</span>
+          <span class="text-xs text-tg-hint">{{ t('common.ad') }}</span>
         </div>
       </div>
     </div>
 
-    <div v-else-if="banner.type === 'inline'" class="flex items-center justify-between p-3 bg-blue-50 rounded-lg cursor-pointer" @click="handleClick">
+    <div v-else-if="banner.type === 'inline'" class="flex items-center justify-between p-3 bg-teal-50 rounded-lg cursor-pointer" @click="handleClick">
       <span class="text-sm font-medium">{{ banner.title }}</span>
-      <span class="text-xs text-tg-hint">Reklama</span>
+      <span class="text-xs text-tg-hint">{{ t('common.ad') }}</span>
     </div>
   </div>
 </template>
@@ -38,6 +38,9 @@
 import { ref, onMounted } from 'vue'
 import api from '@/utils/api'
 import { useTelegram } from '@/composables/useTelegram'
+import { useLocale } from '@/composables/useLocale'
+
+const { t } = useLocale()
 
 const props = defineProps({
   placement: {

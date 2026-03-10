@@ -117,7 +117,7 @@ class SearchController extends Controller
             ->root()
             ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
             ->orderBy('sort_order')
-            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order']);
+            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'default_skills', 'sort_order']);
 
         return response()->json(['categories' => $categories]);
     }

@@ -9,6 +9,10 @@ class ClickService
 {
     public function handlePrepare(Request $request): array
     {
+        if (!$this->verifySignature($request)) {
+            return ['error' => -1, 'error_note' => 'Invalid signature'];
+        }
+
         $merchantTransId = $request->input('merchant_trans_id');
         $amount = $request->input('amount');
 
@@ -38,6 +42,10 @@ class ClickService
 
     public function handleComplete(Request $request): array
     {
+        if (!$this->verifySignature($request)) {
+            return ['error' => -1, 'error_note' => 'Invalid signature'];
+        }
+
         $merchantPrepareId = $request->input('merchant_prepare_id');
         $payment = Payment::find($merchantPrepareId);
 
@@ -59,5 +67,30 @@ class ClickService
             'error' => 0,
             'error_note' => 'Success',
         ];
+    }
+
+    /**
+     * Click webhook sign_string tekshiruvi.
+     * sign_string = md5(click_trans_id + service_id + secret_key + merchant_trans_id + amount + action + sign_time)
+     */
+    private function verifySignature(Request $request): bool
+    {
+        $secretKey = config('services.click.secret_key');
+
+        if (empty($secretKey)) {
+            return false;
+        }
+
+        $signString = md5(
+            $request->input('click_trans_id') .
+            $request->input('service_id') .
+            $secretKey .
+            $request->input('merchant_trans_id', $request->input('merchant_prepare_id', '')) .
+            $request->input('amount') .
+            $request->input('action') .
+            $request->input('sign_time')
+        );
+
+        return $signString === $request->input('sign_string');
     }
 }

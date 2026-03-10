@@ -10,6 +10,12 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function authenticatedRequest(User $user): static
+    {
+        $token = $user->createToken('test')->plainTextToken;
+        return $this->withHeader('Authorization', "Bearer {$token}");
+    }
+
     public function test_user_can_register_with_telegram(): void
     {
         $botToken = 'test_bot_token';
@@ -53,7 +59,7 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->authenticatedRequest($user)
             ->getJson('/api/me');
 
         $response->assertStatus(200)
@@ -67,7 +73,7 @@ class AuthTest extends TestCase
     {
         $user = User::factory()->create();
 
-        $response = $this->actingAs($user, 'sanctum')
+        $response = $this->authenticatedRequest($user)
             ->putJson('/api/me', [
                 'first_name' => 'Updated Name',
             ]);
@@ -79,9 +85,9 @@ class AuthTest extends TestCase
     public function test_user_can_logout(): void
     {
         $user = User::factory()->create();
-        $token = $user->createToken('test-token');
+        $token = $user->createToken('test-token')->plainTextToken;
 
-        $response = $this->withHeader('Authorization', 'Bearer ' . $token->plainTextToken)
+        $response = $this->withHeader('Authorization', "Bearer {$token}")
             ->postJson('/api/logout');
 
         $response->assertStatus(200)

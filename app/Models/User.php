@@ -170,11 +170,11 @@ class User extends Authenticatable implements FilamentUser
 
     public function activeSubscription(): ?Subscription
     {
-        return $this->subscriptions()
+        return once(fn() => $this->subscriptions()
             ->where('status', 'active')
             ->where('expires_at', '>', now())
             ->latest()
-            ->first();
+            ->first());
     }
 
     public function hasPlan(string $plan): bool

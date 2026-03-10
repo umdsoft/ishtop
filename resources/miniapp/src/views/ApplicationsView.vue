@@ -75,7 +75,7 @@
             <div
               v-else
               class="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0"
-              style="background-color: rgba(var(--tg-button-rgb, 59,130,246), 0.1);"
+              style="background-color: rgba(var(--tg-button-rgb, 13,148,136), 0.1);"
             >
               <span class="text-sm font-bold" style="color: var(--tg-theme-button-color);">
                 {{ getInitial(app.vacancy?.employer?.company_name) }}
@@ -160,6 +160,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
+import { formatSalary as _formatSalary, formatDate as _formatDate, getInitial } from '@/utils/formatters'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import api from '@/utils/api'
 
@@ -227,10 +228,6 @@ function viewApplication(app) {
   router.push(`/vacancies/${app.vacancy_id}`)
 }
 
-function getInitial(name) {
-  return name ? name.charAt(0).toUpperCase() : '?'
-}
-
 function getStageLabel(stage) {
   const key = `apps.stage_${stage}`
   const label = t(key)
@@ -239,7 +236,7 @@ function getStageLabel(stage) {
 
 function getStageStyle(stage) {
   const styles = {
-    new: { backgroundColor: 'rgba(59, 130, 246, 0.12)', color: '#3b82f6' },
+    new: { backgroundColor: 'rgba(13, 148, 136, 0.12)', color: '#0D9488' },
     reviewed: { backgroundColor: 'rgba(139, 92, 246, 0.12)', color: '#8b5cf6' },
     shortlisted: { backgroundColor: 'rgba(245, 158, 11, 0.12)', color: '#f59e0b' },
     interview: { backgroundColor: 'rgba(249, 115, 22, 0.12)', color: '#f97316' },
@@ -251,24 +248,11 @@ function getStageStyle(stage) {
 }
 
 function formatSalary(vacancy) {
-  if (!vacancy) return ''
-  const fmt = (n) => new Intl.NumberFormat('uz-UZ').format(n)
-  if (vacancy.salary_min && vacancy.salary_max) {
-    return `${fmt(vacancy.salary_min)} - ${fmt(vacancy.salary_max)}`
-  } else if (vacancy.salary_min) {
-    return `${fmt(vacancy.salary_min)}+`
-  } else if (vacancy.salary_max) {
-    return `${fmt(vacancy.salary_max)} gacha`
-  }
-  return ''
+  return _formatSalary(vacancy, t, { short: true })
 }
 
 function formatDate(date) {
-  if (!date) return ''
-  return new Date(date).toLocaleDateString('uz-UZ', {
-    day: 'numeric',
-    month: 'short',
-  })
+  return _formatDate(date, { short: true })
 }
 </script>
 

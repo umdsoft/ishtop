@@ -57,6 +57,7 @@ import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
+import { timeAgo as _timeAgo } from '@/utils/formatters'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import api from '@/utils/api'
 
@@ -97,7 +98,9 @@ async function handleNotification(notif) {
   }
 
   // Navigate based on type
-  if (notif.data?.vacancy_id) {
+  if (notif.type === 'new_application' && notif.data?.vacancy_id) {
+    router.push('/my-vacancies')
+  } else if (notif.data?.vacancy_id) {
     router.push(`/vacancies/${notif.data.vacancy_id}`)
   } else if (notif.data?.application_id) {
     router.push('/applications')
@@ -117,7 +120,7 @@ function getNotifIcon(type) {
 
 function getNotifIconBg(type) {
   const bgs = {
-    application_stage: 'bg-blue-100',
+    application_stage: 'bg-teal-100',
     new_application: 'bg-green-100',
     vacancy_moderated: 'bg-yellow-100',
     matching_vacancy: 'bg-purple-100',
@@ -127,13 +130,6 @@ function getNotifIconBg(type) {
 }
 
 function timeAgo(date) {
-  const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
-
-  if (seconds < 60) return t('time.just_now')
-  if (seconds < 3600) return `${Math.floor(seconds / 60)} ${t('time.minutes_ago')}`
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)} ${t('time.hours_ago')}`
-  if (seconds < 604800) return `${Math.floor(seconds / 86400)} ${t('time.days_ago')}`
-
-  return new Date(date).toLocaleDateString('uz-UZ')
+  return _timeAgo(date, t)
 }
 </script>

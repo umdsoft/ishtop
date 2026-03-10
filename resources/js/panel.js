@@ -1,5 +1,5 @@
 /**
- * IshTop Recruiter Panel - Entry Point
+ * KadrGo Recruiter Panel - Entry Point
  * Vue 3 SPA application for employer/recruiter dashboard
  */
 

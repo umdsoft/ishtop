@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Recruiter;
 use App\Http\Controllers\Controller;
 use App\Models\EmployerProfile;
 use App\Models\User;
+use App\Services\TelegramAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -14,6 +15,8 @@ use SergiX44\Nutgram\Nutgram;
 
 class AuthController extends Controller
 {
+    public function __construct(private TelegramAuthService $telegramAuth) {}
+
     public function login(Request $request): JsonResponse
     {
         $request->validate([
@@ -34,11 +37,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Recruiter profili topilmadi'], 403);
         }
 
-        // Ensure active employer is set
-        if (!$user->active_employer_id) {
-            $user->update(['active_employer_id' => $user->employerProfiles()->first()->id]);
-            $user->refresh();
-        }
+        $this->ensureActiveEmployer($user);
 
         $token = $user->createToken('recruiter-api')->plainTextToken;
 
@@ -95,12 +94,7 @@ class AuthController extends Controller
             $q->where('status', 'active')->where('expires_at', '>', now())->latest()->limit(1);
         }]);
 
-        // Auto-fix: ensure active_employer_id is set if profiles exist
-        if (!$user->active_employer_id && $user->employerProfiles->isNotEmpty()) {
-            $user->update(['active_employer_id' => $user->employerProfiles->first()->id]);
-            $user->refresh();
-            $user->load(['employerProfile', 'employerProfiles']);
-        }
+        $this->ensureActiveEmployer($user);
 
         return response()->json([
             'user' => $user,
@@ -128,7 +122,7 @@ class AuthController extends Controller
         }
 
         if (!$user->telegram_id || $user->telegram_id == 0) {
-            return response()->json(['message' => 'Telegram bot ga ulanmagan. Avval @' . config('nutgram.username', 'ishtop_bot') . ' botga /start yuboring'], 422);
+            return response()->json(['message' => 'Telegram bot ga ulanmagan. Avval @' . config('nutgram.username', 'kadrgo_bot') . ' botga /start yuboring'], 422);
         }
 
         // Generate OTP
@@ -140,7 +134,7 @@ class AuthController extends Controller
         try {
             $bot = app(Nutgram::class);
             $bot->sendMessage(
-                text: "🔐 *IshTop Recruiter Panel*\n\nKirish kodi: `{$code}`\n\n⏱ Kod 5 daqiqa ichida amal qiladi.\n⚠️ Bu kodni hech kimga bermang!",
+                text: "🔐 *KadrGo Recruiter Panel*\n\nKirish kodi: `{$code}`\n\n⏱ Kod 5 daqiqa ichida amal qiladi.\n⚠️ Bu kodni hech kimga bermang!",
                 chat_id: $user->telegram_id,
                 parse_mode: 'Markdown',
             );
@@ -195,22 +189,8 @@ class AuthController extends Controller
             return response()->json(['message' => 'Foydalanuvchi topilmadi'], 404);
         }
 
-        // Auto-create employer profile if missing
-        if (!$user->employerProfiles()->exists()) {
-            $employer = EmployerProfile::create([
-                'user_id' => $user->id,
-                'company_name' => $user->full_name . ' Company',
-                'phone' => $user->phone,
-            ]);
-            $user->update(['active_employer_id' => $employer->id]);
-            $user->refresh();
-        }
-
-        // Ensure active employer is set
-        if (!$user->active_employer_id) {
-            $user->update(['active_employer_id' => $user->employerProfiles()->first()->id]);
-            $user->refresh();
-        }
+        $this->ensureEmployerProfile($user);
+        $this->ensureActiveEmployer($user);
 
         $token = $user->createToken('recruiter-otp')->plainTextToken;
 
@@ -236,7 +216,7 @@ class AuthController extends Controller
             'hash' => 'required|string',
         ]);
 
-        if (!$this->verifyTelegramWidget($request->all())) {
+        if (!$this->telegramAuth->validateWidgetData($request->all())) {
             return response()->json(['message' => 'Telegram ma\'lumotlari noto\'g\'ri'], 401);
         }
 
@@ -255,32 +235,10 @@ class AuthController extends Controller
                 'username' => $request->username,
                 'is_verified' => true,
             ]);
-
-            $employer = EmployerProfile::create([
-                'user_id' => $user->id,
-                'company_name' => $request->first_name . ' Company',
-                'phone' => '',
-            ]);
-
-            $user->update(['active_employer_id' => $employer->id]);
-            $user->refresh();
         }
 
-        if (!$user->employerProfiles()->exists()) {
-            $employer = EmployerProfile::create([
-                'user_id' => $user->id,
-                'company_name' => $user->first_name . ' Company',
-                'phone' => '',
-            ]);
-            $user->update(['active_employer_id' => $employer->id]);
-            $user->refresh();
-        }
-
-        // Ensure active employer is set
-        if (!$user->active_employer_id) {
-            $user->update(['active_employer_id' => $user->employerProfiles()->first()->id]);
-            $user->refresh();
-        }
+        $this->ensureEmployerProfile($user);
+        $this->ensureActiveEmployer($user);
 
         $token = $user->createToken('recruiter-telegram')->plainTextToken;
 
@@ -290,26 +248,39 @@ class AuthController extends Controller
         ]);
     }
 
-    protected function verifyTelegramWidget(array $data): bool
+    /**
+     * Auto-create employer profile if user doesn't have one.
+     */
+    private function ensureEmployerProfile(User $user): void
     {
-        $botToken = config('nutgram.token');
-
-        if (empty($botToken)) {
-            return false;
+        if ($user->employerProfiles()->exists()) {
+            return;
         }
 
-        $hash = $data['hash'];
-        unset($data['hash']);
+        $employer = EmployerProfile::create([
+            'user_id' => $user->id,
+            'company_name' => ($user->first_name ?: 'User') . ' Company',
+            'phone' => $user->phone ?? '',
+        ]);
 
-        ksort($data);
+        $user->update(['active_employer_id' => $employer->id]);
+        $user->refresh();
+    }
 
-        $dataCheckString = collect($data)
-            ->map(fn($value, $key) => "{$key}={$value}")
-            ->implode("\n");
+    /**
+     * Ensure active_employer_id is set if profiles exist.
+     */
+    private function ensureActiveEmployer(User $user): void
+    {
+        if ($user->active_employer_id) {
+            return;
+        }
 
-        $secretKey = hash('sha256', $botToken, true);
-        $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
-
-        return hash_equals($calculatedHash, $hash);
+        $firstEmployer = $user->employerProfiles()->first();
+        if ($firstEmployer) {
+            $user->update(['active_employer_id' => $firstEmployer->id]);
+            $user->refresh();
+            $user->load(['employerProfile', 'employerProfiles']);
+        }
     }
 }

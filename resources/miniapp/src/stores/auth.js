@@ -18,13 +18,24 @@ export const useAuthStore = defineStore('auth', () => {
   const isWorker = computed(() => !!user.value?.worker_profile || !!user.value?.has_worker_profile)
   const isEmployer = computed(() => !!user.value?.employer_profile || !!user.value?.has_employer_profile)
 
+  // Bootstrap data from combined init endpoint
+  const bootstrapData = ref(null)
+
   async function loginWithTelegram(initData) {
     loading.value = true
     try {
-      const response = await api.post('/auth/telegram', { init_data: initData })
+      // Use combined init endpoint — auth + categories + vacancies in 1 request
+      const response = await api.post('/auth/telegram-init', { init_data: initData })
       token.value = response.data.token
       user.value = response.data.user
       localStorage.setItem('auth_token', token.value)
+      // Store bootstrap data for HomeView to consume
+      if (response.data.categories || response.data.vacancies) {
+        bootstrapData.value = {
+          categories: response.data.categories,
+          vacancies: response.data.vacancies,
+        }
+      }
       return response.data
     } catch (error) {
       console.error('Login failed:', error)
@@ -37,6 +48,31 @@ export const useAuthStore = defineStore('auth', () => {
           // Token is invalid
         }
       }
+      throw error
+    } finally {
+      loading.value = false
+      authAttempted.value = true
+      _authReadyResolve()
+    }
+  }
+
+  async function loginWithToken(authToken) {
+    loading.value = true
+    try {
+      const baseURL = import.meta.env.VITE_API_URL || '/api'
+      const res = await fetch(baseURL + '/auth/telegram-token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({ token: authToken }),
+      })
+      if (!res.ok) throw new Error('Token auth failed')
+      const data = await res.json()
+      token.value = data.token
+      user.value = data.user
+      localStorage.setItem('auth_token', data.token)
+      return data
+    } catch (error) {
+      console.error('Token login failed:', error)
       throw error
     } finally {
       loading.value = false
@@ -95,10 +131,12 @@ export const useAuthStore = defineStore('auth', () => {
     loading,
     authAttempted,
     authReady,
+    bootstrapData,
     isAuthenticated,
     isWorker,
     isEmployer,
     loginWithTelegram,
+    loginWithToken,
     fetchUser,
     updateProfile,
     logout,

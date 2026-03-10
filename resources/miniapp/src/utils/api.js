@@ -16,6 +16,7 @@ api.interceptors.request.use(
       config.headers.Authorization = `Bearer ${token}`
     }
 
+    // initData ni HAR DOIM yangi o'qish (kechikib kelishi mumkin)
     const initData = window.Telegram?.WebApp?.initData
     if (initData) {
       config.headers['X-Telegram-Init-Data'] = initData
@@ -44,6 +45,11 @@ function processQueue(error, token = null) {
   failedQueue = []
 }
 
+// initData ni olish — polling yo'q, darhol tekshirish
+function getInitData() {
+  return window.Telegram?.WebApp?.initData || null
+}
+
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
@@ -65,44 +71,60 @@ api.interceptors.response.use(
       originalRequest._retry = true
       isRefreshing = true
 
-      const tg = window.Telegram?.WebApp
-      if (tg?.initData) {
+      const baseURL = import.meta.env.VITE_API_URL || '/api'
+
+      // 1) initData orqali re-auth
+      const initData = getInitData()
+      if (initData) {
         try {
-          // fetch() ishlatamiz — axios interceptor loop'dan qochish uchun
-          const baseURL = import.meta.env.VITE_API_URL || '/api'
           const res = await fetch(baseURL + '/auth/telegram', {
             method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Accept': 'application/json',
-            },
-            body: JSON.stringify({ init_data: tg.initData }),
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ init_data: initData }),
           })
-
           if (res.ok) {
             const data = await res.json()
             const newToken = data.token
             localStorage.setItem('auth_token', newToken)
-
-            // Auth store'ni yangilash (agar mavjud bo'lsa)
             try {
               const { useAuthStore } = await import('@/stores/auth')
               const authStore = useAuthStore()
               authStore.token = newToken
               authStore.user = data.user
-            } catch (e) {
-              // Store hali yuklanmagan bo'lishi mumkin
-            }
-
-            // Asl so'rovni yangi token bilan qayta yuborish
+            } catch (e) {}
             originalRequest.headers.Authorization = `Bearer ${newToken}`
             processQueue(null, newToken)
             isRefreshing = false
             return api(originalRequest)
           }
-        } catch (e) {
-          // Re-auth muvaffaqiyatsiz
-        }
+        } catch (e) {}
+      }
+
+      // 2) URL auth token orqali re-auth (sessionStorage da saqlangan)
+      const urlToken = sessionStorage.getItem('url_auth_token')
+      if (urlToken) {
+        try {
+          const res = await fetch(baseURL + '/auth/telegram-token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+            body: JSON.stringify({ token: urlToken }),
+          })
+          if (res.ok) {
+            const data = await res.json()
+            const newToken = data.token
+            localStorage.setItem('auth_token', newToken)
+            try {
+              const { useAuthStore } = await import('@/stores/auth')
+              const authStore = useAuthStore()
+              authStore.token = newToken
+              authStore.user = data.user
+            } catch (e) {}
+            originalRequest.headers.Authorization = `Bearer ${newToken}`
+            processQueue(null, newToken)
+            isRefreshing = false
+            return api(originalRequest)
+          }
+        } catch (e) {}
       }
 
       // Re-auth iloji bo'lmadi

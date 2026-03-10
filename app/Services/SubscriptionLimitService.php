@@ -8,6 +8,8 @@ use App\Models\Vacancy;
 
 class SubscriptionLimitService
 {
+    private array $vacancyCountCache = [];
+
     /**
      * Get the current plan for a user.
      */
@@ -64,11 +66,7 @@ class SubscriptionLimitService
             return true;
         }
 
-        $currentCount = Vacancy::where('employer_id', $user->active_employer_id)
-            ->whereNotIn('status', ['closed', 'expired'])
-            ->count();
-
-        return $currentCount < $maxVacancies;
+        return $this->activeVacancyCount($user) < $maxVacancies;
     }
 
     /**
@@ -83,11 +81,22 @@ class SubscriptionLimitService
             return null; // unlimited
         }
 
-        $currentCount = Vacancy::where('employer_id', $user->active_employer_id)
+        return max(0, $maxVacancies - $this->activeVacancyCount($user));
+    }
+
+    /**
+     * Cached active vacancy count per employer (avoids duplicate queries within same request).
+     */
+    private function activeVacancyCount(User $user): int
+    {
+        $employerId = $user->active_employer_id;
+        if (!$employerId) {
+            return 0;
+        }
+
+        return $this->vacancyCountCache[$employerId] ??= Vacancy::where('employer_id', $employerId)
             ->whereNotIn('status', ['closed', 'expired'])
             ->count();
-
-        return max(0, $maxVacancies - $currentCount);
     }
 
     /**

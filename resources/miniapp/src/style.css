@@ -10,6 +10,9 @@
 
 :root {
   --separator-color: rgba(128, 128, 128, 0.15);
+  --tg-button-rgb: 13,148,136;
+  --tg-theme-button-color: #0D9488;
+  --tg-theme-link-color: #0D9488;
 }
 
 body {
@@ -58,7 +61,7 @@ select option {
 @layer components {
   .btn-primary {
     @apply px-4 py-2.5 rounded-xl font-medium active:scale-[0.97] transition-transform;
-    background-color: var(--tg-theme-button-color, #3b82f6);
+    background-color: var(--tg-theme-button-color, #0D9488);
     color: var(--tg-theme-button-text-color, #ffffff);
   }
 
@@ -81,7 +84,7 @@ select option {
   }
 
   .input:focus {
-    border-color: var(--tg-theme-button-color, #3b82f6);
+    border-color: var(--tg-theme-button-color, #0D9488);
   }
 
   .input::placeholder {

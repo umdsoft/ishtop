@@ -26,7 +26,7 @@ class AdminPanelProvider extends PanelProvider
             ->default()
             ->id('admin')
             ->path('admin')
-            ->brandName('IshTop Admin')
+            ->brandName('KadrGo Admin')
             ->login()
             ->colors([
                 'primary' => Color::Indigo,

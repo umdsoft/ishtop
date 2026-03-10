@@ -6,9 +6,9 @@
 const TYPE_COLORS = {
   // Template builder types
   text: {
-    stripe: 'bg-blue-500',
-    number: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    stripe: 'bg-teal-600',
+    number: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+    badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   },
   single_choice: {
     stripe: 'bg-violet-500',
@@ -37,9 +37,9 @@ const TYPE_COLORS = {
     badge: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300',
   },
   open_text: {
-    stripe: 'bg-blue-500',
-    number: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
-    badge: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300',
+    stripe: 'bg-teal-600',
+    number: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
+    badge: 'bg-teal-100 text-teal-700 dark:bg-teal-900/40 dark:text-teal-300',
   },
   number_range: {
     stripe: 'bg-orange-500',

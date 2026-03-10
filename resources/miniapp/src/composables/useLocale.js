@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import uz from '@/locales/uz'
 import ru from '@/locales/ru'
 
-const STORAGE_KEY = 'ishtop_lang'
+const STORAGE_KEY = 'kadrgo_lang'
 
 // Reactive language ref — shared across all components
 const currentLang = ref(localStorage.getItem(STORAGE_KEY) || 'uz')

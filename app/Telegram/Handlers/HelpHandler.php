@@ -16,7 +16,7 @@ class HelpHandler
         $lang = $user?->language?->value ?? 'uz';
 
         if ($lang === 'ru') {
-            $text = "❓ *Помощь — IshTop Bot*\n\n"
+            $text = "❓ *Помощь — KadrGo Bot*\n\n"
                 . "📌 *Команды:*\n"
                 . "/start — Начало работы\n"
                 . "/menu — Главное меню\n"
@@ -31,9 +31,9 @@ class HelpHandler
                 . "/cancel — Отменить текущее действие\n\n"
                 . "📱 *Mini App* — расширенный поиск, карта, фильтры\n"
                 . "🌐 *Web Panel* — панель для работодателей\n\n"
-                . "📞 Поддержка: @IshTopSupport";
+                . "📞 Поддержка: @KadrGoSupport";
         } else {
-            $text = "❓ *Yordam — IshTop Bot*\n\n"
+            $text = "❓ *Yordam — KadrGo Bot*\n\n"
                 . "📌 *Buyruqlar:*\n"
                 . "/start — Boshlash\n"
                 . "/menu — Bosh menyu\n"
@@ -48,10 +48,10 @@ class HelpHandler
                 . "/cancel — Joriy amalni bekor qilish\n\n"
                 . "📱 *Mini App* — kengaytirilgan qidiruv, xarita, filterlar\n"
                 . "🌐 *Web Panel* — ish beruvchilar uchun panel\n\n"
-                . "📞 Yordam: @IshTopSupport";
+                . "📞 Yordam: @KadrGoSupport";
         }
 
-        $botUsername = config('nutgram.bot_username', 'ishtop_bot');
+        $botUsername = config('nutgram.bot_username', 'kadrgo_bot');
 
         $bot->sendMessage(
             text: $text,

@@ -1,6 +1,6 @@
-# IshTop Mini App
+# KadrGo Mini App
 
-Telegram Mini App frontend for IshTop - recruitment platform.
+Telegram Mini App frontend for KadrGo - recruitment platform.
 
 ## Tech Stack
 
@@ -134,4 +134,4 @@ Uses Pinia stores for:
 
 ## License
 
-Proprietary - IshTop 2026
+Proprietary - KadrGo 2026

@@ -92,7 +92,7 @@ async function handleTelegramAuth(telegramUser) {
 
     authStore.token = response.data.token;
     authStore.user = response.data.user;
-    localStorage.setItem('ishtop-token', response.data.token);
+    localStorage.setItem('kadrgo-token', response.data.token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
 
     toast.success('Muvaffaqiyatli kirdingiz!');

@@ -19,7 +19,7 @@ class PaymentController extends Controller
     public function create(Request $request): JsonResponse
     {
         $request->validate([
-            'type' => 'required|string|in:subscription,vacancy_top,vacancy_urgent,vacancy_post,balance_topup',
+            'type' => 'required|string|in:subscription,vacancy_top,vacancy_urgent,vacancy_post,balance_topup,candidate_unlock',
             'amount' => 'required|numeric|min:1000',
             'method' => 'required|string|in:payme,click,uzum,balance',
             'payable_type' => 'nullable|string',
@@ -61,8 +61,32 @@ class PaymentController extends Controller
     public function history(Request $request): JsonResponse
     {
         $payments = Payment::where('user_id', $request->user()->id)
+            ->completed()
             ->orderByDesc('created_at')
             ->paginate($request->per_page ?? 20);
+
+        $typeLabels = [
+            'candidate_unlock' => 'Nomzodlarni ochish',
+            'vacancy_post' => "E'lon joylashtirish",
+            'balance_topup' => "Balansni to'ldirish",
+            'subscription' => 'Obuna',
+            'vacancy_top' => "TOP e'lon",
+            'vacancy_urgent' => "Shoshilinch e'lon",
+        ];
+
+        $payments->getCollection()->transform(function ($payment) use ($typeLabels) {
+            $payment->type_label = $typeLabels[$payment->type] ?? $payment->type;
+
+            $payment->description = null;
+            if ($payment->payable_type === \App\Models\Vacancy::class && $payment->payable_id) {
+                $vacancy = \App\Models\Vacancy::select('id', 'title_uz', 'title_ru')->find($payment->payable_id);
+                if ($vacancy) {
+                    $payment->description = $vacancy->title_uz ?: $vacancy->title_ru;
+                }
+            }
+
+            return $payment;
+        });
 
         return response()->json($payments);
     }

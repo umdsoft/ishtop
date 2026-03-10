@@ -8,6 +8,7 @@ export default defineConfig({
         laravel({
             input: [
                 'resources/css/app.css',
+                'resources/css/website.css',
                 'resources/js/app.js',
                 'resources/js/panel.js', // Recruiter Panel entry point
             ],

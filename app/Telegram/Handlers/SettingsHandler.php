@@ -264,7 +264,7 @@ class SettingsHandler
         $isRu = $lang === 'ru';
 
         $referralCode = $user->referral_code;
-        $botUsername = config('nutgram.bot_username', 'ishtop_bot');
+        $botUsername = config('nutgram.bot_username', 'kadrgo_bot');
         $referralLink = "https://t.me/{$botUsername}?start=ref_{$referralCode}";
 
         $referralsCount = User::where('referred_by', $user->id)->count();
@@ -288,7 +288,7 @@ class SettingsHandler
                 . "`{$referralLink}`\n\n"
                 . "_Nusxa olish uchun havolaga bosing_";
 
-        $shareText = $isRu ? 'Присоединяйся к IshTop!' : "IshTop ga qo'shil!";
+        $shareText = $isRu ? 'Присоединяйся к KadrGo!' : "KadrGo ga qo'shil!";
 
         $bot->sendMessage(
             text: $text,

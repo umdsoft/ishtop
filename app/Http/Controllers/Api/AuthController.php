@@ -3,14 +3,57 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\UserAuthResource;
+use App\Models\Category;
 use App\Models\User;
+use App\Models\Vacancy;
 use App\Services\SmsService;
+use App\Services\TelegramAuthService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
 {
-    public function __construct(private SmsService $smsService) {}
+    public function __construct(
+        private SmsService $smsService,
+        private TelegramAuthService $telegramAuth,
+    ) {}
+
+    /**
+     * URL token orqali autentifikatsiya — initData ishlamagan holatlarda
+     * Bot keyboard da encrypted token yuboradi
+     */
+    public function telegramToken(Request $request): JsonResponse
+    {
+        $request->validate(['token' => 'required|string']);
+
+        try {
+            $decrypted = decrypt($request->input('token'));
+
+            // encrypt(telegram_id) formatda keladi
+            $telegramId = $decrypted;
+
+            $user = User::where('telegram_id', $telegramId)->first();
+            if (!$user) {
+                return response()->json(['message' => 'Foydalanuvchi topilmadi'], 404);
+            }
+
+            $user->update(['last_active_at' => now()]);
+
+            if (!$user->referral_code) {
+                $user->update(['referral_code' => User::generateReferralCode()]);
+            }
+
+            $token = $user->createToken('telegram-mini-app')->plainTextToken;
+
+            return response()->json([
+                'token' => $token,
+                'user' => new UserAuthResource($user),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['message' => 'Noto\'g\'ri token'], 401);
+        }
+    }
 
     public function telegram(Request $request): JsonResponse
     {
@@ -18,7 +61,7 @@ class AuthController extends Controller
 
         $initData = $request->input('init_data');
 
-        if (!$this->verifyTelegramData($initData)) {
+        if (app()->environment('production') && !$this->telegramAuth->validateInitData($initData)) {
             return response()->json(['message' => 'Noto\'g\'ri ma\'lumot'], 401);
         }
 
@@ -60,18 +103,7 @@ class AuthController extends Controller
 
         return response()->json([
             'token' => $token,
-            'user' => [
-                'id' => $user->id,
-                'telegram_id' => $user->telegram_id,
-                'first_name' => $user->first_name,
-                'last_name' => $user->last_name,
-                'username' => $user->username,
-                'language' => $user->language,
-                'is_verified' => $user->is_verified,
-                'has_worker_profile' => $user->workerProfile()->exists(),
-                'has_employer_profile' => $user->employerProfile()->exists(),
-                'balance' => $user->balance,
-            ],
+            'user' => new UserAuthResource($user),
         ]);
     }
 
@@ -149,36 +181,79 @@ class AuthController extends Controller
         return response()->json(['message' => 'Chiqildi']);
     }
 
-    protected function verifyTelegramData(string $initData): bool
+    /**
+     * Combined init endpoint — auth + bootstrap data in ONE request.
+     * Saves 3-4 round trips on first load.
+     */
+    public function telegramInit(Request $request): JsonResponse
     {
-        if (!app()->environment('production')) {
-            return true;
-        }
+        $request->validate(['init_data' => 'required|string']);
 
-        $botToken = config('nutgram.token');
+        $initData = $request->input('init_data');
 
-        if (empty($botToken)) {
-            return false;
+        if (app()->environment('production') && !$this->telegramAuth->validateInitData($initData)) {
+            return response()->json(['message' => 'Noto\'g\'ri ma\'lumot'], 401);
         }
 
         parse_str($initData, $parsed);
+        $userData = json_decode($parsed['user'] ?? '{}', true);
 
-        if (!isset($parsed['hash'])) {
-            return false;
+        if (empty($userData['id'])) {
+            return response()->json(['message' => 'Foydalanuvchi ma\'lumoti topilmadi'], 422);
         }
 
-        $hash = $parsed['hash'];
-        unset($parsed['hash']);
+        $user = User::where('telegram_id', $userData['id'])->first();
 
-        ksort($parsed);
+        if ($user) {
+            $user->update([
+                'first_name' => $userData['first_name'] ?? $user->first_name,
+                'last_name' => $userData['last_name'] ?? $user->last_name,
+                'username' => $userData['username'] ?? $user->username,
+                'last_active_at' => now(),
+            ]);
+        } else {
+            $user = User::create([
+                'telegram_id' => $userData['id'],
+                'first_name' => $userData['first_name'] ?? 'User',
+                'last_name' => $userData['last_name'] ?? null,
+                'username' => $userData['username'] ?? null,
+                'language' => 'uz',
+                'last_active_at' => now(),
+            ]);
+        }
 
-        $dataCheckString = collect($parsed)
-            ->map(fn($value, $key) => "{$key}={$value}")
-            ->implode("\n");
+        if (!$user->referral_code) {
+            $user->update(['referral_code' => User::generateReferralCode()]);
+        }
 
-        $secretKey = hash_hmac('sha256', $botToken, 'WebAppData', true);
-        $calculatedHash = hash_hmac('sha256', $dataCheckString, $secretKey);
+        $token = $user->createToken('telegram-mini-app')->plainTextToken;
 
-        return hash_equals($calculatedHash, $hash);
+        // Bootstrap data — categories + latest vacancies in same response
+        $categories = Category::active()
+            ->root()
+            ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
+            ->orderBy('sort_order')
+            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order']);
+
+        $vacancies = Vacancy::active()
+            ->with('employer:id,company_name,logo_url,verification_level')
+            ->orderByDesc('is_top')
+            ->orderByDesc('published_at')
+            ->limit(10)
+            ->get();
+
+        // Load worker profile for client-side match score calculation
+        $user->load(['workerProfile' => fn($q) => $q->select(
+            'id', 'user_id', 'city', 'specialty',
+            'expected_salary_min', 'expected_salary_max',
+            'work_types', 'preferred_categories'
+        )]);
+
+        return response()->json([
+            'token' => $token,
+            'user' => new UserAuthResource($user),
+            'categories' => $categories,
+            'vacancies' => $vacancies,
+        ]);
     }
 }

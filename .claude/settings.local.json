@@ -34,7 +34,26 @@
       "Bash(npm run:*)",
       "Bash(findstr:*)",
       "Bash(netstat:*)",
-      "Bash(python -m json.tool:*)"
+      "Bash(python -m json.tool:*)",
+      "Bash(wc:*)",
+      "Bash(winget install:*)",
+      "Bash(C:UsersUmidbekDesktopcloudflared.exe --version)",
+      "Bash(\"C:\\\\Users\\\\Umidbek\\\\Desktop\\\\cloudflared.exe\" --version)",
+      "Bash(\"C:\\\\Users\\\\Umidbek\\\\Desktop\\\\cloudflared.exe\" tunnel --url http://127.0.0.1:8000)",
+      "Bash(del:*)",
+      "Bash(more:*)",
+      "Bash(Select-String \"FAIL|failed\")",
+      "Bash(npm uninstall:*)",
+      "Bash(node -e:*)",
+      "Bash(Select-String \"FAIL|fail|Error\")",
+      "Bash(Select-String \"FAIL\")",
+      "Bash(cloudflared version:*)",
+      "Bash(cmd.exe:*)",
+      "Bash(\"c:\\\\Users\\\\Umidbek\\\\Desktop\\\\Ish Top\\\\ishtop\\\\cloudflared.exe\" version)",
+      "Bash(\"c:\\\\Users\\\\Umidbek\\\\Desktop\\\\Ish Top\\\\ishtop\\\\cloudflared.exe\" tunnel --url http://127.0.0.1:8000)",
+      "Bash(ls -la \"c:\\\\Users\\\\Umidbek\\\\Desktop\\\\Ish Top\\\\ishtop\\\\resources\\\\views\"\" 2>/dev/null || echo \"Directory check \")",
+      "Bash(dir:*)",
+      "Bash(cd:*)"
     ]
   }
 }

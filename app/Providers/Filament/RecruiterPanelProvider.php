@@ -25,7 +25,7 @@ class RecruiterPanelProvider extends PanelProvider
         return $panel
             ->id('recruiter')
             ->path('recruiter')
-            ->brandName('IshTop Recruiter')
+            ->brandName('KadrGo Recruiter')
             ->login()
             ->colors([
                 'primary' => Color::Emerald,

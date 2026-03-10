@@ -22,13 +22,17 @@ export const useVacancyStore = defineStore('vacancy', () => {
     total: 0,
   })
 
-  async function fetchVacancies(params = {}) {
+  async function fetchVacancies(params = {}, { append = false } = {}) {
     loading.value = true
     try {
       const response = await api.get('/vacancies', {
         params: { ...filters.value, ...params },
       })
-      vacancies.value = response.data.data
+      if (append) {
+        vacancies.value = [...vacancies.value, ...response.data.data]
+      } else {
+        vacancies.value = response.data.data
+      }
       pagination.value = {
         current_page: response.data.current_page,
         last_page: response.data.last_page,
@@ -68,7 +72,13 @@ export const useVacancyStore = defineStore('vacancy', () => {
       const response = await api.get('/vacancies/nearby', {
         params: { lat, lng, radius },
       })
-      vacancies.value = response.data.vacancies
+      vacancies.value = response.data.data
+      pagination.value = {
+        current_page: response.data.current_page,
+        last_page: response.data.last_page,
+        per_page: response.data.per_page,
+        total: response.data.total,
+      }
       return response.data
     } catch (error) {
       console.error('Nearby vacancies failed:', error)
@@ -79,15 +89,12 @@ export const useVacancyStore = defineStore('vacancy', () => {
   }
 
   async function recommendedVacancies() {
-    loading.value = true
     try {
       const response = await api.get('/vacancies/recommended')
       return response.data.vacancies
     } catch (error) {
       console.error('Recommended vacancies failed:', error)
       throw error
-    } finally {
-      loading.value = false
     }
   }
 
@@ -136,6 +143,15 @@ export const useVacancyStore = defineStore('vacancy', () => {
     }
   }
 
+  // Hydrate from bootstrap data (avoids separate /vacancies call on first load)
+  function hydrateVacancies(data) {
+    if (data && data.length && vacancies.value.length === 0) {
+      vacancies.value = data
+      return true
+    }
+    return false
+  }
+
   return {
     vacancies,
     currentVacancy,
@@ -151,5 +167,6 @@ export const useVacancyStore = defineStore('vacancy', () => {
     applyToVacancy,
     setFilters,
     resetFilters,
+    hydrateVacancies,
   }
 })

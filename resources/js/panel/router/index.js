@@ -1,5 +1,5 @@
 /**
- * Vue Router - IshTop Recruiter Panel
+ * Vue Router - KadrGo Recruiter Panel
  */
 
 import { createRouter, createWebHistory } from 'vue-router';
@@ -11,7 +11,7 @@ import AuthLayout from '../layouts/AuthLayout.vue';
 import LandingLayout from '../layouts/LandingLayout.vue';
 
 const routes = [
-  // Landing Page
+  // Landing Page (panel root)
   {
     path: '/',
     component: LandingLayout,
@@ -20,7 +20,7 @@ const routes = [
         path: '',
         name: 'landing',
         component: () => import('../views/landing/LandingPage.vue'),
-        meta: { title: 'IshTop - Telegram orqali ishga joylashish platformasi' },
+        meta: { title: 'KadrGo - Telegram orqali ishga joylashish platformasi' },
       },
     ],
   },
@@ -218,7 +218,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/panel'),
   routes,
   scrollBehavior(to, from, savedPosition) {
     if (savedPosition) {
@@ -240,7 +240,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Set page title
   if (to.meta.title) {
-    document.title = `${to.meta.title} - IshTop`;
+    document.title = `${to.meta.title} - KadrGo`;
   }
 
   // Check authentication
