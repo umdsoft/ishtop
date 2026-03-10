@@ -1,6 +1,6 @@
 [Unit]
 Description=KadrGo Laravel Queue Worker
-After=network.target redis.service mysql.service
+After=network.target redis.service mysql.service php82-fpm.service
 
 [Service]
 User=admin

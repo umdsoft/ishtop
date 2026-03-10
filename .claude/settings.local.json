@@ -57,7 +57,27 @@
       "Bash(powershell.exe -Command \"Start-Process -FilePath ''php'' -ArgumentList ''artisan'',''serve'',''--host=127.0.0.1'',''--port=8000'' -WorkingDirectory ''D:\\\\shaxsiy\\\\ishtop'' -WindowStyle Hidden -PassThru | Select-Object Id\")",
       "Bash(powershell.exe -Command \"Start-Process -FilePath ''cloudflared'' -ArgumentList ''tunnel'',''--url'',''http://127.0.0.1:8000'' -WorkingDirectory ''D:\\\\shaxsiy\\\\ishtop'' -RedirectStandardError ''D:\\\\shaxsiy\\\\ishtop\\\\storage\\\\logs\\\\cloudflared.log'' -WindowStyle Hidden -PassThru | Select-Object Id\")",
       "Bash(ls:*)",
-      "Bash(npm ls:*)"
+      "Bash(npm ls:*)",
+      "Bash(ssh:*)",
+      "Bash(plink -ssh root@zerox.uz -pw user1515:*)",
+      "Bash(plink -ssh:*)",
+      "Bash(certutil:*)",
+      "Bash(pscp:*)",
+      "WebFetch(domain:kadrgo.uz)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nProduction deployment: branding fixes, deploy configs, server templates\n\n- Fix social links \\(Instagram kadrgo_uz, bot @kadrgobot, channel kadrgo_uz\\)\n- Fix robots.txt sitemap URL to kadrgo.uz\n- Fix LandingPage: blue-50 → brand-50, year 2025→2026, Instagram link\n- Fix GeoServiceTest: test rejects invalid columns \\(security check\\)\n- Add deploy configs: nginx laravel-php82 templates, queue worker service\n- Update .env.example and .env.production.example with channel username\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git push:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix regions rendering: adapt RegionGrid and SearchHero to array API format\n\nThe API returns regions as an array of objects [{name, count, cities}],\nbut RegionGrid and SearchHero expected an Object {region: count}.\nUpdated both components to iterate over the array correctly.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit -m \"$\\(cat <<''EOF''\nFix Nutgram cache: use config value instead of hardcoded ''file''\n\nThe TelegramServiceProvider was hardcoded to Cache::store\\(''file''\\),\nignoring the nutgram.cache config \\(which is ''redis'' in production\\).\nThis caused conversation state to be lost in webhook mode.\n\nCo-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>\nEOF\n\\)\")",
+      "Bash(git commit:*)",
+      "Bash(plink -batch -pw user1515 admin@45.90.34.126 \"cd /home/admin/web/kadrgo.uz/public_html && git pull origin main 2>&1 && printf user1515 | sudo -S /usr/local/php82/bin/php artisan config:cache 2>&1 && printf user1515 | sudo -S /usr/local/php82/bin/php artisan route:cache 2>&1 && printf user1515 | sudo -S systemctl restart kadrgo-queue 2>&1\")",
+      "Bash(plink:*)",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -hostkey \"SHA256:glU7IOXUiNo5HKfp2k3265T0OefUNDje8LC5ND0Vt08\" \"echo connected\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"echo connected\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"cd /home/admin/web/kadrgo.uz/public_html && git pull origin main 2>&1\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"git config --global --add safe.directory /home/admin/web/kadrgo.uz/public_html && cd /home/admin/web/kadrgo.uz/public_html && git pull origin main 2>&1\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"printf ''user1515'' | sudo -S bash -c ''cd /home/admin/web/kadrgo.uz/public_html && git config --global --add safe.directory /home/admin/web/kadrgo.uz/public_html && git pull origin main'' 2>&1\")",
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"printf ''user1515'' | sudo -S bash -c ''/usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan config:cache && /usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan route:cache && systemctl restart kadrgo-queue'' 2>&1\")"
     ]
   }
 }
