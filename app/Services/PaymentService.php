@@ -45,16 +45,19 @@ class PaymentService
 
     public function payWithBalance(User $user, Payment $payment): bool
     {
-        if ($user->balance < $payment->amount) {
-            return false;
-        }
+        return DB::transaction(function () use ($user, $payment) {
+            // Pessimistic locking — race condition oldini olish
+            $lockedUser = User::lockForUpdate()->find($user->id);
 
-        DB::transaction(function () use ($user, $payment) {
-            $user->decrement('balance', $payment->amount);
+            if ($lockedUser->balance < $payment->amount) {
+                return false;
+            }
+
+            $lockedUser->decrement('balance', $payment->amount);
             $this->complete($payment, 'balance_' . now()->timestamp);
-        });
 
-        return true;
+            return true;
+        });
     }
 
     public function topUpBalance(User $user, float $amount): void

@@ -513,7 +513,7 @@ async function handleSave() {
 }
 
 function handleShare() {
-  const url = `https://t.me/kadrgo_bot/app?startapp=vacancy_${vacancy.value.id}`
+  const url = `https://t.me/kadrgobot/app?startapp=vacancy_${vacancy.value.id}`
   const text = `${localized('title') || vacancy.value.title} - ${vacancy.value.employer?.company_name || ''}`
   telegram.shareUrl(url, text)
 }

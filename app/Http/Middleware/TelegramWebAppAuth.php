@@ -53,13 +53,21 @@ class TelegramWebAppAuth
 
     private function resolveUserFromInitData(string $initData): ?User
     {
-        // Production da hash tekshirish
-        if (app()->environment('production') && !$this->telegramAuth->validateInitData($initData)) {
+        // Barcha muhitlarda hash tekshirish (dev bypass xavfli!)
+        if (!$this->telegramAuth->validateInitData($initData)) {
             Log::warning('TelegramWebAppAuth: initData validation failed');
             return null;
         }
 
         parse_str($initData, $parsed);
+
+        // auth_date vaqtini tekshirish (maks 24 soat)
+        $authDate = (int) ($parsed['auth_date'] ?? 0);
+        if ($authDate > 0 && (time() - $authDate) > 86400) {
+            Log::warning('TelegramWebAppAuth: initData expired', ['auth_date' => $authDate]);
+            return null;
+        }
+
         $userData = json_decode($parsed['user'] ?? '{}', true);
 
         if (empty($userData['id'])) {

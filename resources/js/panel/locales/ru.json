@@ -26,6 +26,7 @@
     "register": "Регистрация",
     "logout": "Выйти",
     "email": "Email",
+    "loginField": "Логин",
     "password": "Пароль",
     "rememberMe": "Запомнить меня",
     "forgotPassword": "Забыли пароль?",

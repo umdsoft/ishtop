@@ -12,6 +12,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
+        $middleware->append(\App\Http\Middleware\SecurityHeadersMiddleware::class);
+
         $middleware->alias([
             'telegram.auth' => \App\Http\Middleware\TelegramWebAppAuth::class,
             'subscription' => \App\Http\Middleware\CheckSubscription::class,

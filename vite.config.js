@@ -10,7 +10,8 @@ export default defineConfig({
                 'resources/css/app.css',
                 'resources/css/website.css',
                 'resources/js/app.js',
-                'resources/js/panel.js', // Recruiter Panel entry point
+                'resources/js/panel.js',   // Recruiter Panel entry point
+                'resources/js/website.js', // Public Website SPA entry point
             ],
             refresh: true,
         }),
@@ -28,6 +29,7 @@ export default defineConfig({
         alias: {
             '@': fileURLToPath(new URL('./resources/js', import.meta.url)),
             '@panel': fileURLToPath(new URL('./resources/js/panel', import.meta.url)),
+            '@website': fileURLToPath(new URL('./resources/js/website', import.meta.url)),
         },
     },
 

@@ -97,6 +97,21 @@ class PaymeService
             return $this->errorResponse(-31003, 'Transaction not found');
         }
 
+        // Idempotency — allaqachon completed bo'lsa, qayta ishlamaslik
+        if ($payment->status->value === 'completed') {
+            return [
+                'result' => [
+                    'transaction' => (string) $payment->id,
+                    'perform_time' => $payment->updated_at->getTimestampMs(),
+                    'state' => 2,
+                ],
+            ];
+        }
+
+        if ($payment->status->value !== 'processing') {
+            return $this->errorResponse(-31008, 'Transaction state does not allow perform');
+        }
+
         app(PaymentService::class)->complete($payment, $transactionId);
 
         return [

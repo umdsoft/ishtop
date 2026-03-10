@@ -2,11 +2,11 @@
 
 return [
     'token' => env('TELEGRAM_BOT_TOKEN', ''),
-    'bot_username' => env('TELEGRAM_BOT_USERNAME', 'kadrgo_bot'),
+    'bot_username' => env('TELEGRAM_BOT_USERNAME', 'kadrgobot'),
     'is_local' => env('NUTGRAM_LOCAL', false),
     'local_path' => env('NUTGRAM_LOCAL_PATH', ''),
     'log_channel' => env('NUTGRAM_LOG_CHANNEL', 'stack'),
-    'cache' => env('NUTGRAM_CACHE', 'file'),
+    'cache' => env('NUTGRAM_CACHE', 'redis'),
     'polling' => [
         'timeout' => 10,
         'limit' => 100,

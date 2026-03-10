@@ -19,23 +19,32 @@ class DashboardController extends Controller
             return response()->json(['message' => 'Employer profili kerak'], 403);
         }
 
+        // Bitta query bilan vakansiya statistikasi
+        $vacancyStats = Vacancy::where('employer_id', $employer->id)
+            ->selectRaw("COUNT(*) as total")
+            ->selectRaw("SUM(CASE WHEN status = 'active' THEN 1 ELSE 0 END) as active")
+            ->selectRaw("COALESCE(SUM(views_count), 0) as total_views")
+            ->first();
+
         $vacancyIds = Vacancy::where('employer_id', $employer->id)->pluck('id');
 
-        $totalVacancies = $vacancyIds->count();
-        $activeVacancies = Vacancy::where('employer_id', $employer->id)->active()->count();
-        $totalApplications = Application::whereIn('vacancy_id', $vacancyIds)->count();
-        $newApplications = Application::whereIn('vacancy_id', $vacancyIds)->where('stage', 'new')->count();
-        $totalViews = Vacancy::where('employer_id', $employer->id)->sum('views_count');
-        $hiredCount = Application::whereIn('vacancy_id', $vacancyIds)->where('stage', 'hired')->count();
+        // Bitta query bilan ariza statistikasi
+        $appStats = $vacancyIds->isNotEmpty()
+            ? Application::whereIn('vacancy_id', $vacancyIds)
+                ->selectRaw("COUNT(*) as total")
+                ->selectRaw("SUM(CASE WHEN stage = 'new' THEN 1 ELSE 0 END) as new_count")
+                ->selectRaw("SUM(CASE WHEN stage = 'hired' THEN 1 ELSE 0 END) as hired_count")
+                ->first()
+            : (object) ['total' => 0, 'new_count' => 0, 'hired_count' => 0];
 
         return response()->json([
             'stats' => [
-                'total_vacancies' => $totalVacancies,
-                'active_vacancies' => $activeVacancies,
-                'total_applications' => $totalApplications,
-                'new_applications' => $newApplications,
-                'total_views' => $totalViews,
-                'hired_count' => $hiredCount,
+                'total_vacancies' => (int) $vacancyStats->total,
+                'active_vacancies' => (int) $vacancyStats->active,
+                'total_applications' => (int) $appStats->total,
+                'new_applications' => (int) $appStats->new_count,
+                'total_views' => (int) $vacancyStats->total_views,
+                'hired_count' => (int) $appStats->hired_count,
             ],
         ]);
     }

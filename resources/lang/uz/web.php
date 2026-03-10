@@ -133,6 +133,24 @@ return [
     'privacy' => 'Maxfiylik siyosati',
     'all_rights' => 'Barcha huquqlar himoyalangan',
 
+    // Regions
+    'region_names' => [
+        'Toshkent' => 'Toshkent',
+        'Toshkent viloyati' => 'Toshkent viloyati',
+        'Samarqand' => 'Samarqand',
+        'Buxoro' => 'Buxoro',
+        'Andijon' => 'Andijon',
+        'Farg\'ona' => 'Farg\'ona',
+        'Namangan' => 'Namangan',
+        'Xorazm' => 'Xorazm',
+        'Qashqadaryo' => 'Qashqadaryo',
+        'Surxondaryo' => 'Surxondaryo',
+        'Jizzax' => 'Jizzax',
+        'Sirdaryo' => 'Sirdaryo',
+        'Navoiy' => 'Navoiy',
+        'Qoraqalpog\'iston' => 'Qoraqalpog\'iston',
+    ],
+
     // Time
     'just_now' => 'Hozirgina',
     'minutes_ago' => ':count daqiqa oldin',

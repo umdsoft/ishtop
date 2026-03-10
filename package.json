@@ -15,6 +15,7 @@
         "chart.js": "^4.4.6",
         "dayjs": "^1.11.13",
         "laravel-echo": "^1.16.1",
+        "leaflet": "^1.9.4",
         "lucide-vue-next": "^0.460.0",
         "pinia": "^2.2.7",
         "pusher-js": "^8.4.0-rc2",

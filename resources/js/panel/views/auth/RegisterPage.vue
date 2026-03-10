@@ -1,8 +1,19 @@
 <template>
   <AppCard class="shadow-xl">
     <div class="text-center mb-6">
-      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-500 flex items-center justify-center text-white text-2xl font-bold">
-        I
+      <div class="flex items-center justify-center gap-2.5 mb-4">
+        <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center flex-shrink-0">
+          <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+            <path d="M15 14L15 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 14" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M30 17L35 17L35 31L30 31" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="flex flex-col leading-none">
+          <span class="text-[13px] font-extrabold tracking-[0.5px] text-brand-500">KADR</span>
+          <span class="text-[13px] font-black tracking-[1px] text-accent-500 flex items-center">GO<span class="w-[5px] h-[5px] rounded-full bg-accent-500 ml-1"></span></span>
+        </div>
       </div>
       <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">
         {{ $t('auth.register') }}
@@ -13,13 +24,6 @@
     </div>
 
     <form @submit.prevent="handleRegister" class="space-y-4">
-      <AppInput
-        v-model="form.companyName"
-        :label="$t('auth.companyName')"
-        placeholder="Grand Hotel"
-        required
-      />
-
       <div class="grid grid-cols-2 gap-4">
         <AppInput
           v-model="form.firstName"
@@ -36,10 +40,18 @@
       </div>
 
       <AppInput
-        v-model="form.email"
-        type="email"
-        :label="$t('auth.email')"
-        placeholder="your@email.com"
+        :model-value="form.phone"
+        @update:model-value="onPhoneInput"
+        type="tel"
+        :label="$t('auth.phone')"
+        placeholder="+998 90 123 45 67"
+        required
+      />
+
+      <AppInput
+        v-model="form.login"
+        :label="$t('auth.loginField')"
+        placeholder="umidbek_k"
         required
       />
 
@@ -72,7 +84,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { ref, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { toast } from 'vue-sonner';
@@ -84,23 +96,46 @@ const router = useRouter();
 const authStore = useAuthStore();
 
 const form = ref({
-  companyName: '',
   firstName: '',
   lastName: '',
-  email: '',
+  phone: '+998 ',
+  login: '',
   password: '',
 });
 
 const loading = ref(false);
 
+function onPhoneInput(val) {
+  let digits = val.replace(/\D/g, '');
+  if (!digits.startsWith('998')) {
+    digits = '998';
+  }
+  digits = digits.slice(0, 12);
+
+  let formatted = '+998';
+  const rest = digits.slice(3);
+  if (rest.length > 0) formatted += ' ' + rest.slice(0, 2);
+  if (rest.length > 2) formatted += ' ' + rest.slice(2, 5);
+  if (rest.length > 5) formatted += ' ' + rest.slice(5, 7);
+  if (rest.length > 7) formatted += ' ' + rest.slice(7, 9);
+
+  const oldVal = form.value.phone;
+  if (formatted === oldVal) {
+    form.value.phone = '';
+    nextTick(() => { form.value.phone = formatted; });
+  } else {
+    form.value.phone = formatted;
+  }
+}
+
 async function handleRegister() {
   loading.value = true;
 
   const result = await authStore.register({
-    company_name: form.value.companyName,
     first_name: form.value.firstName,
     last_name: form.value.lastName,
-    email: form.value.email,
+    phone: form.value.phone.replace(/\s/g, ''),
+    login: form.value.login,
     password: form.value.password,
   });
 

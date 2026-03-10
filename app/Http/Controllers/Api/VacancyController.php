@@ -41,7 +41,7 @@ class VacancyController extends Controller
         if ($request->filled(['lat', 'lng'])) {
             $lat = (float) $request->lat;
             $lng = (float) $request->lng;
-            $radius = (int) ($request->radius ?? 100);
+            $radius = min((int) ($request->radius ?? 100), 200);
             $haversine = GeoService::haversineFormula();
 
             $query->whereNotNull('latitude')
@@ -53,7 +53,7 @@ class VacancyController extends Controller
         $vacancies = $query
             ->orderByDesc('is_top')
             ->orderByDesc('published_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         return response()->json($vacancies);
     }
@@ -252,7 +252,7 @@ class VacancyController extends Controller
             ->nearbyVacancies($request->lat, $request->lng, $request->radius ?? 10)
             ->when($request->category, fn($q, $v) => is_array($v) ? $q->whereIn('category', $v) : $q->where('category', $v))
             ->with('employer:id,company_name,logo_url')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         // Add match score if worker profile exists
         $worker = $request->user()?->workerProfile;

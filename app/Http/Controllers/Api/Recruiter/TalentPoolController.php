@@ -17,9 +17,10 @@ class TalentPoolController extends Controller
         $entries = TalentPoolEntry::where('recruiter_user_id', $userId)
             ->with('workerProfile:id,full_name,city,specialty,experience_years,expected_salary_min,expected_salary_max,photo_url')
             ->when($request->q, function ($q, $v) {
-                $q->whereHas('workerProfile', function ($sub) use ($v) {
-                    $sub->where('full_name', 'like', "%{$v}%")
-                        ->orWhere('specialty', 'like', "%{$v}%");
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $v);
+                $q->whereHas('workerProfile', function ($sub) use ($escaped) {
+                    $sub->where('full_name', 'like', "%{$escaped}%")
+                        ->orWhere('specialty', 'like', "%{$escaped}%");
                 });
             })
             ->when($request->tags, function ($q, $v) {
@@ -28,7 +29,7 @@ class TalentPoolController extends Controller
                 }
             })
             ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         return response()->json($entries);
     }

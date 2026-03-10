@@ -6,6 +6,25 @@
 *.md diff=markdown
 *.php diff=php
 
-/.github export-ignore
+# ── Production export-ignore ──
+# Documentation & TZ files
+*.md export-ignore
+*.txt export-ignore
+DEPLOY.md export-ignore
+OPTIMIZATION_PLAN.md export-ignore
+TELEGRAM_BOT_TZ.md export-ignore
+README.md export-ignore
 CHANGELOG.md export-ignore
+LICENSE.md export-ignore
+
+# Dev/CI configs
+/.github export-ignore
 .styleci.yml export-ignore
+.editorconfig export-ignore
+.env.example export-ignore
+phpunit.xml export-ignore
+
+# Tests & dev tools
+/tests export-ignore
+/.vscode export-ignore
+/.idea export-ignore

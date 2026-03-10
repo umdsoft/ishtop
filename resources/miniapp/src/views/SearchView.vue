@@ -205,8 +205,8 @@
       </div>
 
       <!-- Loading -->
-      <div v-if="vacancyStore.loading" class="py-16">
-        <LoadingSpinner />
+      <div v-if="vacancyStore.loading" class="space-y-2.5">
+        <SkeletonCard v-for="i in 5" :key="i" />
       </div>
 
       <!-- No Results -->
@@ -245,6 +245,7 @@ import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
 import VacancyCard from '@/components/VacancyCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import SkeletonCard from '@/components/SkeletonCard.vue'
 
 const route = useRoute()
 const router = useRouter()

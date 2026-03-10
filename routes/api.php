@@ -7,6 +7,21 @@ use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
+| Public Website API (/api/web/...)
+|--------------------------------------------------------------------------
+*/
+
+Route::prefix('web')->middleware('web.locale')->group(function () {
+    Route::get('/home', [Api\WebApiController::class, 'home']);
+    Route::get('/vacancies', [Api\WebApiController::class, 'vacancies']);
+    Route::get('/vacancies/{id}', [Api\WebApiController::class, 'show'])->whereUuid('id');
+    Route::post('/vacancies/{id}/apply', [Api\WebApiController::class, 'apply'])
+        ->whereUuid('id')
+        ->middleware('throttle:5,1');
+});
+
+/*
+|--------------------------------------------------------------------------
 | Mini App API (/api/...)
 |--------------------------------------------------------------------------
 */

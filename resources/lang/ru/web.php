@@ -133,6 +133,24 @@ return [
     'privacy' => 'Политика конфиденциальности',
     'all_rights' => 'Все права защищены',
 
+    // Regions
+    'region_names' => [
+        'Toshkent' => 'Ташкент',
+        'Toshkent viloyati' => 'Ташкентская область',
+        'Samarqand' => 'Самарканд',
+        'Buxoro' => 'Бухара',
+        'Andijon' => 'Андижан',
+        "Farg'ona" => 'Фергана',
+        'Namangan' => 'Наманган',
+        'Xorazm' => 'Хорезм',
+        'Qashqadaryo' => 'Кашкадарья',
+        'Surxondaryo' => 'Сурхандарья',
+        'Jizzax' => 'Джизак',
+        'Sirdaryo' => 'Сырдарья',
+        'Navoiy' => 'Навои',
+        "Qoraqalpog'iston" => 'Каракалпакстан',
+    ],
+
     // Time
     'just_now' => 'Только что',
     'minutes_ago' => ':count мин. назад',

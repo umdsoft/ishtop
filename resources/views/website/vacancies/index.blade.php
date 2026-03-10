@@ -158,7 +158,7 @@
                             @foreach($regions as $region => $count)
                                 <a href="{{ route('vacancies.index', array_merge(request()->except(['region', 'page']), ['region' => $region])) }}"
                                    class="flex items-center justify-between px-3 py-2 rounded-lg text-sm transition-colors {{ request('region') === $region ? 'bg-brand-50 text-brand-600 font-semibold' : 'text-surface-600 hover:bg-surface-50' }}">
-                                    <span class="truncate">{{ $region }}</span>
+                                    <span class="truncate">{{ __('web.region_names.' . $region) }}</span>
                                     <span class="text-xs {{ request('region') === $region ? 'text-brand-400' : 'text-surface-400' }} tabular-nums">{{ $count }}</span>
                                 </a>
                             @endforeach
@@ -302,7 +302,7 @@
                                 <a href="{{ route('vacancies.index', request()->except(['region', 'page'])) }}"
                                    class="inline-flex items-center gap-1 bg-brand-50 text-brand-600 text-xs px-2.5 py-1 rounded-lg hover:bg-brand-100 transition-colors">
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/></svg>
-                                    {{ request('region') }}
+                                    {{ __('web.region_names.' . request('region')) }}
                                     <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
                                 </a>
                             @endif

@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Alpine.js x-cloak */
-[x-cloak] {
-    display: none !important;
-}
-
 /* Line clamp utilities */
 .line-clamp-2 {
     display: -webkit-box;

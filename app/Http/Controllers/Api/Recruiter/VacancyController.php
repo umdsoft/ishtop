@@ -46,8 +46,9 @@ class VacancyController extends Controller
         $vacancies = (clone $query)
             ->when($request->status, fn($q, $v) => $q->where('status', $v))
             ->when($request->search, fn($q, $v) => $q->where(function ($q) use ($v) {
-                $q->where('title_uz', 'like', "%{$v}%")
-                  ->orWhere('title_ru', 'like', "%{$v}%");
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $v);
+                $q->where('title_uz', 'like', "%{$escaped}%")
+                  ->orWhere('title_ru', 'like', "%{$escaped}%");
             }))
             ->when($request->work_type, fn($q, $v) => $q->where('work_type', $v))
             ->when($request->category, fn($q, $v) => $q->where('category', $v))
@@ -56,7 +57,7 @@ class VacancyController extends Controller
             }])
             ->with('employer:id,company_name')
             ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         // Add recommended candidates count — batch query (N+1 → 4 queries)
         $recommendedCounts = $this->matchingService->countRecommendedCandidatesBatch($vacancies->getCollection());

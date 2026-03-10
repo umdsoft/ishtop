@@ -12,9 +12,16 @@ class GeoService
      * Haversine formula for MySQL (PostGIS ST_DWithin replacement).
      * Public static so models can reuse without duplicating the formula.
      */
+    private static array $allowedColumns = ['latitude', 'longitude'];
+
     public static function haversineFormula(string $latCol = 'latitude', string $lngCol = 'longitude'): string
     {
-        return "(6371 * acos(cos(radians(?)) * cos(radians({$latCol})) * cos(radians({$lngCol}) - radians(?)) + sin(radians(?)) * sin(radians({$latCol}))))";
+        // Faqat ruxsat etilgan ustun nomlari — SQL injection oldini olish
+        if (!in_array($latCol, self::$allowedColumns) || !in_array($lngCol, self::$allowedColumns)) {
+            throw new \InvalidArgumentException("Invalid column name for haversine formula");
+        }
+
+        return "(6371 * acos(cos(radians(?)) * cos(radians(`{$latCol}`)) * cos(radians(`{$lngCol}`) - radians(?)) + sin(radians(?)) * sin(radians(`{$latCol}`))))";
     }
 
     public function nearbyVacancies(float $lat, float $lng, int $radiusKm = 10): Builder

@@ -63,7 +63,7 @@ class PaymentController extends Controller
         $payments = Payment::where('user_id', $request->user()->id)
             ->completed()
             ->orderByDesc('created_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         $typeLabels = [
             'candidate_unlock' => 'Nomzodlarni ochish',
@@ -74,17 +74,18 @@ class PaymentController extends Controller
             'vacancy_urgent' => "Shoshilinch e'lon",
         ];
 
-        $payments->getCollection()->transform(function ($payment) use ($typeLabels) {
+        // N+1 oldini olish: barcha vacancy ID larni yig'ib, bitta queryda olish
+        $vacancyPayments = $payments->getCollection()->filter(
+            fn($p) => $p->payable_type === \App\Models\Vacancy::class && $p->payable_id
+        );
+        $vacancyMap = $vacancyPayments->isNotEmpty()
+            ? \App\Models\Vacancy::whereIn('id', $vacancyPayments->pluck('payable_id'))
+                ->pluck('title_uz', 'id')
+            : collect();
+
+        $payments->getCollection()->transform(function ($payment) use ($typeLabels, $vacancyMap) {
             $payment->type_label = $typeLabels[$payment->type] ?? $payment->type;
-
-            $payment->description = null;
-            if ($payment->payable_type === \App\Models\Vacancy::class && $payment->payable_id) {
-                $vacancy = \App\Models\Vacancy::select('id', 'title_uz', 'title_ru')->find($payment->payable_id);
-                if ($vacancy) {
-                    $payment->description = $vacancy->title_uz ?: $vacancy->title_ru;
-                }
-            }
-
+            $payment->description = $vacancyMap->get($payment->payable_id);
             return $payment;
         });
 

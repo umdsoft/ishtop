@@ -264,7 +264,7 @@ class SettingsHandler
         $isRu = $lang === 'ru';
 
         $referralCode = $user->referral_code;
-        $botUsername = config('nutgram.bot_username', 'kadrgo_bot');
+        $botUsername = config('nutgram.bot_username', 'kadrgobot');
         $referralLink = "https://t.me/{$botUsername}?start=ref_{$referralCode}";
 
         $referralsCount = User::where('referred_by', $user->id)->count();

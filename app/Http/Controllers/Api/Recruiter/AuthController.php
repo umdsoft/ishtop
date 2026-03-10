@@ -52,32 +52,23 @@ class AuthController extends Controller
         $request->validate([
             'first_name' => 'required|string|max:100',
             'last_name' => 'nullable|string|max:100',
-            'email' => 'required|email|unique:users,email',
-            'password' => 'required|string|min:8|confirmed',
+            'login' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_]+$/|unique:users,username',
+            'password' => 'required|string|min:8',
             'phone' => 'required|string|regex:/^\+998\d{9}$/',
-            'company_name' => 'required|string|max:300',
-            'industry' => 'nullable|string|max:50',
         ]);
 
         $user = User::create([
-            'telegram_id' => 0,
+            'telegram_id' => null,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
-            'email' => $request->email,
+            'username' => $request->login,
             'password' => Hash::make($request->password),
             'phone' => $request->phone,
             'is_verified' => true,
             'referral_code' => User::generateReferralCode(),
         ]);
 
-        $employer = EmployerProfile::create([
-            'user_id' => $user->id,
-            'company_name' => $request->company_name,
-            'industry' => $request->industry,
-            'phone' => $request->phone,
-        ]);
-
-        $user->update(['active_employer_id' => $employer->id]);
+        $this->ensureEmployerProfile($user);
 
         $token = $user->createToken('recruiter-api')->plainTextToken;
 
@@ -111,6 +102,20 @@ class AuthController extends Controller
         ]);
 
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
+        $ip = $request->ip();
+
+        // IP bo'yicha OTP yuborish limiti — soatiga 10 ta
+        $ipKey = "otp_send_ip:{$ip}";
+        $ipSendCount = (int) Cache::get($ipKey, 0);
+        if ($ipSendCount >= 10) {
+            return response()->json(['message' => 'Juda ko\'p so\'rov. 1 soatdan keyin urinib ko\'ring'], 429);
+        }
+
+        // Telefon bo'yicha OTP yuborish limiti — 5 daqiqada 1 ta
+        $phoneCooldown = Cache::get("otp_cooldown:{$phone}");
+        if ($phoneCooldown) {
+            return response()->json(['message' => 'Kod allaqachon yuborilgan. 2 daqiqadan keyin qayta so\'rang'], 429);
+        }
 
         $user = User::where('phone', $request->phone)
             ->orWhere('phone', $phone)
@@ -122,13 +127,18 @@ class AuthController extends Controller
         }
 
         if (!$user->telegram_id || $user->telegram_id == 0) {
-            return response()->json(['message' => 'Telegram bot ga ulanmagan. Avval @' . config('nutgram.username', 'kadrgo_bot') . ' botga /start yuboring'], 422);
+            return response()->json(['message' => 'Telegram bot ga ulanmagan. Avval @' . config('nutgram.username', 'kadrgobot') . ' botga /start yuboring'], 422);
         }
 
         // Generate OTP
         $code = str_pad((string) random_int(100000, 999999), 6, '0', STR_PAD_LEFT);
         Cache::put("otp:{$phone}", $code, now()->addMinutes(5));
         Cache::put("otp_attempts:{$phone}", 0, now()->addMinutes(5));
+        Cache::put("otp_cooldown:{$phone}", true, now()->addMinutes(2));
+        Cache::increment($ipKey);
+        if ($ipSendCount === 0) {
+            Cache::put($ipKey, 1, now()->addHour());
+        }
 
         // Send OTP via Telegram bot
         try {
@@ -160,10 +170,23 @@ class AuthController extends Controller
         ]);
 
         $phone = preg_replace('/[^0-9]/', '', $request->phone);
+        $ip = $request->ip();
 
-        // Check attempts
+        // IP bo'yicha tekshirish limiti — soatiga 20 ta
+        $ipVerifyKey = "otp_verify_ip:{$ip}";
+        $ipVerifyCount = (int) Cache::get($ipVerifyKey, 0);
+        if ($ipVerifyCount >= 20) {
+            return response()->json(['message' => 'Juda ko\'p urinish. 1 soatdan keyin urinib ko\'ring'], 429);
+        }
+        Cache::increment($ipVerifyKey);
+        if ($ipVerifyCount === 0) {
+            Cache::put($ipVerifyKey, 1, now()->addHour());
+        }
+
+        // Telefon bo'yicha urinishlar soni
         $attempts = Cache::get("otp_attempts:{$phone}", 0);
         if ($attempts >= 5) {
+            Cache::forget("otp:{$phone}");
             return response()->json(['message' => 'Urinishlar soni tugadi. Qaytadan kod so\'rang'], 429);
         }
 

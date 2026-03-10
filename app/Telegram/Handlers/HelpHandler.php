@@ -51,7 +51,7 @@ class HelpHandler
                 . "📞 Yordam: @KadrGoSupport";
         }
 
-        $botUsername = config('nutgram.bot_username', 'kadrgo_bot');
+        $botUsername = config('nutgram.bot_username', 'kadrgobot');
 
         $bot->sendMessage(
             text: $text,

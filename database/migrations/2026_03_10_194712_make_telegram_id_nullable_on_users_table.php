@@ -1,0 +1,30 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::table('users', function (Blueprint $table) {
+            $table->bigInteger('telegram_id')->nullable()->change();
+        });
+
+        DB::table('users')->where('telegram_id', 0)->update(['telegram_id' => null]);
+    }
+
+    public function down(): void
+    {
+        DB::table('users')->whereNull('telegram_id')->update(['telegram_id' => 0]);
+
+        Schema::table('users', function (Blueprint $table) {
+            $table->bigInteger('telegram_id')->nullable(false)->change();
+        });
+    }
+};

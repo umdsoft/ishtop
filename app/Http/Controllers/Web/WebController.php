@@ -13,6 +13,63 @@ use Illuminate\Http\Request;
 
 class WebController extends Controller
 {
+    /**
+     * SPA shell — serves the Vue app with server-side SEO meta tags
+     */
+    public function spa(Request $request)
+    {
+        $path = $request->path();
+        $data = [
+            'title' => 'KadrGo — O\'zbekistondagi eng yirik ish qidirish platformasi',
+            'description' => 'Minglab vakansiyalar, ishonchli kompaniyalar. Telegramdan chiqmasdan ish toping.',
+            'ogType' => 'website',
+            'ogTitle' => null,
+            'ogDescription' => null,
+            'ogImage' => null,
+            'canonical' => url()->current(),
+            'jsonLd' => null,
+        ];
+
+        // SEO: vacancy detail page — render meta from DB
+        if (preg_match('#^vacancies/(\d+)$#', $path, $m)) {
+            $vacancy = Vacancy::with('employer:id,company_name,logo_url')->find($m[1]);
+            if ($vacancy && $vacancy->isActive()) {
+                $lang = app()->getLocale();
+                $title = $lang === 'ru' ? ($vacancy->title_ru ?: $vacancy->title_uz) : $vacancy->title_uz;
+                $company = $vacancy->employer->company_name ?? '';
+
+                $data['title'] = $title . ' — KadrGo';
+                $data['description'] = $company . ($vacancy->city ? ' · ' . $vacancy->city : '');
+                $data['ogTitle'] = $title;
+                $data['ogDescription'] = $company;
+                $data['ogType'] = 'article';
+                if ($vacancy->employer->logo_url) {
+                    $data['ogImage'] = $vacancy->employer->logo_url;
+                }
+                $data['jsonLd'] = json_encode([
+                    '@context' => 'https://schema.org',
+                    '@type' => 'JobPosting',
+                    'title' => $title,
+                    'description' => strip_tags($vacancy->{'description_' . $lang} ?? $vacancy->description_uz ?? ''),
+                    'hiringOrganization' => [
+                        '@type' => 'Organization',
+                        'name' => $company,
+                    ],
+                    'jobLocation' => [
+                        '@type' => 'Place',
+                        'address' => $vacancy->city ?? 'Uzbekistan',
+                    ],
+                    'datePosted' => $vacancy->published_at?->toIso8601String(),
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            }
+        } elseif ($path === 'vacancies') {
+            $data['title'] = 'Vakansiyalar — KadrGo';
+            $data['description'] = 'KadrGo dagi barcha vakansiyalar. Ish qidiring va ariza topshiring.';
+        }
+
+        return view('layouts.spa', $data);
+    }
+
     public function home()
     {
         $lang = app()->getLocale();
@@ -54,25 +111,32 @@ class WebController extends Controller
             $cat->vacancies_count = $slugs->sum(fn($s) => $vacancyCounts->get($s, 0));
         }
 
-        $stats = [
-            'vacancies' => Vacancy::active()->count(),
-            'companies' => Vacancy::active()->distinct('employer_id')->count('employer_id'),
-            'workers' => User::whereHas('workerProfile')->count(),
-        ];
+        $stats = cache()->remember('home_stats', 300, function () {
+            return [
+                'vacancies' => Vacancy::active()->count(),
+                'companies' => Vacancy::active()->distinct('employer_id')->count('employer_id'),
+                'workers' => User::whereHas('workerProfile')->count(),
+            ];
+        });
 
-        // Group vacancies by region (viloyat) using cities table
-        $regions = \DB::table('vacancies')
-            ->join('cities', function ($join) {
-                $join->on('vacancies.city', '=', 'cities.name_uz')
-                     ->where('cities.is_active', true);
-            })
-            ->where('vacancies.status', 'active')
-            ->where('vacancies.expires_at', '>', now())
-            ->select('cities.region')
-            ->selectRaw('COUNT(DISTINCT vacancies.id) as count')
-            ->groupBy('cities.region')
-            ->orderByDesc('count')
-            ->pluck('count', 'region');
+        // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
+        $regions = cache()->remember('home_regions', 300, function () {
+            $allCities = City::where('is_active', true)->get(['name_uz', 'region']);
+            $regionNames = $allCities->pluck('region')->unique()->sort()->values();
+
+            // Bitta query bilan barcha shaharlarning vakansiya sonini olish
+            $cityCounts = Vacancy::active()
+                ->selectRaw('city, COUNT(*) as cnt')
+                ->groupBy('city')
+                ->pluck('cnt', 'city');
+
+            return $regionNames->mapWithKeys(function ($region) use ($allCities, $cityCounts) {
+                $cityNames = $allCities->where('region', $region)->pluck('name_uz');
+                $count = ($cityCounts->get($region, 0))
+                    + $cityNames->sum(fn($name) => $cityCounts->get($name, 0));
+                return [$region => $count];
+            });
+        });
 
         return view('website.home', compact(
             'topVacancies', 'urgentVacancies', 'latestVacancies',
@@ -110,7 +174,8 @@ class WebController extends Controller
             ->orderByDesc('published_at');
 
         if ($request->filled('q')) {
-            $keyword = '%' . $request->q . '%';
+            $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $request->q);
+            $keyword = '%' . $escaped . '%';
             $query->where(function ($q) use ($keyword) {
                 $q->where('title_uz', 'like', $keyword)
                   ->orWhere('title_ru', 'like', $keyword)
@@ -153,8 +218,12 @@ class WebController extends Controller
         }
 
         if ($request->filled('region')) {
+            // Vacancies store region name in city field, so match directly + also check city names within that region
             $regionCities = City::where('region', $request->region)->pluck('name_uz')->unique();
-            $query->whereIn('city', $regionCities);
+            $query->where(function ($q) use ($request, $regionCities) {
+                $q->where('city', $request->region)
+                  ->orWhereIn('city', $regionCities);
+            });
         } elseif ($request->filled('city')) {
             $query->where('city', $request->city);
         }
@@ -181,19 +250,23 @@ class WebController extends Controller
 
         $vacancies = $query->paginate(20)->withQueryString();
 
-        // Regions for location filter
-        $regions = \DB::table('vacancies')
-            ->join('cities', function ($join) {
-                $join->on('vacancies.city', '=', 'cities.name_uz')
-                     ->where('cities.is_active', true);
-            })
-            ->where('vacancies.status', 'active')
-            ->where('vacancies.expires_at', '>', now())
-            ->select('cities.region')
-            ->selectRaw('COUNT(DISTINCT vacancies.id) as count')
-            ->groupBy('cities.region')
-            ->orderByDesc('count')
-            ->pluck('count', 'region');
+        // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
+        $regions = cache()->remember('index_regions', 300, function () {
+            $allCities = City::where('is_active', true)->get(['name_uz', 'region']);
+            $regionNames = $allCities->pluck('region')->unique()->sort()->values();
+
+            $cityCounts = Vacancy::active()
+                ->selectRaw('city, COUNT(*) as cnt')
+                ->groupBy('city')
+                ->pluck('cnt', 'city');
+
+            return $regionNames->mapWithKeys(function ($region) use ($allCities, $cityCounts) {
+                $cityNames = $allCities->where('region', $region)->pluck('name_uz');
+                $count = ($cityCounts->get($region, 0))
+                    + $cityNames->sum(fn($name) => $cityCounts->get($name, 0));
+                return [$region => $count];
+            });
+        });
 
         return view('website.vacancies.index', compact(
             'vacancies', 'categories', 'regions', 'lang', 'expandedRoot', 'selectedSubs'

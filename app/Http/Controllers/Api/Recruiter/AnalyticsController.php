@@ -21,22 +21,26 @@ class AnalyticsController extends Controller
         }
 
         $vacancyIds = Vacancy::where('employer_id', $employer->id)->pluck('id');
-
         $totalViews = Vacancy::where('employer_id', $employer->id)->sum('views_count');
-        $totalApps = Application::whereIn('vacancy_id', $vacancyIds)->count();
-        $hiredCount = Application::whereIn('vacancy_id', $vacancyIds)->where('stage', 'hired')->count();
-        $avgScore = Application::whereIn('vacancy_id', $vacancyIds)
-            ->whereNotNull('questionnaire_score')
-            ->avg('questionnaire_score');
 
+        // Bitta query bilan ariza statistikasi
+        $appStats = $vacancyIds->isNotEmpty()
+            ? Application::whereIn('vacancy_id', $vacancyIds)
+                ->selectRaw("COUNT(*) as total")
+                ->selectRaw("SUM(CASE WHEN stage = 'hired' THEN 1 ELSE 0 END) as hired_count")
+                ->selectRaw("AVG(CASE WHEN questionnaire_score IS NOT NULL THEN questionnaire_score END) as avg_score")
+                ->first()
+            : (object) ['total' => 0, 'hired_count' => 0, 'avg_score' => 0];
+
+        $totalApps = (int) $appStats->total;
         $conversionRate = $totalViews > 0 ? round(($totalApps / $totalViews) * 100, 2) : 0;
 
         return response()->json([
             'overview' => [
-                'total_views' => $totalViews,
+                'total_views' => (int) $totalViews,
                 'total_applications' => $totalApps,
-                'hired_count' => $hiredCount,
-                'avg_questionnaire_score' => round($avgScore ?? 0, 2),
+                'hired_count' => (int) $appStats->hired_count,
+                'avg_questionnaire_score' => round((float) ($appStats->avg_score ?? 0), 2),
                 'conversion_rate' => $conversionRate,
             ],
         ]);

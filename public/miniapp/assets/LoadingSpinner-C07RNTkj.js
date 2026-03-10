@@ -1,1 +1,0 @@
-import{_ as r}from"./index-ZoRAgkcB.js";import{o as t,a as n,b as o}from"./vendor-Te_7JAGS.js";const s={},a={class:"flex items-center justify-center py-8"};function c(i,e){return t(),n("div",a,[...e[0]||(e[0]=[o("div",{class:"animate-spin rounded-full h-8 w-8 border-b-2 border-tg-button"},null,-1)])])}const f=r(s,[["render",c]]);export{f as L};

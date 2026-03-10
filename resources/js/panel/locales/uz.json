@@ -26,6 +26,7 @@
     "register": "Ro'yxatdan o'tish",
     "logout": "Chiqish",
     "email": "Email",
+    "loginField": "Login",
     "password": "Parol",
     "rememberMe": "Eslab qolish",
     "forgotPassword": "Parolni unutdingizmi?",

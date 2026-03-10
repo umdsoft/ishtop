@@ -97,12 +97,12 @@
                        class="w-full pl-11 pr-4 py-3.5 rounded-xl border-0 bg-surface-50 text-surface-900 placeholder-surface-400 focus:ring-2 focus:ring-brand-500 focus:bg-white text-sm">
             </div>
             <div class="sm:w-44">
-                <select name="city"
+                <select name="region"
                         class="w-full py-3.5 px-4 rounded-xl border-0 bg-surface-50 text-surface-900 focus:ring-2 focus:ring-brand-500 text-sm appearance-none">
                     <option value="">{{ __('web.all_cities') }}</option>
                     @if(isset($regions))
                         @foreach($regions as $region => $count)
-                            <option value="{{ $region }}" {{ request('city') === $region ? 'selected' : '' }}>{{ $region }}</option>
+                            <option value="{{ $region }}" {{ request('region') === $region ? 'selected' : '' }}>{{ __('web.region_names.' . $region) }}</option>
                         @endforeach
                     @endif
                 </select>

@@ -95,8 +95,19 @@ class FileUploadService
             // Download file
             $fileContent = Http::get($fileUrl)->body();
 
+            // Fayl hajmini tekshirish (10MB limit)
+            if (strlen($fileContent) > 10 * 1024 * 1024) {
+                return null;
+            }
+
+            // Ruxsat etilgan kengaytmalar
+            $extension = strtolower(pathinfo($filePath, PATHINFO_EXTENSION));
+            $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'pdf', 'doc', 'docx', 'xls', 'xlsx'];
+            if (!in_array($extension, $allowedExtensions)) {
+                return null;
+            }
+
             // Generate filename
-            $extension = pathinfo($filePath, PATHINFO_EXTENSION);
             $filename = Str::uuid() . '.' . $extension;
             $path = $directory . '/' . $filename;
 
@@ -244,7 +255,7 @@ class FileUploadService
     }
 
     /**
-     * Validate file upload
+     * Validate file upload (MIME type + magic bytes)
      */
     protected function validateFile(UploadedFile $file): void
     {
@@ -269,6 +280,51 @@ class FileUploadService
         if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
             throw new \Exception('Fayl turi qo\'llab-quvvatlanmaydi');
         }
+
+        // Magic bytes orqali haqiqiy fayl turini tekshirish
+        $this->validateMagicBytes($file);
+    }
+
+    /**
+     * Magic bytes orqali fayl kontentini tekshirish.
+     * Zararli fayllarni rasm/PDF sifatida yuklashni oldini oladi.
+     */
+    protected function validateMagicBytes(UploadedFile $file): void
+    {
+        $handle = fopen($file->getRealPath(), 'rb');
+        if (!$handle) {
+            throw new \Exception('Faylni o\'qib bo\'lmadi');
+        }
+
+        $bytes = fread($handle, 12);
+        fclose($handle);
+
+        if ($bytes === false || strlen($bytes) < 4) {
+            throw new \Exception('Fayl juda kichik yoki bo\'sh');
+        }
+
+        $mime = $file->getMimeType();
+        $valid = match (true) {
+            // JPEG: FF D8 FF
+            $mime === 'image/jpeg' => str_starts_with($bytes, "\xFF\xD8\xFF"),
+            // PNG: 89 50 4E 47
+            $mime === 'image/png' => str_starts_with($bytes, "\x89PNG"),
+            // GIF: GIF87a yoki GIF89a
+            $mime === 'image/gif' => str_starts_with($bytes, 'GIF87a') || str_starts_with($bytes, 'GIF89a'),
+            // WebP: RIFF....WEBP
+            $mime === 'image/webp' => str_starts_with($bytes, 'RIFF') && substr($bytes, 8, 4) === 'WEBP',
+            // PDF: %PDF
+            $mime === 'application/pdf' => str_starts_with($bytes, '%PDF'),
+            // MS Office (DOC/XLS): D0 CF 11 E0 (OLE compound)
+            in_array($mime, ['application/msword', 'application/vnd.ms-excel']) => str_starts_with($bytes, "\xD0\xCF\x11\xE0"),
+            // OOXML (DOCX/XLSX): PK (ZIP format)
+            str_contains($mime, 'officedocument') => str_starts_with($bytes, "PK"),
+            default => false,
+        };
+
+        if (!$valid) {
+            throw new \Exception('Fayl kontenti ko\'rsatilgan turga mos kelmaydi');
+        }
     }
 
     /**
@@ -292,6 +348,9 @@ class FileUploadService
         if (!in_array($file->getMimeType(), $allowedMimeTypes)) {
             throw new \Exception('Faqat rasm fayllarini yuklash mumkin (JPG, PNG, GIF, WebP)');
         }
+
+        // Magic bytes tekshiruvi
+        $this->validateMagicBytes($file);
     }
 
     /**

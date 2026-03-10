@@ -45,7 +45,7 @@ class SearchController extends Controller
             default => $query->orderByDesc('is_top')->orderByDesc('published_at'),
         };
 
-        $vacancies = $query->paginate($request->per_page ?? 20);
+        $vacancies = $query->paginate(min($request->per_page ?? 20, 100));
 
         return response()->json($vacancies);
     }
@@ -64,21 +64,22 @@ class SearchController extends Controller
         $workers = WorkerProfile::where('search_status', 'open')
             ->with('user:id,first_name,last_name,username,last_active_at')
             ->when($request->q, function ($q, $v) {
-                $q->where(function ($sub) use ($v) {
-                    $sub->where('full_name', 'like', "%{$v}%")
-                        ->orWhere('specialty', 'like', "%{$v}%")
-                        ->orWhere('bio', 'like', "%{$v}%");
+                $escaped = str_replace(['%', '_'], ['\\%', '\\_'], $v);
+                $q->where(function ($sub) use ($escaped) {
+                    $sub->where('full_name', 'like', "%{$escaped}%")
+                        ->orWhere('specialty', 'like', "%{$escaped}%")
+                        ->orWhere('bio', 'like', "%{$escaped}%");
                 });
             })
             ->when($request->city, fn($q, $v) => $q->where('city', $v))
-            ->when($request->specialty, fn($q, $v) => $q->where('specialty', 'like', "%{$v}%"))
+            ->when($request->specialty, fn($q, $v) => $q->where('specialty', 'like', '%' . str_replace(['%', '_'], ['\\%', '\\_'], $v) . '%'))
             ->when($request->experience_min, fn($q, $v) => $q->where('experience_years', '>=', $v))
             ->when($request->salary_max, fn($q, $v) => $q->where('expected_salary_min', '<=', $v))
             ->when($request->work_type, function ($q, $v) {
                 $q->whereJsonContains('work_types', $v);
             })
             ->orderByDesc('updated_at')
-            ->paginate($request->per_page ?? 20);
+            ->paginate(min($request->per_page ?? 20, 100));
 
         return response()->json($workers);
     }
@@ -113,20 +114,24 @@ class SearchController extends Controller
 
     public function categories(Request $request): JsonResponse
     {
-        $categories = Category::active()
-            ->root()
-            ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'default_skills', 'sort_order']);
+        $categories = cache()->remember('categories_active', 86400, function () {
+            return Category::active()
+                ->root()
+                ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
+                ->orderBy('sort_order')
+                ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'default_skills', 'sort_order']);
+        });
 
         return response()->json(['categories' => $categories]);
     }
 
     public function cities(Request $request): JsonResponse
     {
-        $cities = City::active()
-            ->orderBy('name_uz')
-            ->get(['id', 'name_uz', 'name_ru', 'region', 'type', 'latitude', 'longitude']);
+        $cities = cache()->remember('cities_active', 86400, function () {
+            return City::active()
+                ->orderBy('name_uz')
+                ->get(['id', 'name_uz', 'name_ru', 'region', 'type', 'latitude', 'longitude']);
+        });
 
         return response()->json(['cities' => $cities]);
     }

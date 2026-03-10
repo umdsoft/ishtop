@@ -92,8 +92,8 @@
 
       <!-- Tab: Nearby -->
       <div v-if="activeTab === 'nearby'" class="px-5">
-        <div v-if="nearbyLoading" class="flex items-center justify-center py-16">
-          <LoadingSpinner />
+        <div v-if="nearbyLoading" class="space-y-2.5">
+          <SkeletonCard v-for="i in 4" :key="i" />
         </div>
         <template v-else-if="nearbyVacancies.length > 0">
           <div class="flex items-center justify-between mb-3">
@@ -131,8 +131,8 @@
 
       <!-- Tab: Recommended -->
       <div v-if="activeTab === 'recommended'" class="px-5">
-        <div v-if="recommendedLoading" class="flex items-center justify-center py-16">
-          <LoadingSpinner />
+        <div v-if="recommendedLoading" class="space-y-2.5">
+          <SkeletonCard v-for="i in 4" :key="i" />
         </div>
         <!-- Profile incomplete: prompt to fill -->
         <div v-else-if="profileIncomplete" class="flex flex-col items-center justify-center py-16 px-4">
@@ -177,8 +177,8 @@
 
       <!-- Tab: Latest -->
       <div v-if="activeTab === 'latest'" class="px-5">
-        <div v-if="latestLoading && latestVacancies.length === 0" class="flex items-center justify-center py-16">
-          <LoadingSpinner />
+        <div v-if="latestLoading && latestVacancies.length === 0" class="space-y-2.5">
+          <SkeletonCard v-for="i in 5" :key="i" />
         </div>
         <div v-else-if="enrichedLatest.length > 0" class="space-y-2.5">
           <VacancyCard
@@ -220,6 +220,7 @@ import api from '@/utils/api'
 import BannerSlot from '@/components/BannerSlot.vue'
 import VacancyCard from '@/components/VacancyCard.vue'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
+import SkeletonCard from '@/components/SkeletonCard.vue'
 
 const router = useRouter()
 const vacancyStore = useVacancyStore()
