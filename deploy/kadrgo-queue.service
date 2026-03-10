@@ -1,0 +1,16 @@
+[Unit]
+Description=KadrGo Laravel Queue Worker
+After=network.target redis.service mysql.service
+
+[Service]
+User=admin
+Group=www-data
+Restart=always
+RestartSec=5
+WorkingDirectory=/home/admin/web/kadrgo.uz/public_html
+ExecStart=/usr/local/php82/bin/php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000
+StandardOutput=append:/var/log/kadrgo-queue.log
+StandardError=append:/var/log/kadrgo-queue.log
+
+[Install]
+WantedBy=multi-user.target

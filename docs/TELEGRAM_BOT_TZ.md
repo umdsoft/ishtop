@@ -3,7 +3,7 @@
 ## 1. Umumiy ma'lumot
 
 **Loyiha:** KadrGo — Telegram orqali ishga joylashish platformasi
-**Bot username:** @kadrgo_bot
+**Bot username:** @kadrgobot
 **Texnologiyalar:** Laravel 11.48 + nutgram/nutgram v4.0 + Vue 3 (Mini App)
 **Til:** O'zbek (asosiy) + Rus
 

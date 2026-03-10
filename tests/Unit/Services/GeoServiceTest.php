@@ -17,13 +17,11 @@ class GeoServiceTest extends TestCase
         $this->assertStringContainsString('longitude', $formula);
     }
 
-    public function test_haversine_formula_uses_custom_columns(): void
+    public function test_haversine_formula_rejects_invalid_columns(): void
     {
-        $formula = GeoService::haversineFormula('lat', 'lng');
+        $this->expectException(\InvalidArgumentException::class);
 
-        $this->assertStringContainsString('lat', $formula);
-        $this->assertStringContainsString('lng', $formula);
-        $this->assertStringNotContainsString('latitude', $formula);
+        GeoService::haversineFormula('lat', 'lng');
     }
 
     public function test_distance_between_same_point_is_zero(): void

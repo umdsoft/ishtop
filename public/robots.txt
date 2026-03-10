@@ -3,4 +3,4 @@ Disallow: /panel/
 Disallow: /miniapp/
 Disallow: /api/
 
-Sitemap: https://ishtop.uz/sitemap.xml
+Sitemap: https://kadrgo.uz/sitemap.xml
