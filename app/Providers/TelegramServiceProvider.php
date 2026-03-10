@@ -25,7 +25,7 @@ class TelegramServiceProvider extends ServiceProvider
                     'chosen_inline_result',
                     'my_chat_member',
                 ],
-                cache: Cache::store('file'),
+                cache: Cache::store(config('nutgram.cache', 'file')),
             ));
 
             return $bot;
