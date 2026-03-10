@@ -84,8 +84,8 @@ class RegistrationConversation extends Conversation
         );
 
         $welcome = $lang === 'ru'
-            ? "🎉 *Регистрация завершена!*\n\nДобро пожаловать в KadrGo, {$user->first_name}!\n\n📌 /menu — Главное меню"
-            : "🎉 *Ro'yxatdan o'tish yakunlandi!*\n\nKadrGo ga xush kelibsiz, {$user->first_name}!\n\n📌 /menu — Bosh menyu";
+            ? "🎉 *Регистрация завершена!*\n\nДобро пожаловать в KadrGo, {$user->first_name}!\n\n📱 Нажмите кнопку *KadrGo* внизу слева — откроется мини-приложение для поиска работы\n\n📌 /menu — Главное меню"
+            : "🎉 *Ro'yxatdan o'tish yakunlandi!*\n\nKadrGo ga xush kelibsiz, {$user->first_name}!\n\n📱 Pastda chapdagi *KadrGo* tugmasini bosing — ish qidirish ilovasi ochiladi\n\n📌 /menu — Bosh menyu";
 
         $bot->sendMessage(
             text: $welcome,

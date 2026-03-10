@@ -22,7 +22,7 @@ class ProfileController extends Controller
         $user = $worker->user;
 
         $data = $worker->only([
-            'id', 'full_name', 'birth_date', 'city', 'district', 'specialty',
+            'id', 'full_name', 'birth_date', 'city', 'district', 'specialty', 'employment_status',
             'experience_years', 'expected_salary_min', 'expected_salary_max',
             'skills', 'work_types', 'bio', 'work_experience',
             'photo_url', 'education_level', 'gender',
@@ -42,6 +42,7 @@ class ProfileController extends Controller
             'full_name' => 'nullable|string|max:200',
             'birth_date' => 'nullable|date|before:today',
             'gender' => 'nullable|string|in:male,female',
+            'employment_status' => 'nullable|string|in:student,unemployed,employed',
             'city' => 'nullable|string|max:100',
             'district' => 'nullable|string|max:100',
             'education_level' => 'nullable|string|max:50',

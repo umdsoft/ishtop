@@ -93,6 +93,8 @@ export default {
     fill_profile_btn: 'Profilni to\'ldirish',
     resume_add_btn: 'Anketa +',
     resume_btn: 'Anketa',
+    anketa_title: 'Anketangizni to\'ldiring!',
+    anketa_hint: 'Ish beruvchilar sizni tezroq topishi uchun ma\'lumotlaringizni kiriting',
   },
 
   // Search
@@ -378,7 +380,12 @@ export default {
     worker_title: 'Ishchi profilini tahrirlash',
     employer_title: 'Ish beruvchi profilini tahrirlash',
     full_name: 'To\'liq ism',
+    birth_date: 'Tug\'ilgan sana',
     specialty: 'Mutaxassislik',
+    employment_status: 'Ishchi holati',
+    status_student: 'Talaba',
+    status_unemployed: 'Vaqtincha ishsiz',
+    status_employed: 'Ish joyi mavjud',
     city: 'Shahar',
     district: 'Tuman',
     experience_years: 'Tajriba (yil)',

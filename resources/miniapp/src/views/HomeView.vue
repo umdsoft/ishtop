@@ -85,6 +85,34 @@
 
     <!-- Scrollable Content Area -->
     <div ref="scrollContainer" class="flex-1 overflow-y-auto pb-20" @scroll="handleScroll">
+      <!-- Anketa notification -->
+      <div
+        v-if="!hasCompleteProfile && !anketaDismissed"
+        class="mx-5 mt-2 mb-3 rounded-2xl px-4 py-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition-transform"
+        style="background-color: rgba(var(--tg-button-rgb, 13,148,136), 0.1); border: 1px solid rgba(var(--tg-button-rgb, 13,148,136), 0.2);"
+        @click="router.push('/profile/worker/edit')"
+      >
+        <div
+          class="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+          style="background-color: rgba(var(--tg-button-rgb, 13,148,136), 0.15);"
+        >
+          <svg class="w-5 h-5" style="color: var(--tg-theme-button-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+          </svg>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-[13px] font-semibold" style="color: var(--tg-theme-text-color);">
+            {{ t('home.anketa_title') }}
+          </p>
+          <p class="text-[11px] mt-0.5" style="color: var(--tg-theme-hint-color);">
+            {{ t('home.anketa_hint') }}
+          </p>
+        </div>
+        <svg class="w-4 h-4 flex-shrink-0" style="color: var(--tg-theme-button-color);" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+        </svg>
+      </div>
+
       <!-- Banner -->
       <div class="px-5 mb-3">
         <BannerSlot placement="home_top" />
@@ -230,6 +258,7 @@ const telegram = useTelegram()
 const { t } = useLocale()
 
 const activeTab = ref('nearby')
+const anketaDismissed = ref(false)
 const recommended = ref([])
 const recommendedLoading = ref(false)
 const profileIncomplete = ref(false)

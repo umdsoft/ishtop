@@ -93,6 +93,8 @@ export default {
     fill_profile_btn: 'Заполнить профиль',
     resume_add_btn: 'Анкета +',
     resume_btn: 'Анкета',
+    anketa_title: 'Заполните анкету!',
+    anketa_hint: 'Укажите данные, чтобы работодатели быстрее вас нашли',
   },
 
   // Search
@@ -378,7 +380,12 @@ export default {
     worker_title: 'Редактирование профиля работника',
     employer_title: 'Редактирование профиля работодателя',
     full_name: 'Полное имя',
+    birth_date: 'Дата рождения',
     specialty: 'Специальность',
+    employment_status: 'Рабочий статус',
+    status_student: 'Студент',
+    status_unemployed: 'Временно безработный',
+    status_employed: 'Трудоустроен',
     city: 'Город',
     district: 'Район',
     experience_years: 'Опыт (лет)',

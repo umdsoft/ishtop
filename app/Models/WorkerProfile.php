@@ -17,7 +17,7 @@ class WorkerProfile extends Model implements HasMedia
     use HasFactory, HasUuids, SoftDeletes, InteractsWithMedia;
 
     protected $fillable = [
-        'user_id', 'full_name', 'birth_date', 'gender', 'city', 'district',
+        'user_id', 'full_name', 'birth_date', 'gender', 'employment_status', 'city', 'district',
         'education_level', 'specialty', 'experience_years', 'skills',
         'expected_salary_min', 'expected_salary_max', 'work_types', 'preferred_categories', 'bio', 'work_experience',
         'photo_url', 'resume_file_url', 'linkedin_url', 'linkedin_import_data',

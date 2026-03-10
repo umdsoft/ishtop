@@ -36,8 +36,30 @@
         </div>
         <div class="form-divider"></div>
         <div class="form-field">
+          <label class="form-label">{{ t('edit_profile.birth_date') }}</label>
+          <input v-model="form.birth_date" type="date" class="form-input" :max="maxBirthDate" />
+        </div>
+        <div class="form-divider"></div>
+        <div class="form-field">
           <label class="form-label">{{ t('edit_profile.specialty') }}</label>
           <input v-model="form.specialty" type="text" class="form-input" :placeholder="t('edit_profile.specialty')" />
+        </div>
+        <div class="form-divider"></div>
+        <div class="form-field">
+          <label class="form-label">{{ t('edit_profile.employment_status') }}</label>
+          <div class="work-type-grid grid-3">
+            <button
+              v-for="es in employmentStatuses"
+              :key="es.value"
+              type="button"
+              class="wt-chip"
+              :class="{ 'wt-chip-active': form.employment_status === es.value }"
+              @click="selectEmploymentStatus(es.value)"
+            >
+              <span class="text-[13px]">{{ es.icon }}</span>
+              {{ es.label }}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -475,7 +497,9 @@ const saving = ref(false)
 
 const form = ref({
   full_name: '',
+  birth_date: '',
   specialty: '',
+  employment_status: '',
   city: '',
   district: '',
   experience_years: 0,
@@ -487,6 +511,23 @@ const form = ref({
   bio: '',
   work_experience: [],
 })
+
+const maxBirthDate = computed(() => {
+  const d = new Date()
+  d.setFullYear(d.getFullYear() - 14)
+  return d.toISOString().split('T')[0]
+})
+
+const employmentStatuses = computed(() => [
+  { value: 'student', label: t('edit_profile.status_student'), icon: '🎓' },
+  { value: 'unemployed', label: t('edit_profile.status_unemployed'), icon: '🔍' },
+  { value: 'employed', label: t('edit_profile.status_employed'), icon: '💼' },
+])
+
+function selectEmploymentStatus(value) {
+  telegram.hapticFeedback('soft')
+  form.value.employment_status = form.value.employment_status === value ? '' : value
+}
 
 const skillInput = ref('')
 
@@ -829,7 +870,9 @@ onMounted(async () => {
       const p = profileStore.workerProfile
       form.value = {
         full_name: p.full_name || '',
+        birth_date: p.birth_date ? p.birth_date.substring(0, 10) : '',
         specialty: p.specialty || '',
+        employment_status: p.employment_status || '',
         city: p.city || '',
         district: p.district || '',
         experience_years: p.experience_years || 0,
@@ -865,6 +908,8 @@ async function handleSave() {
   try {
     const payload = {
       ...form.value,
+      birth_date: form.value.birth_date || null,
+      employment_status: form.value.employment_status || null,
       work_experience: form.value.work_experience
         .filter(e => e.company || e.position)
         .map(({ is_current, ...e }) => ({
@@ -1071,6 +1116,7 @@ async function handleSave() {
 
 /* Work Type Chips */
 .work-type-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.work-type-grid.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
 .wt-chip {
   display: flex;
   align-items: center;
