@@ -29,6 +29,7 @@ class UserAuthResource extends JsonResource
             'worker_profile' => $this->whenLoaded('workerProfile', function () {
                 $wp = $this->workerProfile;
                 return $wp ? [
+                    'full_name' => $wp->full_name,
                     'city' => $wp->city,
                     'specialty' => $wp->specialty,
                     'expected_salary_min' => $wp->expected_salary_min,

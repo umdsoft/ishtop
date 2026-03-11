@@ -244,7 +244,7 @@ class AuthController extends Controller
 
         // Load worker profile for client-side match score calculation
         $user->load(['workerProfile' => fn($q) => $q->select(
-            'id', 'user_id', 'city', 'specialty',
+            'id', 'user_id', 'full_name', 'city', 'specialty',
             'expected_salary_min', 'expected_salary_max',
             'work_types', 'preferred_categories'
         )]);
