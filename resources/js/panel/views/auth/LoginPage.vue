@@ -1,101 +1,34 @@
 <template>
   <AppCard class="shadow-xl">
     <div class="text-center mb-6">
-      <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-brand-500 flex items-center justify-center text-white text-2xl font-bold">
-        I
+      <div class="flex items-center justify-center gap-2.5 mb-4">
+        <div class="w-10 h-10 bg-brand-500 rounded-xl flex items-center justify-center flex-shrink-0">
+          <svg width="22" height="22" viewBox="0 0 48 48" fill="none">
+            <path d="M15 14L15 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 14" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M15 24L27 34" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M30 17L35 17L35 31L30 31" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/>
+          </svg>
+        </div>
+        <div class="flex flex-col leading-none">
+          <span class="text-[13px] font-extrabold tracking-[0.5px] text-brand-500">KADR</span>
+          <span class="text-[13px] font-black tracking-[1px] text-accent-500 flex items-center">GO<span class="w-[5px] h-[5px] rounded-full bg-accent-500 ml-1"></span></span>
+        </div>
       </div>
       <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">
-        Kirish
+        {{ $t('auth.login') }}
       </h1>
       <p class="mt-2 text-sm text-surface-600 dark:text-surface-400">
         KadrGo Recruiter Panel ga xush kelibsiz
       </p>
     </div>
 
-    <!-- Phone + OTP flow -->
-    <template v-if="authMethod === 'phone'">
-      <!-- Step 1: Phone number -->
-      <form v-if="step === 'phone'" @submit.prevent="handleSendOtp" class="space-y-4">
-        <AppInput
-          v-model="form.phone"
-          type="tel"
-          label="Telefon raqam"
-          placeholder="+998901234567"
-          :error="errors.phone"
-          required
-        />
-
-        <AppButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          full-width
-          :loading="loading"
-        >
-          Kod yuborish
-        </AppButton>
-
-        <p class="text-xs text-center text-surface-500 dark:text-surface-400">
-          Tasdiqlash kodi Telegram botga yuboriladi
-        </p>
-      </form>
-
-      <!-- Step 2: OTP code -->
-      <form v-else-if="step === 'otp'" @submit.prevent="handleVerifyOtp" class="space-y-4">
-        <div class="text-center mb-2">
-          <p class="text-sm text-surface-600 dark:text-surface-400">
-            <span class="font-medium text-surface-900 dark:text-surface-100">{{ form.phone }}</span>
-            raqamiga bog'langan Telegram botga kod yuborildi
-          </p>
-        </div>
-
-        <AppInput
-          v-model="form.code"
-          type="text"
-          label="Tasdiqlash kodi"
-          placeholder="123456"
-          :error="errors.code"
-          required
-          autocomplete="one-time-code"
-        />
-
-        <AppButton
-          type="submit"
-          variant="primary"
-          size="lg"
-          full-width
-          :loading="loading"
-        >
-          Tasdiqlash
-        </AppButton>
-
-        <div class="flex items-center justify-between">
-          <button
-            type="button"
-            class="text-sm text-surface-500 hover:text-surface-700 dark:hover:text-surface-300"
-            @click="step = 'phone'"
-          >
-            Raqamni o'zgartirish
-          </button>
-          <button
-            type="button"
-            class="text-sm text-brand-500 hover:text-brand-600 disabled:opacity-50"
-            :disabled="resendTimer > 0 || loading"
-            @click="handleSendOtp"
-          >
-            {{ resendTimer > 0 ? `Qayta yuborish (${resendTimer}s)` : 'Qayta yuborish' }}
-          </button>
-        </div>
-      </form>
-    </template>
-
-    <!-- Login/Password flow -->
-    <form v-else @submit.prevent="handlePasswordLogin" class="space-y-4">
+    <form @submit.prevent="handleLogin" class="space-y-4">
       <AppInput
         v-model="form.login"
         type="text"
-        label="Login"
-        placeholder="Username yoki email"
+        :label="$t('auth.loginField')"
+        placeholder="Username"
         :error="errors.login"
         required
         autocomplete="username"
@@ -103,7 +36,7 @@
       <AppInput
         v-model="form.password"
         type="password"
-        label="Parol"
+        :label="$t('auth.password')"
         placeholder="••••••••"
         :error="errors.password"
         required
@@ -116,41 +49,21 @@
         full-width
         :loading="loading"
       >
-        Kirish
+        {{ $t('auth.login') }}
       </AppButton>
     </form>
 
-    <!-- Divider -->
-    <div class="relative my-6">
-      <div class="absolute inset-0 flex items-center">
-        <div class="w-full border-t border-surface-200 dark:border-surface-800"></div>
-      </div>
-      <div class="relative flex justify-center text-sm">
-        <span class="px-2 bg-surface-0 dark:bg-surface-900 text-surface-500">yoki</span>
-      </div>
-    </div>
-
-    <!-- Switch method button -->
-    <AppButton
-      variant="outline"
-      size="lg"
-      full-width
-      @click="switchAuthMethod"
-    >
-      {{ authMethod === 'phone' ? 'Login/Parol bilan kirish' : 'Telefon raqam bilan kirish' }}
-    </AppButton>
-
     <p class="mt-6 text-center text-sm text-surface-600 dark:text-surface-400">
-      Akkauntingiz yo'qmi?
+      {{ $t('auth.dontHaveAccount') }}
       <router-link to="/auth/register" class="text-brand-500 hover:text-brand-600 font-medium">
-        Ro'yxatdan o'tish
+        {{ $t('auth.register') }}
       </router-link>
     </p>
   </AppCard>
 </template>
 
 <script setup>
-import { ref, onUnmounted } from 'vue';
+import { ref } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { useAuthStore } from '../../stores/auth';
 import { toast } from 'vue-sonner';
@@ -162,92 +75,15 @@ const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-function redirectAfterLogin() {
-  const redirect = route.query.redirect;
-  return router.replace(redirect || '/dashboard');
-}
-
-const authMethod = ref('phone'); // 'phone' | 'password'
-const step = ref('phone'); // 'phone' | 'otp' (for phone auth method)
 const loading = ref(false);
 const errors = ref({});
-const resendTimer = ref(0);
-let timerInterval = null;
 
 const form = ref({
-  phone: '+998',
-  code: '',
   login: '',
   password: '',
 });
 
-function switchAuthMethod() {
-  authMethod.value = authMethod.value === 'phone' ? 'password' : 'phone';
-  errors.value = {};
-}
-
-function startResendTimer() {
-  resendTimer.value = 60;
-  timerInterval = setInterval(() => {
-    resendTimer.value--;
-    if (resendTimer.value <= 0) {
-      clearInterval(timerInterval);
-    }
-  }, 1000);
-}
-
-async function handleSendOtp() {
-  if (!form.value.phone || form.value.phone.length < 13) {
-    errors.value = { phone: 'To\'liq telefon raqam kiriting (+998XXXXXXXXX)' };
-    return;
-  }
-
-  loading.value = true;
-  errors.value = {};
-
-  const result = await authStore.sendOtp(form.value.phone);
-
-  loading.value = false;
-
-  if (result.success) {
-    step.value = 'otp';
-    form.value.code = '';
-    startResendTimer();
-    toast.success('Kod Telegram botga yuborildi!');
-
-    // Dev mode: auto-fill code
-    if (result.code) {
-      form.value.code = result.code;
-    }
-  } else {
-    toast.error(result.message);
-    errors.value = { phone: result.message };
-  }
-}
-
-async function handleVerifyOtp() {
-  if (!form.value.code || form.value.code.length !== 6) {
-    errors.value = { code: '6 xonali kodni kiriting' };
-    return;
-  }
-
-  loading.value = true;
-  errors.value = {};
-
-  const result = await authStore.verifyOtp(form.value.phone, form.value.code);
-
-  loading.value = false;
-
-  if (result.success) {
-    toast.success('Muvaffaqiyatli kirdingiz!');
-    await redirectAfterLogin();
-  } else {
-    toast.error(result.message);
-    errors.value = { code: result.message };
-  }
-}
-
-async function handlePasswordLogin() {
+async function handleLogin() {
   loading.value = true;
   errors.value = {};
 
@@ -260,14 +96,11 @@ async function handlePasswordLogin() {
 
   if (result.success) {
     toast.success('Muvaffaqiyatli kirdingiz!');
-    await redirectAfterLogin();
+    const redirect = route.query.redirect;
+    router.replace(redirect || '/dashboard');
   } else {
     toast.error(result.message);
     errors.value = result.errors || {};
   }
 }
-
-onUnmounted(() => {
-  if (timerInterval) clearInterval(timerInterval);
-});
 </script>

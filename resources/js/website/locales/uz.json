@@ -124,5 +124,12 @@
   "hours_ago": "{count} soat oldin",
   "days_ago": "{count} kun oldin",
   "today": "Bugun",
-  "yesterday": "Kecha"
+  "yesterday": "Kecha",
+  "login_btn": "Kirish",
+  "login_modal_title": "Tizimga kirish",
+  "login_modal_desc": "Qanday maqsadda kirishingizni tanlang",
+  "login_job_seeker": "Ish qidiruvchiman",
+  "login_job_seeker_desc": "Vakansiyalarga ariza berish — Telegram bot orqali",
+  "login_recruiter": "Ish beruvchiman",
+  "login_recruiter_desc": "Rekruter panelga kirish — CRM, vakansiyalar boshqaruvi"
 }

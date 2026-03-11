@@ -124,5 +124,12 @@
   "hours_ago": "{count} ч. назад",
   "days_ago": "{count} дн. назад",
   "today": "Сегодня",
-  "yesterday": "Вчера"
+  "yesterday": "Вчера",
+  "login_btn": "Войти",
+  "login_modal_title": "Вход в систему",
+  "login_modal_desc": "Выберите цель входа",
+  "login_job_seeker": "Ищу работу",
+  "login_job_seeker_desc": "Подать заявку на вакансию — через Telegram бот",
+  "login_recruiter": "Я работодатель",
+  "login_recruiter_desc": "Панель рекрутера — CRM, управление вакансиями"
 }
