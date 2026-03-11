@@ -475,6 +475,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useProfileStore } from '@/stores/profile'
+import { useAuthStore } from '@/stores/auth'
 import { useReferenceStore } from '@/stores/reference'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
@@ -485,6 +486,7 @@ import { formatNumber } from '@/utils/formatters'
 const router = useRouter()
 const profileStore = useProfileStore()
 const referenceStore = useReferenceStore()
+const authStore = useAuthStore()
 const telegram = useTelegram()
 const { t, lang } = useLocale()
 
@@ -919,6 +921,8 @@ async function handleSave() {
     }
     await api.put('/profile/worker', payload)
     await profileStore.fetchWorkerProfile()
+    // authStore.user.worker_profile ni yangilash (HomeView banner uchun)
+    await authStore.fetchUser()
     telegram.showAlert(t('edit_profile.save_success'))
     telegram.hapticFeedback('medium')
     router.back()
