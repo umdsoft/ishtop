@@ -10,12 +10,14 @@
 
 :root {
   --separator-color: rgba(128, 128, 128, 0.15);
-  --tg-button-rgb: 13,148,136;
-  --tg-theme-button-color: #0D9488;
-  --tg-theme-link-color: #0D9488;
 }
 
 body {
+  /* Brand colors — override Telegram theme */
+  --tg-theme-button-color: #0D9488;
+  --tg-theme-button-text-color: #ffffff;
+  --tg-theme-link-color: #0D9488;
+  --tg-button-rgb: 13,148,136;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
   background-color: var(--tg-theme-bg-color, #ffffff);
   color: var(--tg-theme-text-color, #000000);
