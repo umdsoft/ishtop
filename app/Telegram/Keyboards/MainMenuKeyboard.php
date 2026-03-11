@@ -8,14 +8,14 @@ use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class MainMenuKeyboard
 {
-    public static function make(string $lang = 'uz', ?int $telegramId = null): InlineKeyboardMarkup
+    public static function make(string $lang = 'uz', ?int $telegramId = null, bool $isVerified = true): InlineKeyboardMarkup
     {
         $isRu = $lang === 'ru';
 
         $keyboard = InlineKeyboardMarkup::make();
 
         $appUrl = config('app.url');
-        if (config('app.miniapp_enabled', false)) {
+        if ($isVerified && config('app.miniapp_enabled', false)) {
             $miniappUrl = $appUrl . '/miniapp';
             if ($telegramId) {
                 $token = encrypt((string) $telegramId);

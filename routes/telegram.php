@@ -185,6 +185,16 @@ $bot->onCallbackQueryData('noop', function (Nutgram $bot) {
 $bot->fallback(function (Nutgram $bot) {
     $user = User::where('telegram_id', $bot->user()->id)->first();
     $lang = $user?->language?->value ?? 'uz';
+
+    // Ro'yxatdan o'tmagan foydalanuvchi — /start ga yo'naltirish
+    if (!$user || !$user->is_verified) {
+        $text = $lang === 'ru'
+            ? "⚠️ Сначала пройдите регистрацию.\n\nНажмите /start для начала."
+            : "⚠️ Avval ro'yxatdan o'ting.\n\n/start buyrug'ini bosing.";
+        $bot->sendMessage($text);
+        return;
+    }
+
     $text = $lang === 'ru'
         ? 'Команда не распознана. Нажмите /menu'
         : 'Buyruq tushunarsiz. /menu bosing.';

@@ -3,6 +3,7 @@
 namespace App\Telegram\Handlers;
 
 use App\Models\User;
+use App\Telegram\Conversations\RegistrationConversation;
 use App\Telegram\Keyboards\MainMenuKeyboard;
 use App\Telegram\Keyboards\PersistentMenuKeyboard;
 use SergiX44\Nutgram\Nutgram;
@@ -14,7 +15,19 @@ class MenuHandler
 {
     public function __invoke(Nutgram $bot): void
     {
-        $lang = $this->getUserLang($bot);
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+
+        // Ro'yxatdan o'tmagan foydalanuvchi — registratsiyaga yo'naltirish
+        if (!$user || !$user->is_verified) {
+            $lang = $user?->language?->value ?? 'uz';
+            $text = $lang === 'ru'
+                ? "⚠️ Сначала пройдите регистрацию.\n\nНажмите /start для начала."
+                : "⚠️ Avval ro'yxatdan o'ting.\n\n/start buyrug'ini bosing.";
+            $bot->sendMessage(text: $text);
+            return;
+        }
+
+        $lang = $user->language?->value ?? 'uz';
 
         $text = $lang === 'ru'
             ? "📌 *KadrGo — Главное меню*\n\nВыберите нужный раздел:"

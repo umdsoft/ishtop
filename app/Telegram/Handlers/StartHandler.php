@@ -9,8 +9,11 @@ use App\Telegram\Keyboards\MainMenuKeyboard;
 use App\Telegram\Keyboards\PersistentMenuKeyboard;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
+use SergiX44\Nutgram\Telegram\Types\Command\MenuButtonDefault;
+use SergiX44\Nutgram\Telegram\Types\Command\MenuButtonWebApp;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardButton;
 use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
+use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class StartHandler
 {
@@ -41,6 +44,9 @@ class StartHandler
         if ($user->is_verified) {
             $userLang = $user->language?->value ?? 'uz';
 
+            // Mini app menu tugmasini o'rnatish (pastdagi chap tugma)
+            $this->setMiniAppMenuButton($bot, $tgUser->id);
+
             // Deep link: vacancy
             if ($payload && str_starts_with($payload, 'v_')) {
                 $vacancyId = substr($payload, 2);
@@ -61,7 +67,10 @@ class StartHandler
             return;
         }
 
-        // 4. Ro'yxatdan o'tmagan — RegistrationConversation boshlash
+        // 4. Ro'yxatdan o'tmagan — mini app menu tugmasini olib tashlash
+        $this->removeMiniAppMenuButton($bot, $tgUser->id);
+
+        // RegistrationConversation boshlash
         $conversation = new RegistrationConversation();
         $conversation->referralCode = $payload && str_starts_with($payload, 'ref_')
             ? substr($payload, 4)
@@ -167,6 +176,45 @@ class StartHandler
             parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
+    }
+
+    /**
+     * Mini app menu tugmasini o'rnatish (pastdagi chap tugma)
+     */
+    public static function setMiniAppMenuButton(Nutgram $bot, int $telegramId): void
+    {
+        if (!config('app.miniapp_enabled', false)) {
+            return;
+        }
+
+        $appUrl = config('app.url');
+        $miniappUrl = $appUrl . '/miniapp';
+        $token = encrypt((string) $telegramId);
+        $miniappUrl .= '?auth_token=' . urlencode($token);
+
+        try {
+            $bot->setChatMenuButton(
+                chat_id: $telegramId,
+                menu_button: new MenuButtonWebApp('KadrGo', new WebAppInfo($miniappUrl)),
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("setChatMenuButton error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Mini app menu tugmasini olib tashlash (default holatga qaytarish)
+     */
+    public static function removeMiniAppMenuButton(Nutgram $bot, int $telegramId): void
+    {
+        try {
+            $bot->setChatMenuButton(
+                chat_id: $telegramId,
+                menu_button: new MenuButtonDefault(),
+            );
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning("removeChatMenuButton error: " . $e->getMessage());
+        }
     }
 
     private function extractPayload(Nutgram $bot): ?string

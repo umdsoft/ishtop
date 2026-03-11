@@ -8,14 +8,14 @@ use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class PersistentMenuKeyboard
 {
-    public static function make(string $lang = 'uz', ?int $telegramId = null): ReplyKeyboardMarkup
+    public static function make(string $lang = 'uz', ?int $telegramId = null, bool $isVerified = true): ReplyKeyboardMarkup
     {
         $isRu = $lang === 'ru';
 
         $keyboard = ReplyKeyboardMarkup::make(resize_keyboard: true);
 
         $appUrl = config('app.url');
-        if (config('app.miniapp_enabled', false)) {
+        if ($isVerified && config('app.miniapp_enabled', false)) {
             $miniappUrl = $appUrl . '/miniapp';
             if ($telegramId) {
                 $token = encrypt((string) $telegramId);
