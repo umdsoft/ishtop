@@ -46,6 +46,12 @@ class AuthController extends Controller
 
             $token = $user->createToken('telegram-mini-app')->plainTextToken;
 
+            $user->load(['workerProfile' => fn($q) => $q->select(
+                'id', 'user_id', 'full_name', 'city', 'specialty',
+                'expected_salary_min', 'expected_salary_max',
+                'work_types', 'preferred_categories'
+            )]);
+
             return response()->json([
                 'token' => $token,
                 'user' => new UserAuthResource($user),
@@ -100,6 +106,12 @@ class AuthController extends Controller
         }
 
         $token = $user->createToken('telegram-mini-app')->plainTextToken;
+
+        $user->load(['workerProfile' => fn($q) => $q->select(
+            'id', 'user_id', 'full_name', 'city', 'specialty',
+            'expected_salary_min', 'expected_salary_max',
+            'work_types', 'preferred_categories'
+        )]);
 
         return response()->json([
             'token' => $token,
