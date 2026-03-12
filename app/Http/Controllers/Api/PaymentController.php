@@ -24,6 +24,7 @@ class PaymentController extends Controller
             'method' => 'required|string|in:payme,click,uzum,balance',
             'payable_type' => 'nullable|string',
             'payable_id' => 'nullable|uuid',
+            'meta' => 'nullable|array',
         ]);
 
         $user = $request->user();
@@ -34,6 +35,7 @@ class PaymentController extends Controller
             'method' => $request->method,
             'payable_type' => $request->payable_type,
             'payable_id' => $request->payable_id,
+            'meta' => $request->meta,
         ]);
 
         if ($request->method === 'balance') {
@@ -43,19 +45,24 @@ class PaymentController extends Controller
             }
             return response()->json([
                 'payment' => $payment->fresh(),
-                'message' => 'Balansdan muvaffaqiyatli amalga oshirildi',
+                'message' => "Balansdan muvaffaqiyatli amalga oshirildi",
             ]);
         }
 
-        $checkoutUrl = null;
-        if ($request->method === 'payme') {
-            $checkoutUrl = $this->paymeService->generateCheckoutUrl($payment);
-        }
+        $checkoutUrl = $this->generateCheckoutUrl($payment, $request->method);
 
         return response()->json([
             'payment' => $payment,
             'checkout_url' => $checkoutUrl,
         ], 201);
+    }
+
+    private function generateCheckoutUrl(Payment $payment, string $method): ?string
+    {
+        return match ($method) {
+            'payme' => $this->paymeService->generateCheckoutUrl($payment),
+            default => null,
+        };
     }
 
     public function history(Request $request): JsonResponse
@@ -107,10 +114,7 @@ class PaymentController extends Controller
             'method' => $request->method,
         ]);
 
-        $checkoutUrl = null;
-        if ($request->method === 'payme') {
-            $checkoutUrl = $this->paymeService->generateCheckoutUrl($payment);
-        }
+        $checkoutUrl = $this->generateCheckoutUrl($payment, $request->method);
 
         return response()->json([
             'payment' => $payment,
