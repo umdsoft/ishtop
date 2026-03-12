@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Payment;
 use App\Services\PaymentService;
+use App\Services\ClickService;
 use App\Services\PaymeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -14,6 +15,7 @@ class PaymentController extends Controller
     public function __construct(
         private PaymentService $paymentService,
         private PaymeService $paymeService,
+        private ClickService $clickService,
     ) {}
 
     public function create(Request $request): JsonResponse
@@ -61,6 +63,7 @@ class PaymentController extends Controller
     {
         return match ($method) {
             'payme' => $this->paymeService->generateCheckoutUrl($payment),
+            'click' => $this->clickService->generateCheckoutUrl($payment),
             default => null,
         };
     }
