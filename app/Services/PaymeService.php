@@ -10,21 +10,22 @@ use Illuminate\Support\Facades\Log;
 class PaymeService
 {
     private string $merchantId;
-    private string $key;
+    private string $secretKey;
+    private string $testKey;
 
     private const TIMEOUT_MS = 43_200_000; // 12 soat millisekund
 
     public function __construct()
     {
         $this->merchantId = config('services.payme.merchant_id') ?? '';
-        $this->key = app()->environment('production')
-            ? (config('services.payme.secret_key') ?? '')
-            : (config('services.payme.test_key') ?? config('services.payme.secret_key') ?? '');
+        $this->secretKey = config('services.payme.secret_key') ?? '';
+        $this->testKey = config('services.payme.test_key') ?? '';
     }
 
     /**
      * Payme webhook autentifikatsiya — Basic Auth tekshirish.
      * Payme "Paycom:{KEY}" formatda yuboradi.
+     * Sandbox test_key va production secret_key ikkisini ham qabul qiladi.
      */
     public function authenticate(Request $request): bool
     {
@@ -41,8 +42,11 @@ class PaymeService
             return false;
         }
 
-        // Payme "Paycom" login bilan yuboradi, parol = merchant key
-        return $parts[1] === $this->key;
+        $password = $parts[1];
+
+        // Ikkala kalitni ham tekshirish — sandbox (test_key) va production (secret_key)
+        return ($this->secretKey !== '' && $password === $this->secretKey)
+            || ($this->testKey !== '' && $password === $this->testKey);
     }
 
     /**
