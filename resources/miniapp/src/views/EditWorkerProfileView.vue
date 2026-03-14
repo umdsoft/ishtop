@@ -1331,9 +1331,11 @@ async function handleSave() {
   gap: 6px;
   width: 100%;
   padding: 13px;
+  border: none;
   border-radius: 12px;
   font-size: 15px;
   font-weight: 700;
+  cursor: pointer;
   background-color: var(--tg-theme-button-color);
   color: var(--tg-theme-button-text-color);
   transition: transform 0.15s, opacity 0.15s;
