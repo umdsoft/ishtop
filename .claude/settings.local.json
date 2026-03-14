@@ -77,7 +77,18 @@
       "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"cd /home/admin/web/kadrgo.uz/public_html && git pull origin main 2>&1\")",
       "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"git config --global --add safe.directory /home/admin/web/kadrgo.uz/public_html && cd /home/admin/web/kadrgo.uz/public_html && git pull origin main 2>&1\")",
       "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"printf ''user1515'' | sudo -S bash -c ''cd /home/admin/web/kadrgo.uz/public_html && git config --global --add safe.directory /home/admin/web/kadrgo.uz/public_html && git pull origin main'' 2>&1\")",
-      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"printf ''user1515'' | sudo -S bash -c ''/usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan config:cache && /usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan route:cache && systemctl restart kadrgo-queue'' 2>&1\")"
+      "Bash(\"C:\\\\Program Files\\\\PuTTY\\\\plink.exe\" -ssh -pw user1515 user@zerox.uz -batch \"printf ''user1515'' | sudo -S bash -c ''/usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan config:cache && /usr/local/php82/bin/php /home/admin/web/kadrgo.uz/public_html/artisan route:cache && systemctl restart kadrgo-queue'' 2>&1\")",
+      "Bash(sshpass -p 'user1515' rsync -avz --delete public/miniapp/ user@zerox.uz:/home/admin/web/kadrgo.uz/public_html/public/miniapp/)",
+      "WebFetch(domain:developer.help.paycom.uz)",
+      "Bash(sshpass -p 'user1515' ssh -o StrictHostKeyChecking=no user@zerox.uz \"ls /var/www/\")",
+      "Bash(sshpass -p 'user1515' ssh -o StrictHostKeyChecking=no user@zerox.uz \"cd admin/web/kadrgo/public_html && pwd && git status\")",
+      "Bash(sshpass -p 'user1515' ssh -o StrictHostKeyChecking=no user@zerox.uz \"cd /home/admin/web/kadrgo.uz/public_html && git pull\")",
+      "Bash(sshpass -p 'user1515' ssh -o StrictHostKeyChecking=no user@zerox.uz \"ls /home/admin/web/ | head -20\")",
+      "Bash(pip install:*)",
+      "Bash(python3 -c \":*)",
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe:*)"
     ]
   }
 }
