@@ -10,13 +10,15 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Filament\Models\Contracts\FilamentUser;
+use Filament\Models\Contracts\HasAvatar;
+use Filament\Models\Contracts\HasName;
 use Filament\Panel;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, HasName, HasAvatar
 {
     use HasApiTokens, HasFactory, HasRoles, HasUuids, Notifiable, SoftDeletes;
 
@@ -139,6 +141,16 @@ class User extends Authenticatable implements FilamentUser
             'recruiter' => $this->employerProfiles()->exists(),
             default => false,
         };
+    }
+
+    public function getFilamentName(): string
+    {
+        return trim("{$this->first_name} {$this->last_name}") ?: ($this->username ?? 'User');
+    }
+
+    public function getFilamentAvatarUrl(): ?string
+    {
+        return $this->avatar_url;
     }
 
     // ── Helpers ──

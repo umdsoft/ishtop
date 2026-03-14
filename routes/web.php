@@ -20,9 +20,14 @@ Route::get('/panel/{any?}', function () {
     return view('panel');
 })->where('any', '.*');
 
+// ── Admin Panel - Vue SPA ──
+Route::get('/dash/{any?}', function () {
+    return view('admin');
+})->where('any', '.*');
+
 // ── Public Website — Vue SPA (catch-all, must be LAST) ──
 Route::middleware('web.locale')->group(function () {
     Route::get('/{any?}', [WebController::class, 'spa'])
-        ->where('any', '^(?!panel|miniapp|api|sitemap\.xml|filament|admin|build|hot).*$')
+        ->where('any', '^(?!panel|miniapp|api|sitemap\.xml|filament|dash|admin|build|hot).*$')
         ->name('website.spa');
 });

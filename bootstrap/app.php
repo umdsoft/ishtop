@@ -19,6 +19,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'subscription' => \App\Http\Middleware\CheckSubscription::class,
             'employer' => \App\Http\Middleware\EnsureEmployerProfile::class,
             'web.locale' => \App\Http\Middleware\SetLocaleMiddleware::class,
+            'admin' => \App\Http\Middleware\EnsureAdminRole::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

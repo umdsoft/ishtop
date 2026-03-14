@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api;
+use App\Http\Controllers\Api\Admin;
 use App\Http\Controllers\Api\Recruiter;
 use App\Http\Controllers\Webhook;
 use Illuminate\Support\Facades\Route;
@@ -220,6 +221,70 @@ Route::prefix('recruiter')->middleware(['auth:sanctum', 'throttle:recruiter'])->
     Route::get('/analytics/funnel', [Recruiter\AnalyticsController::class, 'funnel']);
     Route::get('/analytics/time-to-hire', [Recruiter\AnalyticsController::class, 'timeToHire']);
     Route::get('/analytics/questionnaire-stats', [Recruiter\AnalyticsController::class, 'questionnaireStats']);
+});
+
+/*
+|--------------------------------------------------------------------------
+| Admin API (/api/admin/...)
+|--------------------------------------------------------------------------
+*/
+
+// Admin Auth (no auth required)
+Route::prefix('admin')->group(function () {
+    Route::post('/login', [Admin\AuthController::class, 'login']);
+});
+
+// Admin authenticated routes
+Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function () {
+    Route::get('/me', [Admin\AuthController::class, 'me']);
+    Route::post('/logout', [Admin\AuthController::class, 'logout']);
+
+    // Dashboard
+    Route::get('/dashboard/stats', [Admin\DashboardController::class, 'stats']);
+    Route::get('/dashboard/charts/{type}', [Admin\DashboardController::class, 'chart']);
+    Route::get('/dashboard/pending-vacancies', [Admin\DashboardController::class, 'pendingVacancies']);
+    Route::get('/dashboard/latest-vacancies', [Admin\DashboardController::class, 'latestVacancies']);
+
+    // Users
+    Route::apiResource('users', Admin\UserController::class);
+    Route::post('users/{user}/toggle-block', [Admin\UserController::class, 'toggleBlock']);
+
+    // Workers
+    Route::apiResource('workers', Admin\WorkerController::class)->only(['index', 'show']);
+
+    // Employers
+    Route::apiResource('employers', Admin\EmployerController::class)->only(['index', 'show', 'update']);
+
+    // Vacancies
+    Route::apiResource('vacancies', Admin\VacancyController::class)->except(['store']);
+    Route::post('vacancies/{vacancy}/approve', [Admin\VacancyController::class, 'approve']);
+    Route::post('vacancies/{vacancy}/reject', [Admin\VacancyController::class, 'reject']);
+
+    // Applications
+    Route::apiResource('applications', Admin\ApplicationController::class)->only(['index', 'show']);
+
+    // Categories
+    Route::apiResource('categories', Admin\CategoryController::class);
+
+    // Cities
+    Route::apiResource('cities', Admin\CityController::class);
+
+    // Payments
+    Route::apiResource('payments', Admin\PaymentController::class)->only(['index', 'show']);
+
+    // Subscriptions
+    Route::apiResource('subscriptions', Admin\SubscriptionController::class)->only(['index', 'show', 'update']);
+
+    // Banners
+    Route::apiResource('banners', Admin\BannerController::class);
+
+    // Reports
+    Route::apiResource('reports', Admin\ReportController::class)->only(['index', 'show']);
+    Route::post('reports/{report}/resolve', [Admin\ReportController::class, 'resolve']);
+
+    // Settings
+    Route::get('settings', [Admin\SettingController::class, 'index']);
+    Route::put('settings', [Admin\SettingController::class, 'update']);
 });
 
 /*
