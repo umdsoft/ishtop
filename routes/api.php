@@ -242,25 +242,13 @@ Route::prefix('payments/webhook')->middleware('throttle:webhook')->group(functio
 */
 
 Route::post('/webhook/telegram', function () {
-    // 1. Update'ni oldindan o'qish (fastcgi_finish_request keyin php://input bo'sh bo'ladi)
-    $input = file_get_contents('php://input');
-    $updateData = json_decode($input, true);
-
-    // 2. Telegram'ga darhol 200 OK yuborish
-    response()->json(['ok' => true])->send();
-    if (function_exists('fastcgi_finish_request')) {
-        fastcgi_finish_request();
+    try {
+        $bot = app(\SergiX44\Nutgram\Nutgram::class);
+        $bot->setRunningMode(\SergiX44\Nutgram\RunningMode\Webhook::class);
+        $bot->run();
+    } catch (\Throwable $e) {
+        \Illuminate\Support\Facades\Log::error('Telegram webhook: ' . $e->getMessage());
     }
 
-    // 3. Update'ni qayta ishlash (Telegram allaqachon 200 olgan)
-    if (!empty($updateData)) {
-        try {
-            $bot = app(\SergiX44\Nutgram\Nutgram::class);
-            $hydrator = $bot->getContainer()->get(\SergiX44\Nutgram\Hydrator\Hydrator::class);
-            $update = $hydrator->hydrate($updateData, \SergiX44\Nutgram\Telegram\Types\Update::class);
-            $bot->processUpdate($update);
-        } catch (\Throwable $e) {
-            \Illuminate\Support\Facades\Log::error('Telegram webhook: ' . $e->getMessage());
-        }
-    }
+    return response()->json(['ok' => true]);
 });
