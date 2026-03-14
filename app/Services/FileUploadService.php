@@ -112,9 +112,8 @@ class FileUploadService
             $path = $directory . '/' . $filename;
 
             // Store file
+            $size = strlen($fileContent);
             Storage::disk($options['disk'])->put($path, $fileContent);
-
-            $size = Storage::disk($options['disk'])->size($path);
 
             return [
                 'path' => $path,

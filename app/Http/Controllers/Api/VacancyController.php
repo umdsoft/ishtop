@@ -76,6 +76,7 @@ class VacancyController extends Controller
         }
 
         $vacancies = Vacancy::where('employer_id', $employer->id)
+            ->with('employer:id,company_name,logo_url')
             ->orderByDesc('created_at')
             ->get();
 

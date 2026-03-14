@@ -18,6 +18,20 @@ use SergiX44\Nutgram\Nutgram;
 
 /** @var Nutgram $bot */
 
+// ── Global Exception Handler ──
+$bot->onException(function (Nutgram $bot, \Throwable $e) {
+    \Illuminate\Support\Facades\Log::error('Nutgram exception: ' . $e->getMessage(), [
+        'update_type' => $bot->update()?->getType()?->value,
+        'user_id' => $bot->userId(),
+    ]);
+});
+
+$bot->onApiError(function (Nutgram $bot, \SergiX44\Nutgram\Telegram\Exceptions\TelegramException $e) {
+    \Illuminate\Support\Facades\Log::warning('Telegram API error: ' . $e->getMessage(), [
+        'user_id' => $bot->userId(),
+    ]);
+});
+
 // ── Commands ──
 $bot->onCommand('start', StartHandler::class);
 $bot->onCommand('menu', MenuHandler::class);

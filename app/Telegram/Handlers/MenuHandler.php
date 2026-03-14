@@ -222,7 +222,10 @@ class MenuHandler
 
     private function getUserLang(Nutgram $bot): string
     {
-        $user = User::where('telegram_id', $bot->user()->id)->first();
-        return $user?->language?->value ?? 'uz';
+        $tgId = $bot->user()->id;
+        return cache()->remember("user_lang:{$tgId}", 600, function () use ($tgId) {
+            $user = User::where('telegram_id', $tgId)->first();
+            return $user?->language?->value ?? 'uz';
+        });
     }
 }

@@ -42,6 +42,7 @@ class SettingsHandler
         if (str_starts_with($data, 'settings:lang:')) {
             $newLang = str_replace('settings:lang:', '', $data);
             $user->update(['language' => $newLang]);
+            cache()->forget("user_lang:{$bot->user()->id}");
             $msg = $newLang === 'ru' ? '✅ Язык изменён' : "✅ Til o'zgartirildi";
             $bot->answerCallbackQuery(text: $msg, show_alert: true);
             $this->showSettings($bot, $user->fresh());

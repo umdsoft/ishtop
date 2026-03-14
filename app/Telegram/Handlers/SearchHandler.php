@@ -68,7 +68,7 @@ class SearchHandler
     protected function showMainSearch(Nutgram $bot, bool $edit = false): void
     {
         $lang = $this->getUserLang($bot);
-        $activeCount = Vacancy::active()->count();
+        $activeCount = cache()->remember('search:active_count', 120, fn() => Vacancy::active()->count());
 
         $text = $lang === 'ru'
             ? "🔍 *Поиск работы*\n\n📊 Активные вакансии: {$activeCount}\n\nВыберите один из способов:"
@@ -153,7 +153,9 @@ class SearchHandler
     protected function showCategories(Nutgram $bot): void
     {
         $lang = $this->getUserLang($bot);
-        $categories = Category::active()->root()->withCount(['children' => fn($q) => $q->where('is_active', true)])->get();
+        $categories = cache()->remember('search:categories_with_children', 300, fn() =>
+            Category::active()->root()->withCount(['children' => fn($q) => $q->where('is_active', true)])->get()
+        );
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
@@ -188,10 +190,14 @@ class SearchHandler
     protected function showSubCategories(Nutgram $bot, string $parentSlug): void
     {
         $lang = $this->getUserLang($bot);
-        $parent = Category::where('slug', $parentSlug)->first();
+        $parent = cache()->remember("search:cat:{$parentSlug}", 300, fn() =>
+            Category::where('slug', $parentSlug)->first()
+        );
         if (!$parent) return;
 
-        $children = Category::active()->where('parent_id', $parent->id)->get();
+        $children = cache()->remember("search:subcats:{$parent->id}", 300, fn() =>
+            Category::active()->where('parent_id', $parent->id)->get()
+        );
         $parentEmoji = $this->getCategoryEmoji($parent->slug);
         $parentName = $lang === 'ru' ? ($parent->name_ru ?? $parent->name_uz) : $parent->name_uz;
 
@@ -207,7 +213,9 @@ class SearchHandler
         foreach ($children as $child) {
             $name = $lang === 'ru' ? ($child->name_ru ?? $child->name_uz) : $child->name_uz;
             $emoji = $this->getCategoryEmoji($child->slug);
-            $count = Vacancy::where('status', 'active')->where('category', $child->slug)->count();
+            $count = cache()->remember("search:cat_count:{$child->slug}", 120, fn() =>
+                Vacancy::where('status', 'active')->where('category', $child->slug)->count()
+            );
             $label = "{$emoji} {$name} ({$count})";
             $keyboard->addRow(InlineKeyboardButton::make($label, callback_data: 'search_cat:' . $child->slug));
         }
@@ -231,25 +239,27 @@ class SearchHandler
 
     protected function getCategoryVacancyCount(Category $category): int
     {
-        $slugs = [$category->slug];
-        $children = Category::where('parent_id', $category->id)->where('is_active', true)->pluck('slug');
-        $slugs = array_merge($slugs, $children->toArray());
-        return Vacancy::where('status', 'active')->whereIn('category', $slugs)->count();
+        return cache()->remember("search:cat_count:{$category->slug}", 120, function () use ($category) {
+            $slugs = [$category->slug];
+            $children = Category::where('parent_id', $category->id)->where('is_active', true)->pluck('slug');
+            $slugs = array_merge($slugs, $children->toArray());
+            return Vacancy::where('status', 'active')->whereIn('category', $slugs)->count();
+        });
     }
 
     protected function showRegions(Nutgram $bot): void
     {
         $lang = $this->getUserLang($bot);
-        $regions = City::active()
-            ->select('region')
-            ->distinct()
-            ->orderBy('region')
-            ->pluck('region');
+        $regions = cache()->remember('search:regions', 600, fn() =>
+            City::active()->select('region')->distinct()->orderBy('region')->pluck('region')
+        );
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
         foreach ($regions as $i => $region) {
-            $count = Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count();
+            $count = cache()->remember("search:region_count:{$region}", 120, fn() =>
+                Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count()
+            );
             $row[] = InlineKeyboardButton::make(
                 $region . " ({$count})",
                 callback_data: 'search_region:' . $region
@@ -295,7 +305,9 @@ class SearchHandler
         $keyboard = InlineKeyboardMarkup::make();
 
         // "All in region" button first
-        $allCount = Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count();
+        $allCount = cache()->remember("search:region_count:{$region}", 120, fn() =>
+            Vacancy::active()->where('city', 'LIKE', "%{$region}%")->count()
+        );
         $keyboard->addRow(InlineKeyboardButton::make(
             ($isRu ? "📍 Все в {$region}" : "📍 Barcha {$region}") . " ({$allCount})",
             callback_data: 'search_region:' . $region
@@ -303,7 +315,9 @@ class SearchHandler
 
         $row = [];
         foreach ($cities as $i => $city) {
-            $count = Vacancy::active()->where('city', 'LIKE', "%{$city->name_uz}%")->count();
+            $count = cache()->remember("search:district_count:{$city->name_uz}", 120, fn() =>
+                Vacancy::active()->where('city', 'LIKE', "%{$city->name_uz}%")->count()
+            );
             $name = $isRu ? ($city->name_ru ?? $city->name_uz) : $city->name_uz;
             $row[] = InlineKeyboardButton::make(
                 $name . " ({$count})",
@@ -630,7 +644,10 @@ class SearchHandler
 
     private function getUserLang(Nutgram $bot): string
     {
-        $user = User::where('telegram_id', $bot->user()->id)->first();
-        return $user?->language?->value ?? 'uz';
+        $tgId = $bot->user()->id;
+        return cache()->remember("user_lang:{$tgId}", 600, function () use ($tgId) {
+            $user = User::where('telegram_id', $tgId)->first();
+            return $user?->language?->value ?? 'uz';
+        });
     }
 }

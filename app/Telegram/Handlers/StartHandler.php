@@ -87,6 +87,7 @@ class StartHandler
 
         if ($user) {
             $user->update(['language' => $lang]);
+            cache()->forget("user_lang:{$bot->user()->id}");
             $bot->answerCallbackQuery();
 
             $msg = $lang === 'ru'
