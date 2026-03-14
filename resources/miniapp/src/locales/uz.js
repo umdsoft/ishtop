@@ -12,6 +12,7 @@ export default {
     reset: 'Tozalash',
     all: 'Barchasi',
     close: 'Yopish',
+    done: 'Tayyor',
     yes: 'Ha',
     no: 'Yo\'q',
     som: 'so\'m',

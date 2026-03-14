@@ -387,7 +387,7 @@
     <!-- Bottom Sheet Picker -->
     <transition name="sheet">
       <div v-if="activePicker" class="sheet-backdrop" @click="activePicker = null">
-        <div class="sheet-panel" @click.stop>
+        <div class="sheet-panel" :class="{ 'sheet-panel-multi': isMultiSelectPicker }" @click.stop>
           <div class="sheet-handle"></div>
           <div class="sheet-title">{{ pickerTitle }}</div>
 
@@ -421,6 +421,16 @@
             <div v-if="pickerOptions.length === 0" class="sheet-empty">
               {{ t('search.no_results') }}
             </div>
+          </div>
+
+          <!-- Done button for multi-select pickers -->
+          <div v-if="isMultiSelectPicker" class="sheet-done-bar">
+            <button class="sheet-done-btn" @click="activePicker = null">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              {{ t('common.done') }}
+            </button>
           </div>
         </div>
       </div>
@@ -737,6 +747,10 @@ function getCategoryName(slug) {
 // ── Bottom Sheet Picker ──
 const activePicker = ref(null)
 const pickerSearch = ref('')
+
+const isMultiSelectPicker = computed(() => {
+  return activePicker.value === 'subcategory' || activePicker.value === 'skills'
+})
 
 const pickerTitle = computed(() => {
   switch (activePicker.value) {
@@ -1197,6 +1211,9 @@ async function handleSave() {
   flex-direction: column;
   padding-bottom: max(12px, env(safe-area-inset-bottom));
 }
+.sheet-panel-multi {
+  min-height: 45vh;
+}
 .sheet-handle {
   width: 36px;
   height: 4px;
@@ -1245,6 +1262,7 @@ async function handleSave() {
 /* Options */
 .sheet-options {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -1299,6 +1317,28 @@ async function handleSave() {
   color: var(--tg-theme-hint-color);
   opacity: 0.6;
 }
+
+/* Done button bar */
+.sheet-done-bar {
+  padding: 12px 16px;
+  border-top: 1px solid var(--separator-color, rgba(128,128,128,0.08));
+  flex-shrink: 0;
+}
+.sheet-done-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 13px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  background-color: var(--tg-theme-button-color);
+  color: var(--tg-theme-button-text-color);
+  transition: transform 0.15s, opacity 0.15s;
+}
+.sheet-done-btn:active { transform: scale(0.98); }
 
 /* Work Experience */
 .exp-card {

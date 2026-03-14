@@ -12,6 +12,7 @@ export default {
     reset: 'Сбросить',
     all: 'Все',
     close: 'Закрыть',
+    done: 'Готово',
     yes: 'Да',
     no: 'Нет',
     som: 'сум',
