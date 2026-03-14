@@ -185,10 +185,6 @@ class User extends Authenticatable implements FilamentUser
 
     public static function generateReferralCode(): string
     {
-        do {
-            $code = strtoupper(substr(md5(uniqid()), 0, 8));
-        } while (self::where('referral_code', $code)->exists());
-
-        return $code;
+        return strtoupper(substr(str_replace('-', '', (string) \Illuminate\Support\Str::uuid()), 0, 8));
     }
 }

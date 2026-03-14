@@ -8,7 +8,7 @@ Group=www-data
 Restart=always
 RestartSec=5
 WorkingDirectory=/home/admin/web/kadrgo.uz/public_html
-ExecStart=/usr/local/php82/bin/php artisan queue:work redis --sleep=3 --tries=3 --max-time=3600 --max-jobs=1000
+ExecStart=/usr/local/bin/php8.2 artisan queue:work redis --queue=telegram,default --sleep=1 --tries=3 --max-time=3600 --max-jobs=1000
 StandardOutput=append:/var/log/kadrgo-queue.log
 StandardError=append:/var/log/kadrgo-queue.log
 

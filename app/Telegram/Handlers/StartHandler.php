@@ -33,8 +33,8 @@ class StartHandler
         );
 
         // Yangi yaratilgan user uchun default til — O'zbek
-        if ($user->wasRecentlyCreated) {
-            $user->update(['language' => 'uz']);
+        if ($user->wasRecentlyCreated && !$user->language) {
+            $user->forceFill(['language' => 'uz'])->saveQuietly();
         }
 
         // 2. Deep link payload'ni tekshirish

@@ -16,10 +16,13 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\ReplyKeyboardRemove;
 class RegistrationConversation extends Conversation
 {
     public ?string $referralCode = null;
+    public string $userLang = 'uz';
 
     public function start(Nutgram $bot): void
     {
-        $lang = $this->getUserLang($bot);
+        $user = User::where('telegram_id', $bot->user()->id)->first();
+        $this->userLang = $user?->language?->value ?? 'uz';
+        $lang = $this->userLang;
 
         $text = $lang === 'ru'
             ? "👋 Добро пожаловать в *KadrGo*!\n\n📱 Для регистрации отправьте свой номер телефона.\n\nНажмите кнопку ниже или введите вручную: +998XXXXXXXXX"
@@ -39,7 +42,7 @@ class RegistrationConversation extends Conversation
 
     public function handlePhone(Nutgram $bot): void
     {
-        $lang = $this->getUserLang($bot);
+        $lang = $this->userLang;
         $contact = $bot->message()->contact;
         $text = $bot->message()->text;
 
@@ -110,9 +113,4 @@ class RegistrationConversation extends Conversation
         $this->end();
     }
 
-    private function getUserLang(Nutgram $bot): string
-    {
-        $user = User::where('telegram_id', $bot->user()->id)->first();
-        return $user?->language?->value ?? 'uz';
-    }
 }

@@ -242,8 +242,17 @@ Route::prefix('payments/webhook')->middleware('throttle:webhook')->group(functio
 */
 
 Route::post('/webhook/telegram', function () {
+    // Telegram'ga darhol 200 OK qaytarish — retry storm oldini olish
+    if (function_exists('fastcgi_finish_request')) {
+        ob_end_clean();
+        header('HTTP/1.1 200 OK');
+        header('Content-Type: application/json');
+        echo '{"ok":true}';
+        fastcgi_finish_request();
+    }
+
+    // Processing (Telegram allaqachon 200 oldi)
     $bot = app(\SergiX44\Nutgram\Nutgram::class);
     $bot->setRunningMode(\SergiX44\Nutgram\RunningMode\Webhook::class);
     $bot->run();
-    return response()->json(['ok' => true]);
 });

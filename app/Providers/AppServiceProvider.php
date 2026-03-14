@@ -44,9 +44,17 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(60)->by($request->user()?->id ?: $request->ip());
         });
 
-        // Auth endpoints - 10 req/min (brute force prevention)
+        // Auth endpoints — keyed by telegram_id when available
         RateLimiter::for('auth', function (Request $request) {
-            return Limit::perMinute(10)->by($request->ip());
+            $initData = $request->input('init_data', '');
+            if ($initData) {
+                parse_str($initData, $parsed);
+                $userData = json_decode($parsed['user'] ?? '{}', true);
+                if (!empty($userData['id'])) {
+                    return Limit::perMinute(30)->by('tg_' . $userData['id']);
+                }
+            }
+            return Limit::perMinute(30)->by($request->ip());
         });
 
         // Search - 120 req/min (high traffic)

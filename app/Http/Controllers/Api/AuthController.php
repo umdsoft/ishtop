@@ -40,10 +40,7 @@ class AuthController extends Controller
 
             $user->update(['last_active_at' => now()]);
 
-            if (!$user->referral_code) {
-                $user->update(['referral_code' => User::generateReferralCode()]);
-            }
-
+            $user->tokens()->where('name', 'telegram-mini-app')->delete();
             $token = $user->createToken('telegram-mini-app')->plainTextToken;
 
             $user->load(['workerProfile' => fn($q) => $q->select(
@@ -101,10 +98,7 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->referral_code) {
-            $user->update(['referral_code' => User::generateReferralCode()]);
-        }
-
+        $user->tokens()->where('name', 'telegram-mini-app')->delete();
         $token = $user->createToken('telegram-mini-app')->plainTextToken;
 
         $user->load(['workerProfile' => fn($q) => $q->select(
@@ -234,25 +228,26 @@ class AuthController extends Controller
             ]);
         }
 
-        if (!$user->referral_code) {
-            $user->update(['referral_code' => User::generateReferralCode()]);
-        }
-
+        $user->tokens()->where('name', 'telegram-mini-app')->delete();
         $token = $user->createToken('telegram-mini-app')->plainTextToken;
 
-        // Bootstrap data — categories + latest vacancies in same response
-        $categories = Category::active()
-            ->root()
-            ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
-            ->orderBy('sort_order')
-            ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order']);
+        // Bootstrap data — cached to reduce DB load during mass registration
+        $categories = cache()->remember('bootstrap:categories', 300, function () {
+            return Category::active()
+                ->root()
+                ->with(['children' => fn($q) => $q->where('is_active', true)->orderBy('sort_order')])
+                ->orderBy('sort_order')
+                ->get(['id', 'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'sort_order']);
+        });
 
-        $vacancies = Vacancy::active()
-            ->with('employer:id,company_name,logo_url,verification_level')
-            ->orderByDesc('is_top')
-            ->orderByDesc('published_at')
-            ->limit(10)
-            ->get();
+        $vacancies = cache()->remember('bootstrap:vacancies', 60, function () {
+            return Vacancy::active()
+                ->with('employer:id,company_name,logo_url,verification_level')
+                ->orderByDesc('is_top')
+                ->orderByDesc('published_at')
+                ->limit(10)
+                ->get();
+        });
 
         // Load worker profile for client-side match score calculation
         $user->load(['workerProfile' => fn($q) => $q->select(
