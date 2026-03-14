@@ -75,7 +75,13 @@ class VacancyController extends Controller
             'work_type' => 'sometimes|string',
             'is_top' => 'sometimes|boolean',
             'status' => 'sometimes|string',
+            'close_reason' => 'sometimes|nullable|string|max:500',
         ]);
+
+        // When reactivating, clear close_reason
+        if (isset($validated['status']) && $validated['status'] === 'active') {
+            $validated['close_reason'] = null;
+        }
 
         $vacancy->update($validated);
         Cache::forget('admin:dashboard:stats');

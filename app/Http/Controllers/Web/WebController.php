@@ -121,10 +121,10 @@ class WebController extends Controller
 
         // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
         $regions = cache()->remember('home_regions', 300, function () {
-            $allCities = City::where('is_active', true)->get(['name_uz', 'region']);
+            $locations = City::cachedLocations();
+            $allCities = collect($locations['cities']);
             $regionNames = $allCities->pluck('region')->unique()->sort()->values();
 
-            // Bitta query bilan barcha shaharlarning vakansiya sonini olish
             $cityCounts = Vacancy::active()
                 ->selectRaw('city, COUNT(*) as cnt')
                 ->groupBy('city')
@@ -218,8 +218,8 @@ class WebController extends Controller
         }
 
         if ($request->filled('region')) {
-            // Vacancies store region name in city field, so match directly + also check city names within that region
-            $regionCities = City::where('region', $request->region)->pluck('name_uz')->unique();
+            $locations = City::cachedLocations();
+            $regionCities = collect($locations['cities'])->where('region', $request->region)->pluck('name_uz')->unique();
             $query->where(function ($q) use ($request, $regionCities) {
                 $q->where('city', $request->region)
                   ->orWhereIn('city', $regionCities);
@@ -252,7 +252,8 @@ class WebController extends Controller
 
         // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
         $regions = cache()->remember('index_regions', 300, function () {
-            $allCities = City::where('is_active', true)->get(['name_uz', 'region']);
+            $locations = City::cachedLocations();
+            $allCities = collect($locations['cities']);
             $regionNames = $allCities->pluck('region')->unique()->sort()->values();
 
             $cityCounts = Vacancy::active()

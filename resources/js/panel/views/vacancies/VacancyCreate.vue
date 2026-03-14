@@ -431,7 +431,8 @@ import AppTextarea from '../../components/ui/AppTextarea.vue';
 import AppSelect from '../../components/ui/AppSelect.vue';
 import AppCheckbox from '../../components/ui/AppCheckbox.vue';
 import AppDatePicker from '../../components/ui/AppDatePicker.vue';
-import { regions, districts } from '../../data/regions.js';
+import { useLocations } from '../../composables/useLocations.js';
+const { regions, cities: allCities, load: loadLocations, getDistrictsForRegion } = useLocations();
 
 const router = useRouter();
 
@@ -440,6 +441,7 @@ const limitMessage = ref('');
 const canTranslate = ref(false);
 
 onMounted(async () => {
+  loadLocations();
   try {
     const { data } = await axios.get('/api/subscriptions/current');
     canTranslate.value = !!data.limits?.ai_translation;
@@ -532,11 +534,10 @@ form.value.experience_level = experienceLevels[2];
 form.value.status = statusOptions[0];
 
 const filteredDistricts = computed(() => {
-  const regionId = form.value.region_id && typeof form.value.region_id === 'object'
-    ? form.value.region_id.id
-    : form.value.region_id;
-  if (!regionId) return [];
-  return districts.filter(d => d.region_id === regionId);
+  const region = form.value.region_id;
+  const regionKey = region && typeof region === 'object' ? region.key : null;
+  if (!regionKey) return [];
+  return getDistrictsForRegion(regionKey);
 });
 
 const minDeadline = computed(() => {
@@ -585,21 +586,17 @@ function getFormData() {
   }
   delete data.experience_level;
 
-  // Map region_id to city (backend expects string name)
+  // Map region_id to city (backend expects region key string)
   if (data.region_id) {
-    const region = typeof data.region_id === 'object'
-      ? data.region_id
-      : regions.find(r => r.id === data.region_id);
-    data.city = region?.name || '';
+    const region = typeof data.region_id === 'object' ? data.region_id : null;
+    data.city = region?.key || region?.name || '';
   }
   delete data.region_id;
 
-  // Map district_id to district (backend expects string name)
+  // Map district_id to district (backend expects city name string)
   if (data.district_id) {
-    const dist = typeof data.district_id === 'object'
-      ? data.district_id
-      : districts.find(d => d.id === data.district_id);
-    data.district = dist?.name || '';
+    const dist = typeof data.district_id === 'object' ? data.district_id : null;
+    data.district = dist?.name_uz || dist?.name || '';
   }
   delete data.district_id;
 

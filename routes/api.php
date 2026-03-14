@@ -43,6 +43,7 @@ Route::get('/vacancies/{vacancy}', [Api\VacancyController::class, 'show'])
     ->whereUuid('vacancy');
 Route::get('/categories', [Api\SearchController::class, 'categories']);
 Route::get('/cities', [Api\SearchController::class, 'cities']);
+Route::get('/locations', [Api\LocationController::class, 'index']);
 
 Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
     Route::get('/me', [Api\AuthController::class, 'me']);
@@ -285,6 +286,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     // Settings
     Route::get('settings', [Admin\SettingController::class, 'index']);
     Route::put('settings', [Admin\SettingController::class, 'update']);
+    Route::post('settings/clear-cache', [Admin\SettingController::class, 'clearCache']);
 });
 
 /*

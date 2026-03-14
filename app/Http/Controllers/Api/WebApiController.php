@@ -147,7 +147,8 @@ class WebApiController extends Controller
             }
         } elseif ($request->filled('region')) {
             // Region filter — include all cities within region
-            $regionCities = City::where('region', $request->region)->pluck('name_uz')->unique();
+            $locations = City::cachedLocations();
+            $regionCities = collect($locations['cities'])->where('region', $request->region)->pluck('name_uz')->unique();
             $query->where(function ($q) use ($request, $regionCities) {
                 $q->where('city', $request->region)
                   ->orWhereIn('city', $regionCities);
@@ -288,8 +289,8 @@ class WebApiController extends Controller
     {
         return cache()->remember('structured_regions', 300, function () {
             $lang = app()->getLocale();
-            $allCities = City::where('is_active', true)
-                ->get(['name_uz', 'name_ru', 'region', 'type']);
+            $locations = City::cachedLocations();
+            $allCities = collect($locations['cities'])->map(fn($c) => (object) $c);
 
             $regionNames = $allCities->pluck('region')->unique()->sort()->values();
 

@@ -23,8 +23,8 @@ export const useReferenceStore = defineStore('reference', () => {
   async function loadCities() {
     if (citiesLoaded.value) return cities.value
     try {
-      const res = await api.get('/cities')
-      cities.value = res.data.cities || res.data || []
+      const res = await api.get('/locations')
+      cities.value = res.data.cities || []
       citiesLoaded.value = true
     } catch (e) {
       console.error('Failed to load cities:', e)

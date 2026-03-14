@@ -127,12 +127,8 @@ class SearchController extends Controller
 
     public function cities(Request $request): JsonResponse
     {
-        $cities = cache()->remember('cities_active', 86400, function () {
-            return City::active()
-                ->orderBy('name_uz')
-                ->get(['id', 'name_uz', 'name_ru', 'region', 'type', 'latitude', 'longitude']);
-        });
+        $data = City::cachedLocations();
 
-        return response()->json(['cities' => $cities]);
+        return response()->json(['cities' => $data['cities']]);
     }
 }

@@ -64,9 +64,31 @@
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.category?.name || '—' }}</td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.city || '—' }}</td>
               <td class="py-3 px-4">
-                <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', statusClass(vacancy.status)]">
-                  {{ statusLabel(vacancy.status) }}
-                </span>
+                <div class="flex items-center gap-2">
+                  <button
+                    v-if="vacancy.status === 'active' || vacancy.status === 'closed'"
+                    @click.stop="toggleVacancyStatus(vacancy)"
+                    :disabled="vacancy._toggling"
+                    :class="[
+                      'shrink-0 relative w-9 h-5 rounded-full transition-colors duration-200 focus:outline-none',
+                      vacancy.status === 'active'
+                        ? 'bg-success-500'
+                        : 'bg-surface-300 dark:bg-surface-600',
+                      vacancy._toggling ? 'opacity-50' : '',
+                    ]"
+                    :title="vacancy.status === 'active' ? 'Noaktiv qilish' : 'Aktiv qilish'"
+                  >
+                    <span
+                      :class="[
+                        'absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-200',
+                        vacancy.status === 'active' ? 'translate-x-4' : 'translate-x-0',
+                      ]"
+                    />
+                  </button>
+                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', statusClass(vacancy.status)]">
+                    {{ statusLabel(vacancy.status) }}
+                  </span>
+                </div>
               </td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.views_count || 0 }}</td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.applications_count || 0 }}</td>
@@ -99,11 +121,39 @@
 
     <!-- Pagination -->
     <AppPagination v-if="lastPage > 1" :current-page="currentPage" :last-page="lastPage" :total="total" @page-change="goToPage" />
+
+    <!-- Close Reason Modal -->
+    <div v-if="showReasonModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/50" @click.self="cancelClose">
+      <div class="bg-white dark:bg-surface-900 rounded-xl shadow-xl w-full max-w-md mx-4 border border-surface-200 dark:border-surface-800">
+        <div class="px-6 py-4 border-b border-surface-200 dark:border-surface-800">
+          <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">Vakansiyani noaktiv qilish</h3>
+          <p class="text-sm text-surface-500 dark:text-surface-400 mt-1">Iltimos, sababni kiriting</p>
+        </div>
+        <div class="px-6 py-4">
+          <textarea
+            v-model="closeReason"
+            rows="3"
+            class="w-full px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-none"
+            placeholder="Masalan: Vakansiya muddati tugagan, nomuvofiq kontent..."
+          />
+        </div>
+        <div class="px-6 py-4 border-t border-surface-200 dark:border-surface-800 flex justify-end gap-3">
+          <button @click="cancelClose"
+            class="px-4 py-2 text-sm font-medium text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800 rounded-lg transition-colors">
+            Bekor qilish
+          </button>
+          <button @click="confirmClose" :disabled="!closeReason.trim()"
+            class="px-4 py-2 bg-danger-500 text-white text-sm font-medium rounded-lg hover:bg-danger-600 transition-colors disabled:opacity-50">
+            Noaktiv qilish
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useResourceList } from '../../composables/useAdminApi';
@@ -162,6 +212,49 @@ async function rejectVacancy(vacancy) {
   } catch (err) {
     toast.error(err.response?.data?.message || 'Xatolik');
   }
+}
+
+// Toggle status with reason modal
+const showReasonModal = ref(false);
+const closeReason = ref('');
+const closingVacancy = ref(null);
+
+function toggleVacancyStatus(vacancy) {
+  if (vacancy.status === 'active') {
+    closingVacancy.value = vacancy;
+    closeReason.value = '';
+    showReasonModal.value = true;
+  } else {
+    doToggle(vacancy, 'active');
+  }
+}
+
+function cancelClose() {
+  showReasonModal.value = false;
+  closingVacancy.value = null;
+  closeReason.value = '';
+}
+
+async function confirmClose() {
+  if (!closingVacancy.value || !closeReason.value.trim()) return;
+  showReasonModal.value = false;
+  await doToggle(closingVacancy.value, 'closed', closeReason.value.trim());
+  closingVacancy.value = null;
+  closeReason.value = '';
+}
+
+async function doToggle(vacancy, newStatus, reason = null) {
+  vacancy._toggling = true;
+  try {
+    const payload = { status: newStatus };
+    if (reason) payload.close_reason = reason;
+    await axios.put(`/api/admin/vacancies/${vacancy.id}`, payload);
+    vacancy.status = newStatus;
+    toast.success(newStatus === 'active' ? 'Vakansiya faollashtirildi' : 'Vakansiya noaktiv qilindi');
+  } catch (err) {
+    toast.error(err.response?.data?.message || 'Xatolik');
+  }
+  vacancy._toggling = false;
 }
 
 onMounted(fetchItems);

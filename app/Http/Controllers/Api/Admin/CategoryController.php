@@ -11,6 +11,10 @@ class CategoryController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
+        if ($request->boolean('tree')) {
+            return $this->tree($request);
+        }
+
         $query = Category::query();
 
         if ($request->filled('search')) {
@@ -24,6 +28,53 @@ class CategoryController extends Controller
         $categories = $query->orderBy('sort_order')->paginate($request->input('per_page', 50));
 
         return response()->json($categories);
+    }
+
+    private function tree(Request $request): JsonResponse
+    {
+        $query = Category::root()
+            ->withCount(['children', 'children as active_vacancies_count' => function ($q) {
+                // Count vacancies in children via category_id
+            }])
+            ->with(['children' => function ($q) {
+                $q->orderBy('sort_order')
+                    ->withCount(['children']);
+            }])
+            ->orderBy('sort_order');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('name_uz', 'like', "%{$search}%")
+                    ->orWhere('name_ru', 'like', "%{$search}%")
+                    ->orWhereHas('children', function ($cq) use ($search) {
+                        $cq->where('name_uz', 'like', "%{$search}%")
+                            ->orWhere('name_ru', 'like', "%{$search}%");
+                    });
+            });
+        }
+
+        $categories = $query->get();
+
+        // Count vacancies per category (both parent slug match and child category_id)
+        $vacancyCounts = \App\Models\Vacancy::query()
+            ->selectRaw('category_id, count(*) as cnt')
+            ->whereNotNull('category_id')
+            ->groupBy('category_id')
+            ->pluck('cnt', 'category_id');
+
+        foreach ($categories as $parent) {
+            $childVacancies = 0;
+            foreach ($parent->children as $child) {
+                $count = $vacancyCounts[$child->id] ?? 0;
+                $child->vacancies_count = $count;
+                $childVacancies += $count;
+            }
+            $parentOwn = $vacancyCounts[$parent->id] ?? 0;
+            $parent->vacancies_count = $parentOwn + $childVacancies;
+        }
+
+        return response()->json(['data' => $categories]);
     }
 
     public function show(Category $category): JsonResponse

@@ -128,22 +128,73 @@ class PostVacancyConversation extends Conversation
             message_id: $cb->message->message_id,
         );
 
-        $cities = City::active()->get();
+        // Avval viloyat tanlash — yagona cache dan olish
+        $locations = City::cachedLocations();
+        $regions = collect($locations['regions'])->pluck('key')->sort()->values();
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
-        foreach ($cities as $i => $city) {
+        foreach ($regions as $i => $region) {
             $row[] = InlineKeyboardButton::make(
-                $city->name($this->lang),
-                callback_data: 'vac_city:' . $city->name_uz
+                $region,
+                callback_data: 'vac_reg:' . $region
             );
-            if (count($row) === 2 || $i === $cities->count() - 1) {
+            if (count($row) === 2 || $i === $regions->count() - 1) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }
         }
 
         $bot->sendMessage(
-            text: $this->t('*3/8 — Shaharni tanlang:*', '*3/8 — Выберите город:*'),
+            text: $this->t('*3/8 — Viloyatni tanlang:*', '*3/8 — Выберите регион:*'),
+            parse_mode: ParseMode::MARKDOWN_LEGACY,
+            reply_markup: $keyboard,
+        );
+        $this->next('handleRegion');
+    }
+
+    public function handleRegion(Nutgram $bot): void
+    {
+        $cb = $bot->callbackQuery();
+        if (!$cb || !str_starts_with($cb->data ?? '', 'vac_reg:')) return;
+
+        $region = str_replace('vac_reg:', '', $cb->data);
+        $this->data['city'] = $region; // vacancy.city = region nomi
+
+        $bot->answerCallbackQuery();
+        $bot->editMessageText(
+            text: '✅ ' . $region,
+            message_id: $cb->message->message_id,
+        );
+
+        // Shu viloyatdagi shahar/tumanlarni ko'rsatish — yagona cache dan
+        $locations = City::cachedLocations();
+        $cities = collect($locations['cities'])->where('region', $region)->sortBy('name_uz')->values();
+        $keyboard = InlineKeyboardMarkup::make();
+        $row = [];
+        $total = $cities->count();
+        foreach ($cities as $i => $city) {
+            $nameUz = $city['name_uz'];
+            $name = $this->lang === 'ru' ? ($city['name_ru'] ?? $nameUz) : $nameUz;
+            $label = $name . ($city['type'] ? ' (' . $city['type'] . ')' : '');
+            $row[] = InlineKeyboardButton::make(
+                $label,
+                callback_data: 'vac_city:' . $nameUz
+            );
+            if (count($row) === 2 || $i === $total - 1) {
+                $keyboard->addRow(...$row);
+                $row = [];
+            }
+        }
+        // "O'tkazib yuborish" tugmasi
+        $keyboard->addRow(
+            InlineKeyboardButton::make(
+                $this->t('⏭ O\'tkazib yuborish', '⏭ Пропустить'),
+                callback_data: 'vac_city:skip'
+            )
+        );
+
+        $bot->sendMessage(
+            text: $this->t('*Shahar/tumanni tanlang:*', '*Выберите город/район:*'),
             parse_mode: ParseMode::MARKDOWN_LEGACY,
             reply_markup: $keyboard,
         );
@@ -154,17 +205,20 @@ class PostVacancyConversation extends Conversation
     {
         $cb = $bot->callbackQuery();
         if ($cb && str_starts_with($cb->data ?? '', 'vac_city:')) {
-            $this->data['city'] = str_replace('vac_city:', '', $cb->data);
+            $cityName = str_replace('vac_city:', '', $cb->data);
+            if ($cityName !== 'skip') {
+                $this->data['district'] = $cityName;
+            }
             $bot->answerCallbackQuery();
             $bot->editMessageText(
-                text: '✅ ' . $this->data['city'],
+                text: '✅ ' . ($cityName !== 'skip' ? $cityName : $this->data['city']),
                 message_id: $cb->message->message_id,
             );
         } else {
             if ($this->checkCancel($bot)) return;
             $text = trim($bot->message()->text ?? '');
             if (empty($text)) return;
-            $this->data['city'] = $text;
+            $this->data['district'] = $text;
         }
 
         $bot->sendMessage(
@@ -400,6 +454,7 @@ class PostVacancyConversation extends Conversation
             'salary_type' => $this->data['salary_type'] ?? 'negotiable',
             'work_type' => $this->data['work_type'] ?? 'full_time',
             'city' => $this->data['city'] ?? null,
+            'district' => $this->data['district'] ?? null,
             'contact_phone' => $user->phone,
             'contact_method' => $this->data['contact_method'] ?? 'both',
         ]);

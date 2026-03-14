@@ -41,7 +41,20 @@ class UserController extends Controller
 
     public function show(User $user): JsonResponse
     {
-        $user->load(['workerProfile', 'employerProfiles', 'roles']);
+        $user->load([
+            'workerProfile',
+            'employerProfiles' => fn($q) => $q->withCount('vacancies'),
+            'roles',
+        ]);
+        $user->loadCount([
+            'referrals',
+            'payments' => fn($q) => $q->where('status', 'completed'),
+        ]);
+
+        // Worker applications count
+        if ($user->workerProfile) {
+            $user->workerProfile->loadCount('applications');
+        }
 
         return response()->json(['user' => $user]);
     }

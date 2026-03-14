@@ -250,9 +250,8 @@ class SearchHandler
     protected function showRegions(Nutgram $bot): void
     {
         $lang = $this->getUserLang($bot);
-        $regions = cache()->remember('search:regions', 600, fn() =>
-            City::active()->select('region')->distinct()->orderBy('region')->pluck('region')
-        );
+        $locations = City::cachedLocations();
+        $regions = collect($locations['regions'])->pluck('key')->sort()->values();
 
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
@@ -297,10 +296,8 @@ class SearchHandler
         $lang = $this->getUserLang($bot);
         $isRu = $lang === 'ru';
 
-        $cities = City::active()
-            ->where('region', $region)
-            ->orderBy('name_uz')
-            ->get();
+        $locations = City::cachedLocations();
+        $cities = collect($locations['cities'])->where('region', $region)->sortBy('name_uz')->values();
 
         $keyboard = InlineKeyboardMarkup::make();
 
@@ -314,16 +311,19 @@ class SearchHandler
         ));
 
         $row = [];
+        $total = $cities->count();
         foreach ($cities as $i => $city) {
-            $count = cache()->remember("search:district_count:{$city->name_uz}", 120, fn() =>
-                Vacancy::active()->where('city', 'LIKE', "%{$city->name_uz}%")->count()
+            $nameUz = $city['name_uz'];
+            $nameRu = $city['name_ru'] ?? $nameUz;
+            $count = cache()->remember("search:district_count:{$nameUz}", 120, fn() =>
+                Vacancy::active()->where('city', 'LIKE', "%{$nameUz}%")->count()
             );
-            $name = $isRu ? ($city->name_ru ?? $city->name_uz) : $city->name_uz;
+            $name = $isRu ? $nameRu : $nameUz;
             $row[] = InlineKeyboardButton::make(
                 $name . " ({$count})",
-                callback_data: 'search_district:' . $region . '|' . $city->name_uz
+                callback_data: 'search_district:' . $region . '|' . $nameUz
             );
-            if (count($row) === 2 || $i === $cities->count() - 1) {
+            if (count($row) === 2 || $i === $total - 1) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }

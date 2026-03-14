@@ -135,20 +135,20 @@ return [
 
     // Regions
     'region_names' => [
-        'Toshkent' => 'Ташкент',
+        'Toshkent shahri' => 'Ташкент',
         'Toshkent viloyati' => 'Ташкентская область',
-        'Samarqand' => 'Самарканд',
-        'Buxoro' => 'Бухара',
-        'Andijon' => 'Андижан',
-        "Farg'ona" => 'Фергана',
-        'Namangan' => 'Наманган',
-        'Xorazm' => 'Хорезм',
-        'Qashqadaryo' => 'Кашкадарья',
-        'Surxondaryo' => 'Сурхандарья',
-        'Jizzax' => 'Джизак',
-        'Sirdaryo' => 'Сырдарья',
-        'Navoiy' => 'Навои',
-        "Qoraqalpog'iston" => 'Каракалпакстан',
+        'Andijon viloyati' => 'Андижанская область',
+        'Buxoro viloyati' => 'Бухарская область',
+        "Farg'ona viloyati" => 'Ферганская область',
+        'Jizzax viloyati' => 'Джизакская область',
+        'Xorazm viloyati' => 'Хорезмская область',
+        'Namangan viloyati' => 'Наманганская область',
+        'Navoiy viloyati' => 'Навоийская область',
+        'Qashqadaryo viloyati' => 'Кашкадарьинская область',
+        "Qoraqalpog'iston Respublikasi" => 'Республика Каракалпакстан',
+        'Samarqand viloyati' => 'Самаркандская область',
+        'Sirdaryo viloyati' => 'Сырдарьинская область',
+        'Surxondaryo viloyati' => 'Сурхандарьинская область',
     ],
 
     // Time

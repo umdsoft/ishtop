@@ -134,7 +134,7 @@ class DashboardController extends Controller
     private function categoriesChart(): JsonResponse
     {
         $data = Cache::remember('admin:chart:categories', 600, function () {
-            $categories = Vacancy::select('category', DB::raw('count(*) as total'))
+            $topSlugs = Vacancy::select('category', DB::raw('count(*) as total'))
                 ->where('status', 'active')
                 ->whereNotNull('category')
                 ->groupBy('category')
@@ -142,9 +142,14 @@ class DashboardController extends Controller
                 ->limit(6)
                 ->get();
 
+            // slug → name_uz mapping
+            $slugs = $topSlugs->pluck('category')->toArray();
+            $nameMap = \App\Models\Category::whereIn('slug', $slugs)
+                ->pluck('name_uz', 'slug');
+
             return [
-                'counts' => $categories->pluck('total')->toArray(),
-                'labels' => $categories->pluck('category')->toArray(),
+                'counts' => $topSlugs->pluck('total')->toArray(),
+                'labels' => $topSlugs->pluck('category')->map(fn($s) => $nameMap->get($s, $s))->toArray(),
             ];
         });
 
@@ -166,7 +171,15 @@ class DashboardController extends Controller
         $vacancies = Vacancy::with('employer:id,company_name')
             ->latest()
             ->limit(10)
-            ->get(['id', 'title_uz', 'title_ru', 'category', 'city', 'status', 'views_count', 'employer_id', 'created_at']);
+            ->get(['id', 'title_uz', 'title_ru', 'category', 'city', 'district', 'status', 'views_count', 'employer_id', 'salary_min', 'salary_max', 'created_at']);
+
+        // slug → name_uz
+        $slugs = $vacancies->pluck('category')->unique()->filter()->toArray();
+        $catNames = \App\Models\Category::whereIn('slug', $slugs)->pluck('name_uz', 'slug');
+
+        $vacancies->each(function ($v) use ($catNames) {
+            $v->category_name = $catNames->get($v->category, $v->category);
+        });
 
         return response()->json(['vacancies' => $vacancies]);
     }

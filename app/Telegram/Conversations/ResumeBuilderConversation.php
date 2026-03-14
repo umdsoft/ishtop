@@ -120,15 +120,16 @@ class ResumeBuilderConversation extends Conversation
             message_id: $cb->message->message_id,
         );
 
-        $cities = City::active()->get();
+        $locations = City::cachedLocations();
+        $regions = collect($locations['regions'])->pluck('key')->sort()->values();
         $keyboard = InlineKeyboardMarkup::make();
         $row = [];
-        foreach ($cities as $i => $city) {
+        foreach ($regions as $i => $region) {
             $row[] = InlineKeyboardButton::make(
-                $city->name($this->lang),
-                callback_data: 'resume_city:' . $city->name_uz
+                $region,
+                callback_data: 'resume_city:' . $region
             );
-            if (count($row) === 2 || $i === $cities->count() - 1) {
+            if (count($row) === 2 || $i === $regions->count() - 1) {
                 $keyboard->addRow(...$row);
                 $row = [];
             }

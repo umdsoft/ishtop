@@ -135,20 +135,20 @@ return [
 
     // Regions
     'region_names' => [
-        'Toshkent' => 'Toshkent',
+        'Toshkent shahri' => 'Toshkent shahri',
         'Toshkent viloyati' => 'Toshkent viloyati',
-        'Samarqand' => 'Samarqand',
-        'Buxoro' => 'Buxoro',
-        'Andijon' => 'Andijon',
-        'Farg\'ona' => 'Farg\'ona',
-        'Namangan' => 'Namangan',
-        'Xorazm' => 'Xorazm',
-        'Qashqadaryo' => 'Qashqadaryo',
-        'Surxondaryo' => 'Surxondaryo',
-        'Jizzax' => 'Jizzax',
-        'Sirdaryo' => 'Sirdaryo',
-        'Navoiy' => 'Navoiy',
-        'Qoraqalpog\'iston' => 'Qoraqalpog\'iston',
+        'Andijon viloyati' => 'Andijon viloyati',
+        'Buxoro viloyati' => 'Buxoro viloyati',
+        'Farg\'ona viloyati' => 'Farg\'ona viloyati',
+        'Jizzax viloyati' => 'Jizzax viloyati',
+        'Xorazm viloyati' => 'Xorazm viloyati',
+        'Namangan viloyati' => 'Namangan viloyati',
+        'Navoiy viloyati' => 'Navoiy viloyati',
+        'Qashqadaryo viloyati' => 'Qashqadaryo viloyati',
+        'Qoraqalpog\'iston Respublikasi' => 'Qoraqalpog\'iston Respublikasi',
+        'Samarqand viloyati' => 'Samarqand viloyati',
+        'Sirdaryo viloyati' => 'Sirdaryo viloyati',
+        'Surxondaryo viloyati' => 'Surxondaryo viloyati',
     ],
 
     // Time
