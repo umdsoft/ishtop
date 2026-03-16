@@ -151,6 +151,39 @@ return [
         'Surxondaryo viloyati' => 'Surxondaryo viloyati',
     ],
 
+    // FAQ (for SEO schema)
+    'faq' => [
+        [
+            'q' => 'KadrGo nima?',
+            'a' => 'KadrGo — O\'zbekistondagi eng yirik ish qidirish platformasi. Telegram bot va veb-sayt orqali ish topish yoki ishchi yollash mumkin.',
+        ],
+        [
+            'q' => 'KadrGo bepulmi?',
+            'a' => 'Ha, ish qidiruvchilar uchun platforma mutlaqo bepul. Ish beruvchilar uchun asosiy xizmatlar bepul, premium xizmatlar (TOP, Shoshilinch) pullik.',
+        ],
+        [
+            'q' => 'Qanday qilib ish topsa bo\'ladi?',
+            'a' => 'Telegram bot @kadrgobot ga yozing yoki kadrgo.uz saytiga kiring. Vakansiyalarni ko\'ring va ariza yuboring — bu atigi 1-2 daqiqa vaqt oladi.',
+        ],
+        [
+            'q' => 'Qaysi shaharlarda vakansiyalar bor?',
+            'a' => 'Toshkent, Samarqand, Buxoro, Farg\'ona, Andijon va O\'zbekistonning barcha viloyatlarida vakansiyalar mavjud.',
+        ],
+        [
+            'q' => 'Ro\'yxatdan o\'tish kerakmi?',
+            'a' => 'Yo\'q, ro\'yxatdan o\'tmasdan ham vakansiyalarni ko\'rish va ariza topshirish mumkin. Telegram orqali avtomatik kirish ishlaydi.',
+        ],
+    ],
+
+    // SEO dynamic titles
+    'seo_home_title' => 'Ish qidirish O\'zbekistonda — vakansiyalar 2026 | KadrGo',
+    'seo_home_description' => 'O\'zbekistondagi eng yirik ish qidirish platformasi. Minglab vakansiyalar, ishonchli kompaniyalar. Telegramdan chiqmasdan ish toping yoki ishchi yollang.',
+    'seo_vacancies_title' => 'Vakansiyalar — ish qidirish O\'zbekistonda | KadrGo',
+    'seo_vacancies_description' => 'Barcha vakansiyalar bir joyda. Maosh, shahar, kategoriya bo\'yicha filtrlang. Bepul ariza yuboring.',
+    'seo_category_title' => ':category — vakansiyalar va ish o\'rinlari | KadrGo',
+    'seo_region_title' => ':regionda ish — vakansiyalar 2026 | KadrGo',
+    'seo_category_region_title' => ':category :region — vakansiyalar | KadrGo',
+
     // Time
     'just_now' => 'Hozirgina',
     'minutes_ago' => ':count daqiqa oldin',

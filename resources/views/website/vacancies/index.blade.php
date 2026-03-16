@@ -1,7 +1,7 @@
 @extends('layouts.website')
 
-@section('title', __('web.vacancies') . ' — KadrGo')
-@section('meta_description', __('web.hero_subtitle'))
+@section('title', $seoTitle)
+@section('meta_description', $seoDescription)
 
 @section('json_ld')
 <script type="application/ld+json">

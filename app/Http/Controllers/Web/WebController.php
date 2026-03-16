@@ -217,8 +217,27 @@ class WebController extends Controller
 
         $regions = $this->getRegionsWithCounts();
 
+        // Dynamic SEO title based on filters
+        $seoTitle = __('web.seo_vacancies_title');
+        $seoDescription = __('web.seo_vacancies_description');
+
+        if ($expandedRoot && $request->filled('region')) {
+            $rootCat = $categories->firstWhere('slug', $expandedRoot);
+            $catName = $rootCat ? $rootCat->name($lang) : $expandedRoot;
+            $regionName = __('web.region_names.' . $request->region);
+            $seoTitle = __('web.seo_category_region_title', ['category' => $catName, 'region' => $regionName]);
+        } elseif ($expandedRoot) {
+            $rootCat = $categories->firstWhere('slug', $expandedRoot);
+            $catName = $rootCat ? $rootCat->name($lang) : $expandedRoot;
+            $seoTitle = __('web.seo_category_title', ['category' => $catName]);
+        } elseif ($request->filled('region')) {
+            $regionName = __('web.region_names.' . $request->region);
+            $seoTitle = __('web.seo_region_title', ['region' => $regionName]);
+        }
+
         return view('website.vacancies.index', compact(
-            'vacancies', 'categories', 'regions', 'lang', 'expandedRoot', 'selectedSubs'
+            'vacancies', 'categories', 'regions', 'lang', 'expandedRoot', 'selectedSubs',
+            'seoTitle', 'seoDescription'
         ));
     }
 

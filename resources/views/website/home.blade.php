@@ -1,7 +1,7 @@
 @extends('layouts.website')
 
-@section('title', 'KadrGo — ' . __('web.hero_title'))
-@section('meta_description', __('web.hero_subtitle'))
+@section('title', __('web.seo_home_title'))
+@section('meta_description', __('web.seo_home_description'))
 
 @section('json_ld')
 <script type="application/ld+json">
@@ -37,6 +37,20 @@
         "query-input": "required name=search_term_string"
     }
 }
+</script>
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'FAQPage',
+    'mainEntity' => collect(__('web.faq'))->map(fn($item) => [
+        '@type' => 'Question',
+        'name' => $item['q'],
+        'acceptedAnswer' => [
+            '@type' => 'Answer',
+            'text' => $item['a'],
+        ],
+    ])->toArray(),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
 </script>
 @endsection
 
