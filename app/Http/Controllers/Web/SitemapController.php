@@ -29,7 +29,7 @@ class SitemapController extends Controller
 
             // Vacancies list
             $xml .= '<url>';
-            $xml .= '<loc>' . route('vacancies.index') . '</loc>';
+            $xml .= '<loc>' . url('/vacancies') . '</loc>';
             $xml .= '<changefreq>hourly</changefreq>';
             $xml .= '<priority>0.9</priority>';
             $xml .= '</url>';
@@ -37,7 +37,7 @@ class SitemapController extends Controller
             // Individual vacancies
             foreach ($vacancies as $vacancy) {
                 $xml .= '<url>';
-                $xml .= '<loc>' . route('vacancies.show', $vacancy) . '</loc>';
+                $xml .= '<loc>' . url('/vacancies/' . $vacancy->id) . '</loc>';
                 $xml .= '<lastmod>' . $vacancy->updated_at->toW3cString() . '</lastmod>';
                 $xml .= '<changefreq>weekly</changefreq>';
                 $xml .= '<priority>0.8</priority>';

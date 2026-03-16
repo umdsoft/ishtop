@@ -68,10 +68,18 @@ class ProfileController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
-        $profile = $request->user()->workerProfile()->updateOrCreate(
-            ['user_id' => $request->user()->id],
-            $validated
-        );
+        $user = $request->user();
+        $existing = $user->workerProfile;
+
+        if ($existing) {
+            $existing->update($validated);
+            $profile = $existing;
+        } else {
+            if (empty($validated['full_name'])) {
+                $validated['full_name'] = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? '')) ?: 'Foydalanuvchi';
+            }
+            $profile = $user->workerProfile()->create($validated);
+        }
 
         // Clear recommended cache so new profile data takes effect immediately
         cache()->forget("recommended_worker_{$profile->id}");

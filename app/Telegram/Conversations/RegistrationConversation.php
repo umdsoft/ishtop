@@ -43,8 +43,15 @@ class RegistrationConversation extends Conversation
     public function handlePhone(Nutgram $bot): void
     {
         $lang = $this->userLang;
-        $contact = $bot->message()->contact;
-        $text = $bot->message()->text;
+        $message = $bot->message();
+
+        if (!$message) {
+            $this->end();
+            return;
+        }
+
+        $contact = $message->contact;
+        $text = $message->text;
 
         $phone = null;
 
