@@ -47,83 +47,110 @@ class WorkerController extends Controller
 
     /**
      * Regional statistics — workers & vacancies grouped by region and district.
+     *
+     * Data comes from two sources with different conventions:
+     *   Telegram bot: city = region name, district = city/district name
+     *   Miniapp:      city = city name,   district = region name (reversed!)
+     *
+     * We handle both patterns by building a lookup map from the cities table.
      */
     public function regionalStats(): JsonResponse
     {
-        // Get all regions from cities table
         $locations = City::cachedLocations();
         $regions = collect($locations['regions']);
-        $cities = collect($locations['cities']);
+        $allCities = collect($locations['cities']);
 
-        // Workers count per region (city field stores region name)
-        $workersByRegion = WorkerProfile::select('city', DB::raw('COUNT(*) as count'))
+        // Build lookup: city name → region key
+        $regionKeys = $regions->pluck('key')->toArray();
+        $cityNameToRegion = [];
+        foreach ($allCities as $c) {
+            $cityNameToRegion[$c['name_uz']] = $c['region'];
+            $cityNameToRegion[$c['name_ru']] = $c['region'];
+        }
+
+        // ── Workers: resolve each record to (region, district_name) ──
+        $workerRows = WorkerProfile::select('city', 'district')
             ->whereNotNull('city')
             ->where('city', '!=', '')
-            ->groupBy('city')
-            ->pluck('count', 'city');
+            ->get();
 
-        // Workers count per district
-        $workersByDistrict = WorkerProfile::select('district', 'city', DB::raw('COUNT(*) as count'))
-            ->whereNotNull('district')
-            ->where('district', '!=', '')
-            ->groupBy('district', 'city')
-            ->get()
-            ->groupBy('city')
-            ->map(fn($items) => $items->pluck('count', 'district'));
+        $workerRegionCounts = [];   // region → count
+        $workerDistrictCounts = []; // region → { district_name → count }
 
-        // Active vacancies count per region (city field stores region name)
-        $vacanciesByRegion = Vacancy::select('city', DB::raw('COUNT(*) as count'))
+        foreach ($workerRows as $row) {
+            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion);
+            if (!$resolved['region']) continue;
+
+            $region = $resolved['region'];
+            $district = $resolved['district'];
+
+            $workerRegionCounts[$region] = ($workerRegionCounts[$region] ?? 0) + 1;
+
+            if ($district) {
+                $workerDistrictCounts[$region] ??= [];
+                $workerDistrictCounts[$region][$district] = ($workerDistrictCounts[$region][$district] ?? 0) + 1;
+            }
+        }
+
+        // ── Vacancies (active): resolve each record ──
+        $vacancyRows = Vacancy::select('city', 'district')
             ->where('status', 'active')
             ->whereNotNull('city')
             ->where('city', '!=', '')
-            ->groupBy('city')
-            ->pluck('count', 'city');
+            ->get();
 
-        // Active vacancies count per district
-        $vacanciesByDistrict = Vacancy::select('district', 'city', DB::raw('COUNT(*) as count'))
-            ->where('status', 'active')
-            ->whereNotNull('district')
-            ->where('district', '!=', '')
-            ->groupBy('district', 'city')
-            ->get()
-            ->groupBy('city')
-            ->map(fn($items) => $items->pluck('count', 'district'));
+        $vacancyRegionCounts = [];
+        $vacancyDistrictCounts = [];
 
-        // Total counts
+        foreach ($vacancyRows as $row) {
+            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion);
+            if (!$resolved['region']) continue;
+
+            $region = $resolved['region'];
+            $district = $resolved['district'];
+
+            $vacancyRegionCounts[$region] = ($vacancyRegionCounts[$region] ?? 0) + 1;
+
+            if ($district) {
+                $vacancyDistrictCounts[$region] ??= [];
+                $vacancyDistrictCounts[$region][$district] = ($vacancyDistrictCounts[$region][$district] ?? 0) + 1;
+            }
+        }
+
+        // ── Summary ──
         $totalWorkers = WorkerProfile::count();
+        $activeWorkers = WorkerProfile::where('search_status', 'open')->count();
         $totalActiveVacancies = Vacancy::where('status', 'active')->count();
         $totalApplications = DB::table('applications')->count();
-        $activeWorkers = WorkerProfile::where('search_status', 'open')->count();
 
-        // Build region data
+        // ── Build region data ──
         $regionData = $regions->map(function ($region) use (
-            $cities, $workersByRegion, $workersByDistrict, $vacanciesByRegion, $vacanciesByDistrict
+            $allCities, $workerRegionCounts, $workerDistrictCounts,
+            $vacancyRegionCounts, $vacancyDistrictCounts
         ) {
-            $regionKey = $region['key'];
+            $key = $region['key'];
+            $regionCities = $allCities->where('region', $key)->values();
 
-            // Get districts for this region from cities table
-            $regionCities = $cities->where('region', $regionKey)->values();
+            $wDistrictMap = $workerDistrictCounts[$key] ?? [];
+            $vDistrictMap = $vacancyDistrictCounts[$key] ?? [];
 
-            $districts = $regionCities->map(function ($city) use ($regionKey, $workersByDistrict, $vacanciesByDistrict) {
-                $districtWorkers = $workersByDistrict->get($regionKey);
-                $districtVacancies = $vacanciesByDistrict->get($regionKey);
-
+            $districts = $regionCities->map(function ($city) use ($wDistrictMap, $vDistrictMap) {
                 return [
                     'id' => $city['id'],
                     'name_uz' => $city['name_uz'],
                     'name_ru' => $city['name_ru'],
                     'type' => $city['type'],
-                    'workers_count' => $districtWorkers ? ($districtWorkers[$city['name_uz']] ?? 0) : 0,
-                    'vacancies_count' => $districtVacancies ? ($districtVacancies[$city['name_uz']] ?? 0) : 0,
+                    'workers_count' => $wDistrictMap[$city['name_uz']] ?? 0,
+                    'vacancies_count' => $vDistrictMap[$city['name_uz']] ?? 0,
                 ];
             });
 
             return [
-                'key' => $regionKey,
+                'key' => $key,
                 'name_uz' => $region['name_uz'],
                 'name_ru' => $region['name_ru'],
-                'workers_count' => $workersByRegion[$regionKey] ?? 0,
-                'vacancies_count' => $vacanciesByRegion[$regionKey] ?? 0,
+                'workers_count' => $workerRegionCounts[$key] ?? 0,
+                'vacancies_count' => $vacancyRegionCounts[$key] ?? 0,
                 'districts_count' => $regionCities->count(),
                 'districts' => $districts,
             ];
@@ -139,5 +166,64 @@ class WorkerController extends Controller
             ],
             'regions' => $regionData,
         ]);
+    }
+
+    /**
+     * Resolve city/district fields to a normalized (region, district_name).
+     *
+     * Handles both data patterns:
+     *  Pattern A (Telegram): city="Xorazm viloyati", district="Urganch"
+     *  Pattern B (Miniapp):  city="Urganch",         district="Xorazm viloyati"
+     *  Pattern C (no district): city="Xorazm viloyati", district=null
+     */
+    private function resolveLocation(
+        ?string $city,
+        ?string $district,
+        array $regionKeys,
+        array $cityNameToRegion
+    ): array {
+        $city = trim($city ?? '');
+        $district = trim($district ?? '');
+
+        // Pattern A: city is a region name
+        if (in_array($city, $regionKeys, true)) {
+            return [
+                'region' => $city,
+                'district' => $district ?: null,
+            ];
+        }
+
+        // Pattern B: district is a region name, city is a district name
+        if ($district && in_array($district, $regionKeys, true)) {
+            return [
+                'region' => $district,
+                'district' => $city,
+            ];
+        }
+
+        // city is a district/city name — resolve via lookup
+        if (isset($cityNameToRegion[$city])) {
+            return [
+                'region' => $cityNameToRegion[$city],
+                'district' => $city,
+            ];
+        }
+
+        // district is a district/city name
+        if ($district && isset($cityNameToRegion[$district])) {
+            return [
+                'region' => $cityNameToRegion[$district],
+                'district' => $district,
+            ];
+        }
+
+        // Fallback — try fuzzy: maybe "Xorazm" without "viloyati"
+        foreach ($regionKeys as $rk) {
+            if ($city && str_starts_with($rk, $city)) {
+                return ['region' => $rk, 'district' => $district ?: null];
+            }
+        }
+
+        return ['region' => null, 'district' => null];
     }
 }
