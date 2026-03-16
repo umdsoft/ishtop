@@ -88,4 +88,8 @@ return [
         'site_verification' => env('YANDEX_SITE_VERIFICATION'),
     ],
 
+    'meta' => [
+        'pixel_id' => env('META_PIXEL_ID'),
+    ],
+
 ];
