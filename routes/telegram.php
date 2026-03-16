@@ -20,15 +20,43 @@ use SergiX44\Nutgram\Nutgram;
 
 // ── Global Exception Handler ──
 $bot->onException(function (Nutgram $bot, \Throwable $e) {
-    \Illuminate\Support\Facades\Log::error('Nutgram exception: ' . $e->getMessage(), [
+    $message = $e->getMessage();
+
+    // 403/blocked errors — mark user as blocked and suppress
+    if (str_contains($message, 'Forbidden') || str_contains($message, '403')
+        || str_contains($message, 'bot was blocked') || str_contains($message, 'chat not found')
+        || str_contains($message, 'user is deactivated')) {
+        $telegramId = $bot->userId();
+        if ($telegramId) {
+            User::where('telegram_id', $telegramId)->update(['is_blocked' => true]);
+        }
+        \Illuminate\Support\Facades\Log::info("Bot blocked/deactivated by user {$telegramId}");
+        return;
+    }
+
+    \Illuminate\Support\Facades\Log::error('Nutgram exception: ' . $message, [
         'update_type' => $bot->update()?->getType()?->value,
         'user_id' => $bot->userId(),
     ]);
 });
 
 $bot->onApiError(function (Nutgram $bot, \SergiX44\Nutgram\Telegram\Exceptions\TelegramException $e) {
-    \Illuminate\Support\Facades\Log::warning('Telegram API error: ' . $e->getMessage(), [
-        'user_id' => $bot->userId(),
+    $message = $e->getMessage();
+    $telegramId = $bot->userId();
+
+    // 403 Forbidden — user blocked the bot
+    if (str_contains($message, 'Forbidden') || str_contains($message, '403')
+        || str_contains($message, 'bot was blocked') || str_contains($message, 'chat not found')
+        || str_contains($message, 'user is deactivated')) {
+        if ($telegramId) {
+            User::where('telegram_id', $telegramId)->update(['is_blocked' => true]);
+        }
+        \Illuminate\Support\Facades\Log::info("Bot blocked/deactivated by user {$telegramId}");
+        return;
+    }
+
+    \Illuminate\Support\Facades\Log::warning('Telegram API error: ' . $message, [
+        'user_id' => $telegramId,
     ]);
 });
 

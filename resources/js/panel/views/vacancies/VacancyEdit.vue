@@ -457,8 +457,6 @@ const loadingPhase = ref(''); // 'translating' | 'saving' | ''
 
 const categories = ref([]);
 
-// regions va districts are imported from ../../data/regions.js
-
 const employmentTypes = [
   { value: 'full_time', label: 'To\'liq ish kuni' },
   { value: 'part_time', label: 'Yarim ish kuni' },

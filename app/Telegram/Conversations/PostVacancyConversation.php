@@ -7,6 +7,7 @@ use App\Models\City;
 use App\Models\EmployerProfile;
 use App\Models\User;
 use App\Services\VacancyService;
+use App\Telegram\Traits\BotConversationTrait;
 use SergiX44\Nutgram\Conversations\Conversation;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
@@ -15,7 +16,7 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 
 class PostVacancyConversation extends Conversation
 {
-    protected string $lang = 'uz';
+    use BotConversationTrait;
     protected array $data = [];
     protected ?string $employerId = null;
 
@@ -53,7 +54,7 @@ class PostVacancyConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $name = trim($bot->message()->text ?? '');
+        $name = trim($bot->message()?->text ?? '');
         if (mb_strlen($name) < 2) {
             $bot->sendMessage(text: $this->t('❌ Nom juda qisqa.', '❌ Слишком короткое название.'));
             return;
@@ -85,7 +86,7 @@ class PostVacancyConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (mb_strlen($text) < 3) {
             $bot->sendMessage(text: $this->t('❌ Sarlavha juda qisqa.', '❌ Слишком короткое название.'));
             return;
@@ -216,7 +217,7 @@ class PostVacancyConversation extends Conversation
             );
         } else {
             if ($this->checkCancel($bot)) return;
-            $text = trim($bot->message()->text ?? '');
+            $text = trim($bot->message()?->text ?? '');
             if (empty($text)) return;
             $this->data['district'] = $text;
         }
@@ -232,7 +233,7 @@ class PostVacancyConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (mb_strlen($text) < 10) {
             $bot->sendMessage(text: $this->t('❌ Tavsif juda qisqa (kamida 10 belgi).', '❌ Слишком короткое описание (минимум 10 символов).'));
             return;
@@ -254,7 +255,7 @@ class PostVacancyConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         $this->data['requirements'] = ($text === '-' || empty($text)) ? null : $text;
 
         $keyboard = InlineKeyboardMarkup::make()
@@ -316,7 +317,7 @@ class PostVacancyConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
 
         if ($this->data['salary_type'] === 'fixed') {
             if (!is_numeric($text)) {
@@ -499,19 +500,4 @@ class PostVacancyConversation extends Conversation
         );
     }
 
-    protected function t(string $uz, string $ru): string
-    {
-        return $this->lang === 'ru' ? $ru : $uz;
-    }
-
-    protected function checkCancel(Nutgram $bot): bool
-    {
-        $text = $bot->message()->text ?? '';
-        if ($text === '/cancel') {
-            $bot->sendMessage(text: $this->t('❌ Bekor qilindi. /menu — Bosh menyu', '❌ Отменено. /menu — Главное меню'));
-            $this->end();
-            return true;
-        }
-        return false;
-    }
 }

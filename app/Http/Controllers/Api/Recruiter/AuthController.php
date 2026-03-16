@@ -280,13 +280,7 @@ class AuthController extends Controller
             return;
         }
 
-        $employer = EmployerProfile::create([
-            'user_id' => $user->id,
-            'company_name' => ($user->first_name ?: 'User') . ' Company',
-            'phone' => $user->phone ?? '',
-        ]);
-
-        $user->update(['active_employer_id' => $employer->id]);
+        $user->getOrCreateEmployerProfile();
         $user->refresh();
     }
 

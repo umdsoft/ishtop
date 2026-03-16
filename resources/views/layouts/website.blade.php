@@ -11,7 +11,27 @@
     <link rel="canonical" href="@yield('canonical', url()->current())">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
-    @yield('og_meta')
+    {{-- Hreflang --}}
+    <link rel="alternate" hreflang="uz" href="{{ url()->current() }}?lang=uz">
+    <link rel="alternate" hreflang="ru" href="{{ url()->current() }}?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
+
+    {{-- Open Graph (default, overridable per page) --}}
+    @hasSection('og_meta')
+        @yield('og_meta')
+    @else
+        <meta property="og:type" content="website">
+        <meta property="og:title" content="@yield('title', 'KadrGo')">
+        <meta property="og:description" content="@yield('meta_description')">
+        <meta property="og:url" content="{{ url()->current() }}">
+        <meta property="og:site_name" content="KadrGo">
+    @endif
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@yield('title', 'KadrGo')">
+    <meta name="twitter:description" content="@yield('meta_description')">
+
     @yield('json_ld')
 
     <link rel="preconnect" href="https://fonts.bunny.net">

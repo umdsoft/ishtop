@@ -21,13 +21,20 @@ class MatchVacanciesJob implements ShouldQueue
             ->with('user')
             ->chunk(100, function ($workers) use ($matchingService, $notificationService) {
                 foreach ($workers as $worker) {
-                    $matches = $matchingService->findMatchesForWorker($worker, 3);
+                    try {
+                        $matches = $matchingService->findMatchesForWorker($worker, 3);
 
-                    foreach ($matches as $vacancy) {
-                        $score = $matchingService->calculateMatchScore($worker, $vacancy);
-                        if ($score >= 50) {
-                            $notificationService->notifyMatchingVacancy($worker, $vacancy, $score);
+                        foreach ($matches as $vacancy) {
+                            $score = $matchingService->calculateMatchScore($worker, $vacancy);
+                            if ($score >= 50) {
+                                $notificationService->notifyMatchingVacancy($worker, $vacancy, $score);
+                            }
                         }
+                    } catch (\Throwable $e) {
+                        \Log::warning('MatchVacanciesJob failed for worker', [
+                            'worker_id' => $worker->id,
+                            'error' => $e->getMessage(),
+                        ]);
                     }
                 }
             });

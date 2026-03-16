@@ -147,9 +147,9 @@ Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
 
 // Recruiter Auth (no auth required)
 Route::prefix('recruiter')->middleware('throttle:recruiter')->group(function () {
-    Route::post('/login', [Recruiter\AuthController::class, 'login']);
-    Route::post('/register', [Recruiter\AuthController::class, 'register']);
-    Route::post('/send-otp', [Recruiter\AuthController::class, 'sendOtp']);
+    Route::post('/login', [Recruiter\AuthController::class, 'login'])->middleware('throttle:5,1');
+    Route::post('/register', [Recruiter\AuthController::class, 'register'])->middleware('throttle:5,1');
+    Route::post('/send-otp', [Recruiter\AuthController::class, 'sendOtp'])->middleware('throttle:5,1');
     Route::post('/verify-otp', [Recruiter\AuthController::class, 'verifyOtp']);
     Route::get('/telegram-bot-info', [Recruiter\AuthController::class, 'telegramBotInfo']);
     Route::post('/telegram-login', [Recruiter\AuthController::class, 'telegramLogin']);
@@ -247,6 +247,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::get('/dashboard/latest-vacancies', [Admin\DashboardController::class, 'latestVacancies']);
 
     // Users
+    Route::get('users/stats', [Admin\UserController::class, 'stats']);
     Route::apiResource('users', Admin\UserController::class);
     Route::post('users/{user}/toggle-block', [Admin\UserController::class, 'toggleBlock']);
 
@@ -309,14 +310,5 @@ Route::prefix('payments/webhook')->middleware('throttle:webhook')->group(functio
 |--------------------------------------------------------------------------
 */
 
-Route::post('/webhook/telegram', function () {
-    try {
-        $bot = app(\SergiX44\Nutgram\Nutgram::class);
-        $bot->setRunningMode(\SergiX44\Nutgram\RunningMode\Webhook::class);
-        $bot->run();
-    } catch (\Throwable $e) {
-        \Illuminate\Support\Facades\Log::error('Telegram webhook: ' . $e->getMessage());
-    }
-
-    return response()->json(['ok' => true]);
-});
+Route::post('/webhook/telegram/{secret?}', [Webhook\TelegramWebhookController::class, 'handle'])
+    ->where('secret', '[a-zA-Z0-9_-]+');

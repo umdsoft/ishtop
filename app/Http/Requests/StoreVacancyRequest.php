@@ -31,7 +31,7 @@ class StoreVacancyRequest extends FormRequest
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
             'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|min:0',
+            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
             'salary_type' => 'nullable|string|in:fixed,range,negotiable',
             'currency' => 'nullable|string|in:uzs,usd',
             'experience_required' => 'nullable|string|max:50',

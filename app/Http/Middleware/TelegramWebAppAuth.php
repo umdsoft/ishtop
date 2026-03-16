@@ -61,9 +61,9 @@ class TelegramWebAppAuth
 
         parse_str($initData, $parsed);
 
-        // auth_date vaqtini tekshirish (maks 24 soat)
+        // auth_date vaqtini tekshirish (maks 5 daqiqa)
         $authDate = (int) ($parsed['auth_date'] ?? 0);
-        if ($authDate > 0 && (time() - $authDate) > 86400) {
+        if ($authDate > 0 && (time() - $authDate) > 300) {
             Log::warning('TelegramWebAppAuth: initData expired', ['auth_date' => $authDate]);
             return null;
         }

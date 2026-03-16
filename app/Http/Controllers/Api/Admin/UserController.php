@@ -3,12 +3,26 @@
 namespace App\Http\Controllers\Api\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\EmployerProfile;
 use App\Models\User;
+use App\Models\WorkerProfile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
 {
+    public function stats(): JsonResponse
+    {
+        return response()->json([
+            'total_users' => User::count(),
+            'today_users' => User::whereDate('created_at', today())->count(),
+            'active_users' => User::where('is_blocked', false)->count(),
+            'blocked_users' => User::where('is_blocked', true)->count(),
+            'workers' => WorkerProfile::count(),
+            'employers' => EmployerProfile::count(),
+        ]);
+    }
+
     public function index(Request $request): JsonResponse
     {
         $query = User::with(['workerProfile:id,user_id', 'employerProfiles:id,user_id,company_name'])

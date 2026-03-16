@@ -2,5 +2,6 @@ User-agent: *
 Disallow: /panel/
 Disallow: /miniapp/
 Disallow: /api/
+Disallow: /dash/
 
 Sitemap: https://kadrgo.uz/sitemap.xml

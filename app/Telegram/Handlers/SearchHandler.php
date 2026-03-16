@@ -125,31 +125,6 @@ class SearchHandler
         }
     }
 
-    protected function getCategoryEmoji(string $slug): string
-    {
-        return match ($slug) {
-            'it' => '💻',
-            'sales' => '🛒',
-            'shop-seller' => '🏪',
-            'sales-manager' => '💼',
-            'call-center' => '📞',
-            'food' => '🍽',
-            'driver' => '🚗',
-            'construction' => '🔧',
-            'beauty' => '💇',
-            'education' => '🎓',
-            'finance' => '💰',
-            'marketing' => '📢',
-            'logistics' => '📦',
-            'security' => '🛡',
-            'cleaning' => '✨',
-            'admin' => '🏢',
-            'production' => '⚙️',
-            'other' => '📋',
-            default => '📁',
-        };
-    }
-
     protected function showCategories(Nutgram $bot): void
     {
         $lang = $this->getUserLang($bot);
@@ -161,7 +136,7 @@ class SearchHandler
         $row = [];
         foreach ($categories as $cat) {
             $name = $lang === 'ru' ? ($cat->name_ru ?? $cat->name_uz) : $cat->name_uz;
-            $emoji = $this->getCategoryEmoji($cat->slug);
+            $emoji = $cat->getEmoji();
             $count = $this->getCategoryVacancyCount($cat);
             $label = "{$emoji} {$name} ({$count})";
             $callback = $cat->children_count > 0 ? 'search_subcat:' . $cat->slug : 'search_cat:' . $cat->slug;
@@ -198,7 +173,7 @@ class SearchHandler
         $children = cache()->remember("search:subcats:{$parent->id}", 300, fn() =>
             Category::active()->where('parent_id', $parent->id)->get()
         );
-        $parentEmoji = $this->getCategoryEmoji($parent->slug);
+        $parentEmoji = $parent->getEmoji();
         $parentName = $lang === 'ru' ? ($parent->name_ru ?? $parent->name_uz) : $parent->name_uz;
 
         $keyboard = InlineKeyboardMarkup::make();
@@ -212,7 +187,7 @@ class SearchHandler
 
         foreach ($children as $child) {
             $name = $lang === 'ru' ? ($child->name_ru ?? $child->name_uz) : $child->name_uz;
-            $emoji = $this->getCategoryEmoji($child->slug);
+            $emoji = $child->getEmoji();
             $count = cache()->remember("search:cat_count:{$child->slug}", 120, fn() =>
                 Vacancy::where('status', 'active')->where('category', $child->slug)->count()
             );

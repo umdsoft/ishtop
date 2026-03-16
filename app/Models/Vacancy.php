@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Vacancy extends Model
 {
@@ -18,14 +19,14 @@ class Vacancy extends Model
 
     protected $fillable = [
         'employer_id', 'company_name', 'language',
-        'title_uz', 'title_ru', 'category', 'category_id',
+        'title_uz', 'title_ru', 'slug', 'category', 'category_id',
         'description_uz', 'description_ru',
         'requirements_uz', 'requirements_ru',
         'responsibilities_uz', 'responsibilities_ru',
         'salary_min', 'salary_max', 'salary_type', 'currency',
         'work_type', 'experience_required', 'city', 'district',
         'latitude', 'longitude', 'contact_phone', 'contact_method',
-        'views_count', 'applications_count', 'status', 'is_top', 'is_urgent',
+        'status', 'is_top', 'is_urgent',
         'top_until', 'urgent_until', 'has_questionnaire',
         'published_at', 'expires_at', 'close_reason',
     ];
@@ -49,6 +50,27 @@ class Vacancy extends Model
             'status' => VacancyStatus::class,
             'work_type' => WorkType::class,
         ];
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (Vacancy $vacancy) {
+            if (empty($vacancy->slug)) {
+                $vacancy->slug = $vacancy->generateSlug();
+            }
+        });
+    }
+
+    public function generateSlug(): string
+    {
+        $baseSlug = Str::slug($this->title_uz ?: $this->title_ru ?: 'vacancy');
+        if ($baseSlug === '') {
+            $baseSlug = 'vacancy';
+        }
+
+        return $baseSlug . '-' . substr($this->id, 0, 8);
     }
 
     public function employer(): BelongsTo

@@ -3,6 +3,43 @@
 @section('title', 'KadrGo — ' . __('web.hero_title'))
 @section('meta_description', __('web.hero_subtitle'))
 
+@section('json_ld')
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "KadrGo",
+    "alternateName": "КадрГо",
+    "url": "{{ url('/') }}",
+    "logo": "{{ asset('favicon.svg') }}",
+    "description": "O'zbekistondagi eng yirik ish qidirish platformasi",
+    "address": {
+        "@type": "PostalAddress",
+        "addressCountry": "UZ"
+    },
+    "sameAs": [
+        "https://t.me/kadrgobot"
+    ]
+}
+</script>
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": "KadrGo",
+    "url": "{{ url('/') }}",
+    "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+            "@type": "EntryPoint",
+            "urlTemplate": "{{ url('/vacancies') }}?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+    }
+}
+</script>
+@endsection
+
 @section('content')
 
     {{-- Hero + Search --}}

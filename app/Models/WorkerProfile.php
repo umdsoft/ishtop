@@ -22,7 +22,6 @@ class WorkerProfile extends Model implements HasMedia
         'expected_salary_min', 'expected_salary_max', 'work_types', 'preferred_categories', 'bio', 'work_experience',
         'photo_url', 'resume_file_url', 'linkedin_url', 'linkedin_import_data',
         'linkedin_imported_at', 'search_status', 'latitude', 'longitude',
-        'views_count',
     ];
 
     protected function casts(): array

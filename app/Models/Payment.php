@@ -49,6 +49,15 @@ class Payment extends Model
         return $query->where('status', PaymentStatus::PENDING);
     }
 
+    public function scopeCandidateUnlocked($query, string $vacancyId, string $userId)
+    {
+        return $query->where('type', 'candidate_unlock')
+            ->where('payable_type', Vacancy::class)
+            ->where('payable_id', $vacancyId)
+            ->where('user_id', $userId)
+            ->completed();
+    }
+
     public function isCompleted(): bool
     {
         return $this->status === PaymentStatus::COMPLETED;

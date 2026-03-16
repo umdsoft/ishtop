@@ -331,7 +331,13 @@ class TelegramNotificationService
         }
 
         try {
-            Http::post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
+            $response = Http::post("https://api.telegram.org/bot{$this->botToken}/sendMessage", $payload);
+
+            // Mark user as blocked if 403 Forbidden
+            if ($response->status() === 403 || ($response->json('error_code') === 403)) {
+                \App\Models\User::where('telegram_id', $chatId)->update(['is_blocked' => true]);
+                Log::info("Telegram user {$chatId} blocked the bot, marked as blocked.");
+            }
         } catch (\Throwable $e) {
             Log::warning('Telegram notification failed', [
                 'chat_id' => $chatId,

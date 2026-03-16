@@ -11,6 +11,11 @@
     <link rel="canonical" href="{{ $canonical ?? url()->current() }}">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+    {{-- Hreflang --}}
+    <link rel="alternate" hreflang="uz" href="{{ url()->current() }}?lang=uz">
+    <link rel="alternate" hreflang="ru" href="{{ url()->current() }}?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="{{ url()->current() }}">
+
     {{-- Open Graph --}}
     <meta property="og:type" content="{{ $ogType ?? 'website' }}">
     <meta property="og:title" content="{{ $ogTitle ?? $title ?? 'KadrGo' }}">
@@ -20,6 +25,11 @@
     @if(!empty($ogImage))
         <meta property="og:image" content="{{ $ogImage }}">
     @endif
+
+    {{-- Twitter Card --}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ $ogTitle ?? $title ?? 'KadrGo' }}">
+    <meta name="twitter:description" content="{{ $ogDescription ?? $description ?? '' }}">
 
     {{-- JSON-LD --}}
     @if(!empty($jsonLd))

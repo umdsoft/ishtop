@@ -5,8 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Enums\ApplicationStage;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreApplicationRequest;
+use App\Jobs\SendNotificationJob;
 use App\Models\Application;
-use App\Models\Notification;
+use App\Models\User;
 use App\Models\Vacancy;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +20,7 @@ class ApplicationController extends Controller
         $validated = $request->validated();
         $user = $request->user();
 
-        $vacancy = Vacancy::with('employer:id,user_id,company_name')->findOrFail($validated['vacancy_id']);
+        $vacancy = Vacancy::with(['employer:id,user_id,company_name', 'employer.user:id,first_name,last_name,telegram_id'])->findOrFail($validated['vacancy_id']);
 
         // Prevent applying to own vacancy
         if ($vacancy->employer && $vacancy->employer->user_id === $user->id) {
@@ -52,21 +53,24 @@ class ApplicationController extends Controller
             return $application;
         });
 
-        // Notify vacancy owner about new application
+        // Notify vacancy owner about new application (async)
         if ($vacancy->employer?->user_id) {
-            $title = $vacancy->title_uz ?: $vacancy->title_ru;
-
-            Notification::create([
-                'user_id' => $vacancy->employer->user_id,
-                'type' => 'new_application',
-                'title' => "Yangi ariza: {$title}",
-                'message' => trim("{$user->first_name} {$user->last_name}") . ' vakansiyangizga ariza yubordi',
-                'data' => [
-                    'application_id' => $application->id,
-                    'vacancy_id' => $vacancy->id,
-                    'worker_name' => trim("{$user->first_name} {$user->last_name}"),
-                ],
-            ]);
+            $owner = $vacancy->employer->user;
+            if ($owner) {
+                $title = $vacancy->title_uz ?: $vacancy->title_ru;
+                $workerName = trim("{$user->first_name} {$user->last_name}");
+                SendNotificationJob::dispatch(
+                    $owner,
+                    'new_application',
+                    "Yangi ariza: {$title}",
+                    "{$workerName} vakansiyangizga ariza yubordi",
+                    [
+                        'application_id' => $application->id,
+                        'vacancy_id' => $vacancy->id,
+                        'worker_name' => $workerName,
+                    ],
+                );
+            }
         }
 
         return response()->json(['application' => $application], 201);
@@ -75,7 +79,10 @@ class ApplicationController extends Controller
     public function my(Request $request): JsonResponse
     {
         $worker = $request->user()->workerProfile;
-        $applications = Application::where('worker_id', $worker?->id)
+        if (!$worker) {
+            return response()->json(['data' => [], 'total' => 0]);
+        }
+        $applications = Application::where('worker_id', $worker->id)
             ->with(['vacancy:id,title_uz,title_ru,category,city,salary_min,salary_max,employer_id', 'vacancy.employer:id,company_name,logo_url'])
             ->latest()
             ->paginate(20);
@@ -86,7 +93,10 @@ class ApplicationController extends Controller
     public function received(Request $request): JsonResponse
     {
         $employer = $request->user()->employerProfile;
-        $applications = Application::whereHas('vacancy', fn($q) => $q->where('employer_id', $employer?->id))
+        if (!$employer) {
+            return response()->json(['data' => [], 'total' => 0]);
+        }
+        $applications = Application::whereHas('vacancy', fn($q) => $q->where('employer_id', $employer->id))
             ->with(['worker:id,full_name,city,experience_years', 'vacancy:id,title_uz,title_ru'])
             ->latest()
             ->paginate(20);

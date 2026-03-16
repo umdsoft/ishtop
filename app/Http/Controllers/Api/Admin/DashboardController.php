@@ -55,21 +55,13 @@ class DashboardController extends Controller
             ? round(($stats['today_users'] - $stats['yesterday_users']) / $stats['yesterday_users'] * 100)
             : ($stats['today_users'] > 0 ? 100 : 0);
 
-        // 7-day sparkline data
+        // 7-day sparkline data (1 query per model instead of 7)
         $users7d = Cache::remember('admin:chart:User', 300, function () {
-            $data = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $data[] = User::whereDate('created_at', today()->subDays($i))->count();
-            }
-            return $data;
+            return $this->sparklineData(User::class, 7);
         });
 
         $vacancies7d = Cache::remember('admin:chart:vacancies_7d', 300, function () {
-            $data = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $data[] = Vacancy::whereDate('created_at', today()->subDays($i))->count();
-            }
-            return $data;
+            return $this->sparklineData(Vacancy::class, 7);
         });
 
         return response()->json([
@@ -95,13 +87,20 @@ class DashboardController extends Controller
     private function registrationsChart(): JsonResponse
     {
         $data = Cache::remember('admin:chart:registrations', 300, function () {
+            $days = 14;
+            $startDate = Carbon::now()->subDays($days - 1)->startOfDay();
+
+            $rows = User::where('created_at', '>=', $startDate)
+                ->selectRaw('DATE(created_at) as date, COUNT(*) as cnt')
+                ->groupBy('date')
+                ->pluck('cnt', 'date');
+
             $counts = [];
             $labels = [];
-
-            for ($i = 13; $i >= 0; $i--) {
+            for ($i = $days - 1; $i >= 0; $i--) {
                 $date = Carbon::now()->subDays($i);
                 $labels[] = $date->format('d.m');
-                $counts[] = User::whereDate('created_at', $date)->count();
+                $counts[] = (int) $rows->get($date->toDateString(), 0);
             }
 
             return compact('counts', 'labels');
@@ -113,16 +112,22 @@ class DashboardController extends Controller
     private function revenueChart(): JsonResponse
     {
         $data = Cache::remember('admin:chart:revenue', 600, function () {
+            $startDate = Carbon::now()->subMonths(5)->startOfMonth();
+
+            $rows = Payment::where('status', 'completed')
+                ->where('created_at', '>=', $startDate)
+                ->selectRaw('YEAR(created_at) as y, MONTH(created_at) as m, SUM(amount) as total')
+                ->groupByRaw('YEAR(created_at), MONTH(created_at)')
+                ->get()
+                ->keyBy(fn($row) => $row->y . '-' . str_pad($row->m, 2, '0', STR_PAD_LEFT));
+
             $amounts = [];
             $labels = [];
-
             for ($i = 5; $i >= 0; $i--) {
                 $date = Carbon::now()->subMonths($i);
+                $key = $date->format('Y-m');
                 $labels[] = $date->translatedFormat('M');
-                $amounts[] = (float) Payment::where('status', 'completed')
-                    ->whereYear('created_at', $date->year)
-                    ->whereMonth('created_at', $date->month)
-                    ->sum('amount');
+                $amounts[] = (float) ($rows->get($key)?->total ?? 0);
             }
 
             return compact('amounts', 'labels');
@@ -190,5 +195,26 @@ class DashboardController extends Controller
         });
 
         return response()->json(['vacancies' => $vacancies]);
+    }
+
+    /**
+     * Generate sparkline data using a single GROUP BY query instead of N separate queries.
+     */
+    private function sparklineData(string $model, int $days): array
+    {
+        $startDate = today()->subDays($days - 1);
+
+        $rows = $model::where('created_at', '>=', $startDate)
+            ->selectRaw('DATE(created_at) as date, COUNT(*) as cnt')
+            ->groupBy('date')
+            ->pluck('cnt', 'date');
+
+        $data = [];
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $date = today()->subDays($i)->toDateString();
+            $data[] = (int) $rows->get($date, 0);
+        }
+
+        return $data;
     }
 }

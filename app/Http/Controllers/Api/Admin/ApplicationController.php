@@ -29,6 +29,10 @@ class ApplicationController extends Controller
             $query->where('status', $request->status);
         }
 
+        if ($request->filled('vacancy_id')) {
+            $query->where('vacancy_id', $request->vacancy_id);
+        }
+
         $query->latest();
         $applications = $query->paginate($request->input('per_page', 15));
 

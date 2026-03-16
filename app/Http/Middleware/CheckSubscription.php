@@ -22,7 +22,7 @@ class CheckSubscription
             return $next($request);
         }
 
-        if (!$subscription || !in_array($subscription->plan->value, $plans)) {
+        if (!$subscription || !$subscription->plan || !in_array($subscription->plan->value, $plans)) {
             return response()->json([
                 'message' => 'Bu funksiya uchun obuna kerak',
                 'required_plans' => $plans,

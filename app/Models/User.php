@@ -97,6 +97,19 @@ class User extends Authenticatable implements FilamentUser, HasName, HasAvatar
         return $this->hasMany(User::class, 'referred_by');
     }
 
+    public function getOrCreateEmployerProfile(?string $companyName = null): EmployerProfile
+    {
+        if ($this->employerProfile) {
+            return $this->employerProfile;
+        }
+        $employer = $this->employerProfiles()->create([
+            'company_name' => $companyName ?? $this->first_name ?? 'Kompaniya',
+        ]);
+        $this->update(['active_employer_id' => $employer->id]);
+        $this->setRelation('employerProfile', $employer);
+        return $employer;
+    }
+
     public function payments(): HasMany
     {
         return $this->hasMany(Payment::class);

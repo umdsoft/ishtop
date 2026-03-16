@@ -4,6 +4,14 @@
       <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ $t('vacancies.title') }}</h1>
     </div>
 
+    <!-- City filter badge -->
+    <div v-if="cityFilterLabel" class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium">
+        📍 {{ cityFilterLabel }}
+        <button @click="clearCityFilter" class="ml-1 hover:text-brand-900 dark:hover:text-brand-200">&times;</button>
+      </span>
+    </div>
+
     <!-- Filters -->
     <AppCard>
       <div class="flex flex-wrap items-center gap-3">
@@ -91,7 +99,17 @@
                 </div>
               </td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.views_count || 0 }}</td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.applications_count || 0 }}</td>
+              <td class="py-3 px-4" @click.stop>
+                <span
+                  v-if="vacancy.applications_count > 0"
+                  @click="router.push({ path: '/applications', query: { vacancy_id: vacancy.id } })"
+                  class="inline-flex items-center justify-center min-w-[1.5rem] px-2 py-0.5 rounded-md text-sm font-bold bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 hover:bg-brand-200 dark:hover:bg-brand-800/40 cursor-pointer transition-all hover:scale-105"
+                  :title="`${vacancy.applications_count} ta ariza`"
+                >
+                  {{ vacancy.applications_count }}
+                </span>
+                <span v-else class="text-surface-400">0</span>
+              </td>
               <td class="py-3 px-4 text-surface-500 text-xs">{{ formatDate(vacancy.created_at) }}</td>
               <td class="py-3 px-4 text-right" @click.stop>
                 <div class="flex items-center justify-end gap-2">
@@ -154,6 +172,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useResourceList } from '../../composables/useAdminApi';
@@ -162,10 +181,27 @@ import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { CheckIcon, XMarkIcon } from '@heroicons/vue/24/outline';
 
+const route = useRoute();
+const router = useRouter();
+
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/vacancies');
+
+// Apply city filter from query param
+const cityFilterLabel = ref(null);
+if (route.query.city) {
+  cityFilterLabel.value = route.query.city;
+  filters.value.city = route.query.city;
+}
+
+function clearCityFilter() {
+  cityFilterLabel.value = null;
+  delete filters.value.city;
+  router.replace({ path: '/vacancies' });
+  fetchItems();
+}
 
 function formatDate(d) {
   if (!d) return '';

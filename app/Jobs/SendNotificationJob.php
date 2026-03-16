@@ -45,10 +45,22 @@ class SendNotificationJob implements ShouldQueue
     {
         $text = "📌 *{$this->title}*\n\n{$this->message}";
 
-        Http::post('https://api.telegram.org/bot' . config('nutgram.token') . '/sendMessage', [
-            'chat_id' => $this->user->telegram_id,
-            'text' => $text,
-            'parse_mode' => 'Markdown',
-        ]);
+        try {
+            $response = Http::post('https://api.telegram.org/bot' . config('nutgram.token') . '/sendMessage', [
+                'chat_id' => $this->user->telegram_id,
+                'text' => $text,
+                'parse_mode' => 'Markdown',
+            ]);
+
+            // User blocked the bot — mark as blocked
+            if ($response->status() === 403 || ($response->json('error_code') === 403)) {
+                $this->user->update(['is_blocked' => true]);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('SendNotificationJob telegram failed', [
+                'user_id' => $this->user->id,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

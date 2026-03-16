@@ -2,6 +2,14 @@
   <div class="space-y-6">
     <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ $t('applications.title') }}</h1>
 
+    <!-- Vacancy filter badge -->
+    <div v-if="vacancyFilterLabel" class="flex items-center gap-3">
+      <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium">
+        📋 {{ vacancyTitle || 'Vakansiya bo\'yicha filtrlangan' }}
+        <button @click="clearVacancyFilter" class="ml-1 hover:text-brand-900 dark:hover:text-brand-200">&times;</button>
+      </span>
+    </div>
+
     <!-- Filters -->
     <AppCard>
       <div class="flex flex-wrap items-center gap-3">
@@ -103,17 +111,40 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
+import { ref, computed, onMounted } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
 import { useResourceList } from '../../composables/useAdminApi';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { DocumentTextIcon } from '@heroicons/vue/24/outline';
 
+const route = useRoute();
+const router = useRouter();
+
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/applications');
+
+// Apply vacancy_id filter from query param
+const vacancyFilterLabel = ref(null);
+if (route.query.vacancy_id) {
+  filters.value.vacancy_id = route.query.vacancy_id;
+  vacancyFilterLabel.value = true; // Will be replaced with vacancy title after fetch
+}
+
+const vacancyTitle = computed(() => {
+  if (!vacancyFilterLabel.value || items.value.length === 0) return null;
+  return items.value[0]?.vacancy?.title_uz || null;
+});
+
+function clearVacancyFilter() {
+  vacancyFilterLabel.value = null;
+  delete filters.value.vacancy_id;
+  router.replace({ path: '/applications' });
+  fetchItems();
+}
 
 function formatDate(d) {
   if (!d) return '';

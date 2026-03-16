@@ -35,6 +35,18 @@ export default defineConfig({
         },
     },
 
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: {
+                    'vendor-vue': ['vue', 'vue-router', 'pinia'],
+                    'vendor-ui': ['@headlessui/vue', '@heroicons/vue'],
+                },
+            },
+        },
+        chunkSizeWarningLimit: 600,
+    },
+
     server: {
         hmr: {
             host: 'localhost',

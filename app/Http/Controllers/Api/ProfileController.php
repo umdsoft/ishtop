@@ -29,8 +29,10 @@ class ProfileController extends Controller
             'resume_file_url', 'linkedin_url',
         ]);
 
-        // User contact info
-        $data['phone'] = $user?->phone;
+        // User contact info (phone masked for privacy)
+        $data['phone'] = $user?->phone
+            ? preg_replace('/(\+\d{3})\d{5}(\d{4})/', '$1*****$2', $user->phone)
+            : null;
         $data['telegram_username'] = $user?->username;
 
         return response()->json(['profile' => $data]);
@@ -123,10 +125,9 @@ class ProfileController extends Controller
             'longitude' => 'nullable|numeric|between:-180,180',
         ]);
 
-        $profile = $request->user()->employerProfile()->updateOrCreate(
-            ['user_id' => $request->user()->id],
-            $validated
-        );
+        $user = $request->user();
+        $profile = $user->getOrCreateEmployerProfile($validated['company_name'] ?? null);
+        $profile->update($validated);
 
         return response()->json(['profile' => $profile]);
     }

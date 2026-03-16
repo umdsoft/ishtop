@@ -11,7 +11,7 @@ class Category extends Model
     use HasFactory, HasUuids;
 
     protected $fillable = [
-        'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'default_skills', 'sort_order', 'is_active',
+        'slug', 'parent_id', 'name_uz', 'name_ru', 'icon', 'emoji', 'default_skills', 'sort_order', 'is_active',
     ];
 
     protected function casts(): array
@@ -46,5 +46,10 @@ class Category extends Model
     public function name(string $lang = 'uz'): string
     {
         return $lang === 'ru' ? $this->name_ru : $this->name_uz;
+    }
+
+    public function getEmoji(): string
+    {
+        return $this->emoji ?? '📁';
     }
 }

@@ -22,9 +22,17 @@ class NotifyMatchingWorkersJob implements ShouldQueue
         $workers = $matchingService->findMatchesForVacancy($this->vacancy, 50);
 
         foreach ($workers as $worker) {
-            $score = $matchingService->calculateMatchScore($worker, $this->vacancy);
-            if ($score >= 50) {
-                $notificationService->notifyMatchingVacancy($worker, $this->vacancy, $score);
+            try {
+                $score = $matchingService->calculateMatchScore($worker, $this->vacancy);
+                if ($score >= 50) {
+                    $notificationService->notifyMatchingVacancy($worker, $this->vacancy, $score);
+                }
+            } catch (\Throwable $e) {
+                \Log::warning('NotifyMatchingWorkers failed for worker', [
+                    'worker_id' => $worker->id,
+                    'vacancy_id' => $this->vacancy->id,
+                    'error' => $e->getMessage(),
+                ]);
             }
         }
     }

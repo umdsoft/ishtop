@@ -220,7 +220,11 @@ class StartHandler
 
     private function extractPayload(Nutgram $bot): ?string
     {
-        $text = $bot->message()->text ?? '';
+        $message = $bot->message();
+        if (!$message) {
+            return null;
+        }
+        $text = $message->text ?? '';
         if (preg_match('/\/start\s+(\S+)/', $text, $matches)) {
             return $matches[1];
         }

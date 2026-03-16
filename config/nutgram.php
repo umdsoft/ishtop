@@ -7,6 +7,7 @@ return [
     'local_path' => env('NUTGRAM_LOCAL_PATH', ''),
     'log_channel' => env('NUTGRAM_LOG_CHANNEL', 'stack'),
     'cache' => env('NUTGRAM_CACHE', 'redis'),
+    'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
     'polling' => [
         'timeout' => 10,
         'limit' => 100,

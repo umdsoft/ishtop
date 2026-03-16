@@ -7,6 +7,7 @@ use App\Models\Category;
 use App\Models\City;
 use App\Models\User;
 use App\Models\WorkerProfile;
+use App\Telegram\Traits\BotConversationTrait;
 use SergiX44\Nutgram\Conversations\Conversation;
 use SergiX44\Nutgram\Nutgram;
 use SergiX44\Nutgram\Telegram\Properties\ParseMode;
@@ -15,7 +16,7 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
 
 class ResumeBuilderConversation extends Conversation
 {
-    protected string $lang = 'uz';
+    use BotConversationTrait;
     protected array $data = [];
 
     public function start(Nutgram $bot): void
@@ -55,7 +56,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $name = trim($bot->message()->text ?? '');
+        $name = trim($bot->message()?->text ?? '');
         if (mb_strlen($name) < 2) {
             $bot->sendMessage(text: $this->t('❌ Ism juda qisqa. Qaytadan kiriting:', '❌ Имя слишком короткое. Введите ещё раз:'));
             return;
@@ -77,7 +78,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
 
         if (!preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $text, $m)) {
             $bot->sendMessage(text: $this->t('❌ Noto\'g\'ri format. KK.OO.YYYY kiriting:', '❌ Неверный формат. Введите ДД.ММ.ГГГГ:'));
@@ -154,7 +155,7 @@ class ResumeBuilderConversation extends Conversation
                 message_id: $cb->message->message_id,
             );
         } else {
-            $text = trim($bot->message()->text ?? '');
+            $text = trim($bot->message()?->text ?? '');
             if (empty($text)) return;
             $this->data['city'] = $text;
         }
@@ -211,7 +212,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (empty($text)) {
             $bot->sendMessage(text: $this->t('❌ Mutaxassislikni kiriting:', '❌ Введите специальность:'));
             return;
@@ -247,7 +248,7 @@ class ResumeBuilderConversation extends Conversation
             );
         } else {
             if ($this->checkCancel($bot)) return;
-            $text = trim($bot->message()->text ?? '');
+            $text = trim($bot->message()?->text ?? '');
             if (!is_numeric($text)) {
                 $bot->sendMessage(text: $this->t('❌ Raqam kiriting:', '❌ Введите число:'));
                 return;
@@ -269,7 +270,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (empty($text)) {
             $bot->sendMessage(text: $this->t('❌ Kamida bitta ko\'nikma kiriting:', '❌ Введите хотя бы один навык:'));
             return;
@@ -353,7 +354,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
 
         if ($text === '-') {
             $this->data['expected_salary_min'] = null;
@@ -386,7 +387,7 @@ class ResumeBuilderConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         $this->data['bio'] = ($text === '-' || empty($text)) ? null : $text;
 
         $this->saveProfile($bot);
@@ -472,19 +473,4 @@ class ResumeBuilderConversation extends Conversation
         );
     }
 
-    protected function t(string $uz, string $ru): string
-    {
-        return $this->lang === 'ru' ? $ru : $uz;
-    }
-
-    protected function checkCancel(Nutgram $bot): bool
-    {
-        $text = $bot->message()->text ?? '';
-        if ($text === '/cancel') {
-            $bot->sendMessage(text: $this->t('❌ Bekor qilindi. /menu — Bosh menyu', '❌ Отменено. /menu — Главное меню'));
-            $this->end();
-            return true;
-        }
-        return false;
-    }
 }

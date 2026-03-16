@@ -87,13 +87,9 @@ class VacancyController extends Controller
     {
         $validated = $request->validated();
 
-        $employer = $request->user()->employerProfile;
-        if (!$employer) {
-            $employer = $request->user()->employerProfiles()->create([
-                'company_name' => $validated['company_name'] ?? $request->user()->first_name,
-            ]);
-            $request->user()->update(['active_employer_id' => $employer->id]);
-        }
+        $employer = $request->user()->getOrCreateEmployerProfile(
+            $validated['company_name'] ?? null
+        );
 
         // Auto-translate missing language fields
         $validated = $this->autoTranslate($validated);
@@ -299,12 +295,7 @@ class VacancyController extends Controller
             return response()->json(['candidates' => [], 'total_count' => 0, 'locked' => true]);
         }
 
-        $isUnlocked = Payment::where('type', 'candidate_unlock')
-            ->where('payable_type', Vacancy::class)
-            ->where('payable_id', $vacancy->id)
-            ->where('user_id', $user->id)
-            ->completed()
-            ->exists();
+        $isUnlocked = Payment::candidateUnlocked($vacancy->id, $user->id)->exists();
 
         $limit = $isUnlocked ? 20 : 3;
         $paginator = $this->matchingService->getRecommendedCandidates($vacancy, $limit);
@@ -339,12 +330,7 @@ class VacancyController extends Controller
 
         $user = $request->user();
 
-        $alreadyUnlocked = Payment::where('type', 'candidate_unlock')
-            ->where('payable_type', Vacancy::class)
-            ->where('payable_id', $vacancy->id)
-            ->where('user_id', $user->id)
-            ->completed()
-            ->exists();
+        $alreadyUnlocked = Payment::candidateUnlocked($vacancy->id, $user->id)->exists();
 
         if ($alreadyUnlocked) {
             return response()->json(['message' => 'Nomzodlar allaqachon ochilgan'], 422);

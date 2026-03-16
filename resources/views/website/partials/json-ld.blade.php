@@ -12,8 +12,14 @@
         '@type' => 'JobPosting',
         'title' => $vacancy->title($lang),
         'description' => Str::limit(strip_tags($vacancy->description($lang)), 5000),
+        'identifier' => [
+            '@type' => 'PropertyValue',
+            'name' => 'KadrGo',
+            'value' => $vacancy->id,
+        ],
         'datePosted' => $vacancy->published_at?->toIso8601String(),
         'employmentType' => $employmentType,
+        'directApply' => true,
         'hiringOrganization' => array_filter([
             '@type' => 'Organization',
             'name' => $vacancy->company_name,
@@ -48,6 +54,18 @@
             'currency' => 'UZS',
             'value' => $salaryValue,
         ];
+    }
+
+    // Qualifications (requirements)
+    $requirements = $vacancy->requirements($lang);
+    if ($requirements) {
+        $jsonLd['qualifications'] = Str::limit(strip_tags($requirements), 2000);
+    }
+
+    // Responsibilities
+    $responsibilities = $vacancy->responsibilities($lang);
+    if ($responsibilities) {
+        $jsonLd['responsibilities'] = Str::limit(strip_tags($responsibilities), 2000);
     }
 @endphp
 <script type="application/ld+json">

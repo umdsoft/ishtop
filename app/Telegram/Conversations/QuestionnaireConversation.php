@@ -8,6 +8,7 @@ use App\Models\Question;
 use App\Models\QuestionOption;
 use App\Models\User;
 use App\Services\ScoringService;
+use App\Telegram\Traits\BotConversationTrait;
 use Illuminate\Support\Facades\Cache;
 use SergiX44\Nutgram\Conversations\Conversation;
 use SergiX44\Nutgram\Nutgram;
@@ -21,7 +22,7 @@ use SergiX44\Nutgram\Telegram\Types\Keyboard\InlineKeyboardMarkup;
  */
 class QuestionnaireConversation extends Conversation
 {
-    protected string $lang = 'uz';
+    use BotConversationTrait;
     public ?string $applicationId = null;
     protected array $answers = [];
     protected array $questions = [];
@@ -265,7 +266,7 @@ class QuestionnaireConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (!is_numeric($text)) {
             $bot->sendMessage(text: $this->t('❌ Raqam kiriting:', '❌ Введите число:'));
             return;
@@ -291,7 +292,7 @@ class QuestionnaireConversation extends Conversation
     {
         if ($this->checkCancel($bot)) return;
 
-        $text = trim($bot->message()->text ?? '');
+        $text = trim($bot->message()?->text ?? '');
         if (empty($text)) {
             $bot->sendMessage(text: $this->t('❌ Javob yozing:', '❌ Напишите ответ:'));
             return;
@@ -308,6 +309,7 @@ class QuestionnaireConversation extends Conversation
         if ($this->checkCancel($bot)) return;
 
         $message = $bot->message();
+        if (!$message) return;
         $fileId = null;
 
         if ($message->document) {
@@ -450,19 +452,4 @@ class QuestionnaireConversation extends Conversation
         return $keyboard;
     }
 
-    protected function t(string $uz, string $ru): string
-    {
-        return $this->lang === 'ru' ? $ru : $uz;
-    }
-
-    protected function checkCancel(Nutgram $bot): bool
-    {
-        $text = $bot->message()->text ?? '';
-        if ($text === '/cancel') {
-            $bot->sendMessage(text: $this->t('❌ Bekor qilindi. /menu — Bosh menyu', '❌ Отменено. /menu — Главное меню'));
-            $this->end();
-            return true;
-        }
-        return false;
-    }
 }

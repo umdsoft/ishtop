@@ -32,11 +32,16 @@ class VacancyController extends Controller
 
         $query = Vacancy::where('employer_id', $employer->id);
 
-        // Stats across all vacancies (unfiltered) — single aggregate queries
+        // Stats across all vacancies — single GROUP BY query instead of 3 separate COUNT queries
+        $statusCounts = (clone $query)
+            ->selectRaw("status, COUNT(*) as cnt")
+            ->groupBy('status')
+            ->pluck('cnt', 'status');
+
         $stats = [
-            'active' => (clone $query)->where('status', 'active')->count(),
-            'pending' => (clone $query)->where('status', 'pending')->count(),
-            'closed' => (clone $query)->whereIn('status', ['closed', 'expired'])->count(),
+            'active' => (int) ($statusCounts['active'] ?? 0),
+            'pending' => (int) ($statusCounts['pending'] ?? 0),
+            'closed' => (int) (($statusCounts['closed'] ?? 0) + ($statusCounts['expired'] ?? 0)),
             'total_applications' => \App\Models\Application::whereIn(
                 'vacancy_id', (clone $query)->select('id')
             )->count(),

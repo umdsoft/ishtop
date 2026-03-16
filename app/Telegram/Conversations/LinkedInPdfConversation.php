@@ -30,14 +30,20 @@ class LinkedInPdfConversation extends Conversation
 
     public function handleDocument(Nutgram $bot): void
     {
-        $text = $bot->message()->text ?? '';
+        $message = $bot->message();
+        if (!$message) {
+            $this->end();
+            return;
+        }
+
+        $text = $message->text ?? '';
         if ($text === '/cancel') {
             $bot->sendMessage(text: $this->lang === 'ru' ? '❌ Отменено.' : '❌ Bekor qilindi.');
             $this->end();
             return;
         }
 
-        $document = $bot->message()->document;
+        $document = $message->document;
         if (!$document) {
             $bot->sendMessage(text: $this->lang === 'ru'
                 ? '❌ Пожалуйста, отправьте PDF файл.'

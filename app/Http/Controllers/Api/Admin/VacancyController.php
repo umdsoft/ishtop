@@ -30,6 +30,10 @@ class VacancyController extends Controller
             $query->where('is_top', $request->boolean('is_top'));
         }
 
+        if ($request->filled('city')) {
+            $query->where('city', $request->city);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {

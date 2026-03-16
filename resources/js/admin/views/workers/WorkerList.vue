@@ -44,6 +44,105 @@
       </div>
     </div>
 
+    <!-- City-filtered worker list -->
+    <AppCard v-if="cityFilter" noPadding>
+      <div class="p-4 border-b border-surface-100 dark:border-surface-800">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-3">
+            <button
+              @click="closeCityFilter"
+              class="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700 transition-colors"
+            >
+              <ArrowLeftIcon class="w-4 h-4" />
+              {{ $t('workers.backToRegions') }}
+            </button>
+            <div class="flex items-center gap-2">
+              <MapPinIcon class="w-5 h-5 text-brand-500" />
+              <span class="text-lg font-semibold text-surface-900 dark:text-surface-100">{{ cityFilter }}</span>
+              <span class="text-sm text-surface-500">— {{ cityWorkersTotal }} {{ $t('workers.workersCount').toLowerCase() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="cityWorkersLoading" class="p-6">
+        <div class="animate-pulse space-y-4">
+          <div v-for="i in 5" :key="i" class="flex items-center gap-4">
+            <div class="w-10 h-10 bg-surface-200 dark:bg-surface-700 rounded-full"></div>
+            <div class="flex-1 space-y-2">
+              <div class="h-4 bg-surface-200 dark:bg-surface-700 rounded w-1/3"></div>
+              <div class="h-3 bg-surface-200 dark:bg-surface-700 rounded w-1/4"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div v-else-if="cityWorkers.length === 0" class="p-12 text-center">
+        <UserGroupIcon class="w-12 h-12 text-surface-300 dark:text-surface-600 mx-auto mb-3" />
+        <p class="text-surface-500">{{ $t('common.noData') }}</p>
+      </div>
+
+      <div v-else class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-surface-200 dark:border-surface-800 bg-surface-50 dark:bg-surface-800/50">
+              <th class="text-left py-3 px-5 font-semibold text-surface-600 dark:text-surface-400 w-8">#</th>
+              <th class="text-left py-3 px-5 font-semibold text-surface-600 dark:text-surface-400">Ism</th>
+              <th class="text-left py-3 px-5 font-semibold text-surface-600 dark:text-surface-400">Mutaxassislik</th>
+              <th class="text-left py-3 px-5 font-semibold text-surface-600 dark:text-surface-400">Shahar</th>
+              <th class="text-left py-3 px-5 font-semibold text-surface-600 dark:text-surface-400">Telefon</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr
+              v-for="(worker, idx) in cityWorkers"
+              :key="worker.id"
+              class="border-b border-surface-100 dark:border-surface-800/50 hover:bg-brand-50/50 dark:hover:bg-brand-900/10 cursor-pointer transition-colors"
+              @click="router.push(`/workers/${worker.id}`)"
+            >
+              <td class="py-3 px-5 text-surface-400 font-mono text-xs">{{ (cityWorkersPage - 1) * 15 + idx + 1 }}</td>
+              <td class="py-3 px-5">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 text-xs font-bold">
+                    {{ (worker.user?.first_name?.[0] || '?').toUpperCase() }}
+                  </div>
+                  <div>
+                    <p class="font-medium text-surface-900 dark:text-surface-100">{{ worker.user?.first_name }} {{ worker.user?.last_name }}</p>
+                    <p v-if="worker.user?.username" class="text-xs text-surface-400">@{{ worker.user.username }}</p>
+                  </div>
+                </div>
+              </td>
+              <td class="py-3 px-5 text-surface-600 dark:text-surface-400">{{ worker.specialty || '—' }}</td>
+              <td class="py-3 px-5 text-surface-600 dark:text-surface-400">{{ worker.city || '—' }}</td>
+              <td class="py-3 px-5 text-surface-600 dark:text-surface-400">{{ worker.user?.phone || '—' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Simple pagination -->
+      <div v-if="cityWorkersLastPage > 1" class="flex items-center justify-between p-4 border-t border-surface-100 dark:border-surface-800">
+        <span class="text-sm text-surface-500">{{ cityWorkersTotal }} ta ishchi</span>
+        <div class="flex gap-2">
+          <button
+            :disabled="cityWorkersPage <= 1"
+            @click="fetchCityWorkers(cityWorkersPage - 1)"
+            class="px-3 py-1.5 text-sm rounded-lg border border-surface-300 dark:border-surface-700 disabled:opacity-50 hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            &larr;
+          </button>
+          <span class="px-3 py-1.5 text-sm text-surface-600 dark:text-surface-400">{{ cityWorkersPage }} / {{ cityWorkersLastPage }}</span>
+          <button
+            :disabled="cityWorkersPage >= cityWorkersLastPage"
+            @click="fetchCityWorkers(cityWorkersPage + 1)"
+            class="px-3 py-1.5 text-sm rounded-lg border border-surface-300 dark:border-surface-700 disabled:opacity-50 hover:bg-surface-100 dark:hover:bg-surface-800"
+          >
+            &rarr;
+          </button>
+        </div>
+      </div>
+    </AppCard>
+
     <!-- Region detail — back button -->
     <div v-if="selectedRegion" class="flex items-center gap-3">
       <button
@@ -139,20 +238,24 @@
               </td>
               <td class="py-3.5 px-5 text-center">
                 <span
-                  class="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 rounded-lg text-sm font-bold"
+                  @click.stop="region.workers_count > 0 && goToWorkers(region.key)"
+                  class="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 rounded-lg text-sm font-bold transition-all"
                   :class="region.workers_count > 0
-                    ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400'
+                    ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 hover:bg-brand-200 dark:hover:bg-brand-800/40 cursor-pointer hover:scale-105'
                     : 'bg-surface-100 dark:bg-surface-800 text-surface-400'"
+                  :title="region.workers_count > 0 ? `${region.name_uz} ishchilari` : ''"
                 >
                   {{ region.workers_count }}
                 </span>
               </td>
               <td class="py-3.5 px-5 text-center">
                 <span
-                  class="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 rounded-lg text-sm font-bold"
+                  @click.stop="region.vacancies_count > 0 && goToVacancies(region.key)"
+                  class="inline-flex items-center justify-center min-w-[2.5rem] px-2.5 py-1 rounded-lg text-sm font-bold transition-all"
                   :class="region.vacancies_count > 0
-                    ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400'
+                    ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 hover:bg-success-200 dark:hover:bg-success-800/40 cursor-pointer hover:scale-105'
                     : 'bg-surface-100 dark:bg-surface-800 text-surface-400'"
+                  :title="region.vacancies_count > 0 ? `${region.name_uz} vakansiyalari` : ''"
                 >
                   {{ region.vacancies_count }}
                 </span>
@@ -276,20 +379,24 @@
               </td>
               <td class="py-3.5 px-5 text-center">
                 <span
-                  class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold"
+                  @click="district.workers_count > 0 && goToWorkers(district.name_uz)"
+                  class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold transition-all"
                   :class="district.workers_count > 0
-                    ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400'
+                    ? 'bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 hover:bg-brand-200 dark:hover:bg-brand-800/40 cursor-pointer hover:scale-105'
                     : 'text-surface-400'"
+                  :title="district.workers_count > 0 ? `${district.name_uz} ishchilari` : ''"
                 >
                   {{ district.workers_count }}
                 </span>
               </td>
               <td class="py-3.5 px-5 text-center">
                 <span
-                  class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold"
+                  @click="district.vacancies_count > 0 && goToVacancies(district.name_uz)"
+                  class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold transition-all"
                   :class="district.vacancies_count > 0
-                    ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400'
+                    ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 hover:bg-success-200 dark:hover:bg-success-800/40 cursor-pointer hover:scale-105'
                     : 'text-surface-400'"
+                  :title="district.vacancies_count > 0 ? `${district.name_uz} vakansiyalari` : ''"
                 >
                   {{ district.vacancies_count }}
                 </span>
@@ -321,7 +428,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
 import { useI18n } from 'vue-i18n';
@@ -334,6 +442,8 @@ import {
 } from '@heroicons/vue/24/outline';
 
 const { t } = useI18n();
+const router = useRouter();
+const route = useRoute();
 
 const loading = ref(true);
 const exporting = ref(false);
@@ -341,6 +451,42 @@ const summary = ref({});
 const regions = ref([]);
 const selectedRegion = ref(null);
 const searchRegion = ref('');
+
+// City-filtered worker list mode
+const cityFilter = ref(route.query.city || null);
+const cityWorkers = ref([]);
+const cityWorkersLoading = ref(false);
+const cityWorkersPage = ref(1);
+const cityWorkersLastPage = ref(1);
+const cityWorkersTotal = ref(0);
+
+async function fetchCityWorkers(page = 1) {
+  if (!cityFilter.value) return;
+  cityWorkersLoading.value = true;
+  try {
+    const res = await axios.get('/api/admin/workers', {
+      params: { city: cityFilter.value, page, per_page: 15 }
+    });
+    cityWorkers.value = res.data.data || [];
+    cityWorkersPage.value = res.data.current_page || 1;
+    cityWorkersLastPage.value = res.data.last_page || 1;
+    cityWorkersTotal.value = res.data.total || 0;
+  } catch {
+    toast.error('Ishchilarni yuklashda xatolik');
+  } finally {
+    cityWorkersLoading.value = false;
+  }
+}
+
+function closeCityFilter() {
+  cityFilter.value = null;
+  router.replace({ path: '/workers' });
+}
+
+watch(() => route.query.city, (val) => {
+  cityFilter.value = val || null;
+  if (val) fetchCityWorkers();
+});
 
 const summaryCards = computed(() => [
   {
@@ -404,6 +550,14 @@ const sortedDistricts = computed(() => {
 
 function openRegion(region) {
   selectedRegion.value = region;
+}
+
+function goToWorkers(city) {
+  router.push({ path: '/workers', query: { city } });
+}
+
+function goToVacancies(city) {
+  router.push({ path: '/vacancies', query: { city } });
 }
 
 async function fetchStats() {
@@ -785,5 +939,8 @@ function buildPrintHtml(title, headers, rows) {
 </html>`;
 }
 
-onMounted(fetchStats);
+onMounted(() => {
+  fetchStats();
+  if (cityFilter.value) fetchCityWorkers();
+});
 </script>

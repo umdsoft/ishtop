@@ -5,15 +5,29 @@
 @section('canonical', route('vacancies.show', $vacancy))
 
 @section('og_meta')
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="{{ $vacancy->title($lang) }}">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="{{ $vacancy->title($lang) }} — {{ $vacancy->company_name }}">
     <meta property="og:description" content="{{ Str::limit(strip_tags($vacancy->description($lang)), 200) }}">
     <meta property="og:url" content="{{ route('vacancies.show', $vacancy) }}">
     <meta property="og:site_name" content="KadrGo">
+    @if($vacancy->employer?->logo_url)
+        <meta property="og:image" content="{{ $vacancy->employer->logo_url }}">
+    @endif
 @endsection
 
 @section('json_ld')
     @include('website.partials.json-ld', ['vacancy' => $vacancy])
+    <script type="application/ld+json">
+    {!! json_encode([
+        '@context' => 'https://schema.org',
+        '@type' => 'BreadcrumbList',
+        'itemListElement' => [
+            ['@type' => 'ListItem', 'position' => 1, 'name' => __('web.home'), 'item' => url('/')],
+            ['@type' => 'ListItem', 'position' => 2, 'name' => __('web.vacancies'), 'item' => route('vacancies.index')],
+            ['@type' => 'ListItem', 'position' => 3, 'name' => $vacancy->title($lang)],
+        ],
+    ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+    </script>
 @endsection
 
 @section('content')

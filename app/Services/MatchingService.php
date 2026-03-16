@@ -663,10 +663,8 @@ class MatchingService
             if (!$city || !$city->region) return [];
 
             return City::where('region', $city->region)
-                ->pluck('name_uz')
-                ->merge(
-                    City::where('region', $city->region)->pluck('name_ru')
-                )
+                ->get(['name_uz', 'name_ru'])
+                ->flatMap(fn($c) => [$c->name_uz, $c->name_ru])
                 ->filter()
                 ->unique()
                 ->values()

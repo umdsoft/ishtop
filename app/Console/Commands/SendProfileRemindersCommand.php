@@ -260,7 +260,13 @@ class SendProfileRemindersCommand extends Command
         }
 
         try {
-            Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", $payload);
+            $response = Http::post("https://api.telegram.org/bot{$botToken}/sendMessage", $payload);
+
+            // User blocked the bot — mark as blocked to skip in future
+            if ($response->status() === 403 || ($response->json('error_code') === 403)) {
+                \App\Models\User::where('telegram_id', $chatId)->update(['is_blocked' => true]);
+                Log::info("Marked user as blocked", ['chat_id' => $chatId]);
+            }
         } catch (\Throwable $e) {
             Log::warning('Profile reminder failed', [
                 'chat_id' => $chatId,

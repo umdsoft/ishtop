@@ -6,6 +6,7 @@ use App\Models\Banner;
 use App\Models\BannerImpression;
 use App\Models\User;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 class BannerService
 {
@@ -16,23 +17,29 @@ class BannerService
             return collect();
         }
 
-        $query = Banner::active()
-            ->forPlacement($placement)
-            ->where(function ($q) {
-                $q->whereNull('max_impressions')
-                  ->orWhereColumn('impressions_count', '<', 'max_impressions');
-            })
-            ->orderByDesc('priority')
-            ->orderByRaw('RAND()');
+        $cacheKey = "banners:{$placement}:" . ($category ?? 'all');
 
-        if ($category) {
-            $query->where(function ($q) use ($category) {
-                $q->whereNull('categories')
-                  ->orWhereJsonContains('categories', $category);
-            });
-        }
+        $banners = Cache::remember($cacheKey, 300, function () use ($placement, $category) {
+            $query = Banner::active()
+                ->forPlacement($placement)
+                ->where(function ($q) {
+                    $q->whereNull('max_impressions')
+                      ->orWhereColumn('impressions_count', '<', 'max_impressions');
+                })
+                ->orderByDesc('priority');
 
-        return $query->limit(3)->get();
+            if ($category) {
+                $query->where(function ($q) use ($category) {
+                    $q->whereNull('categories')
+                      ->orWhereJsonContains('categories', $category);
+                });
+            }
+
+            return $query->limit(10)->get();
+        });
+
+        // PHP shuffle instead of MySQL RAND() — cacheable
+        return $banners->shuffle()->take(3);
     }
 
     public function recordImpression(Banner $banner, ?string $userId, string $placement, string $ip): void

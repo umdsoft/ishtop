@@ -10,16 +10,16 @@ use App\Models\User;
 use App\Models\Vacancy;
 use App\Models\WebApplication;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 
 class WebController extends Controller
 {
     /**
-     * SPA shell — serves the Vue app with server-side SEO meta tags
+     * SPA shell — serves the Vue app for non-SSR pages
      */
     public function spa(Request $request)
     {
-        $path = $request->path();
-        $data = [
+        return view('layouts.spa', [
             'title' => 'KadrGo — O\'zbekistondagi eng yirik ish qidirish platformasi',
             'description' => 'Minglab vakansiyalar, ishonchli kompaniyalar. Telegramdan chiqmasdan ish toping.',
             'ogType' => 'website',
@@ -28,46 +28,28 @@ class WebController extends Controller
             'ogImage' => null,
             'canonical' => url()->current(),
             'jsonLd' => null,
-        ];
+        ]);
+    }
 
-        // SEO: vacancy detail page — render meta from DB
-        if (preg_match('#^vacancies/(\d+)$#', $path, $m)) {
-            $vacancy = Vacancy::with('employer:id,company_name,logo_url')->find($m[1]);
-            if ($vacancy && $vacancy->isActive()) {
-                $lang = app()->getLocale();
-                $title = $lang === 'ru' ? ($vacancy->title_ru ?: $vacancy->title_uz) : $vacancy->title_uz;
-                $company = $vacancy->employer->company_name ?? '';
+    public function miniapp()
+    {
+        return response()->file(public_path('miniapp/index.html'));
+    }
 
-                $data['title'] = $title . ' — KadrGo';
-                $data['description'] = $company . ($vacancy->city ? ' · ' . $vacancy->city : '');
-                $data['ogTitle'] = $title;
-                $data['ogDescription'] = $company;
-                $data['ogType'] = 'article';
-                if ($vacancy->employer->logo_url) {
-                    $data['ogImage'] = $vacancy->employer->logo_url;
-                }
-                $data['jsonLd'] = json_encode([
-                    '@context' => 'https://schema.org',
-                    '@type' => 'JobPosting',
-                    'title' => $title,
-                    'description' => strip_tags($vacancy->{'description_' . $lang} ?? $vacancy->description_uz ?? ''),
-                    'hiringOrganization' => [
-                        '@type' => 'Organization',
-                        'name' => $company,
-                    ],
-                    'jobLocation' => [
-                        '@type' => 'Place',
-                        'address' => $vacancy->city ?? 'Uzbekistan',
-                    ],
-                    'datePosted' => $vacancy->published_at?->toIso8601String(),
-                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
-            }
-        } elseif ($path === 'vacancies') {
-            $data['title'] = 'Vakansiyalar — KadrGo';
-            $data['description'] = 'KadrGo dagi barcha vakansiyalar. Ish qidiring va ariza topshiring.';
-        }
+    public function panel()
+    {
+        return view('panel');
+    }
 
-        return view('layouts.spa', $data);
+    public function dash()
+    {
+        return view('admin');
+    }
+
+    public function legacyRedirect(string $uuid)
+    {
+        $vacancy = Vacancy::findOrFail($uuid);
+        return redirect()->route('vacancies.show', $vacancy, 301);
     }
 
     public function home()
@@ -119,24 +101,7 @@ class WebController extends Controller
             ];
         });
 
-        // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
-        $regions = cache()->remember('home_regions', 300, function () {
-            $locations = City::cachedLocations();
-            $allCities = collect($locations['cities']);
-            $regionNames = $allCities->pluck('region')->unique()->sort()->values();
-
-            $cityCounts = Vacancy::active()
-                ->selectRaw('city, COUNT(*) as cnt')
-                ->groupBy('city')
-                ->pluck('cnt', 'city');
-
-            return $regionNames->mapWithKeys(function ($region) use ($allCities, $cityCounts) {
-                $cityNames = $allCities->where('region', $region)->pluck('name_uz');
-                $count = ($cityCounts->get($region, 0))
-                    + $cityNames->sum(fn($name) => $cityCounts->get($name, 0));
-                return [$region => $count];
-            });
-        });
+        $regions = $this->getRegionsWithCounts();
 
         return view('website.home', compact(
             'topVacancies', 'urgentVacancies', 'latestVacancies',
@@ -250,24 +215,7 @@ class WebController extends Controller
 
         $vacancies = $query->paginate(20)->withQueryString();
 
-        // Viloyatlar va ularning vakansiya sonlari (5 daqiqa cache)
-        $regions = cache()->remember('index_regions', 300, function () {
-            $locations = City::cachedLocations();
-            $allCities = collect($locations['cities']);
-            $regionNames = $allCities->pluck('region')->unique()->sort()->values();
-
-            $cityCounts = Vacancy::active()
-                ->selectRaw('city, COUNT(*) as cnt')
-                ->groupBy('city')
-                ->pluck('cnt', 'city');
-
-            return $regionNames->mapWithKeys(function ($region) use ($allCities, $cityCounts) {
-                $cityNames = $allCities->where('region', $region)->pluck('name_uz');
-                $count = ($cityCounts->get($region, 0))
-                    + $cityNames->sum(fn($name) => $cityCounts->get($name, 0));
-                return [$region => $count];
-            });
-        });
+        $regions = $this->getRegionsWithCounts();
 
         return view('website.vacancies.index', compact(
             'vacancies', 'categories', 'regions', 'lang', 'expandedRoot', 'selectedSubs'
@@ -328,5 +276,26 @@ class WebController extends Controller
         session(['locale' => $locale]);
 
         return back()->withCookie(cookie('locale', $locale, 60 * 24 * 365));
+    }
+
+    private function getRegionsWithCounts(): Collection
+    {
+        return cache()->remember('web_regions', 300, function () {
+            $locations = City::cachedLocations();
+            $allCities = collect($locations['cities']);
+            $regionNames = $allCities->pluck('region')->unique()->sort()->values();
+
+            $cityCounts = Vacancy::active()
+                ->selectRaw('city, COUNT(*) as cnt')
+                ->groupBy('city')
+                ->pluck('cnt', 'city');
+
+            return $regionNames->mapWithKeys(function ($region) use ($allCities, $cityCounts) {
+                $cityNames = $allCities->where('region', $region)->pluck('name_uz');
+                $count = ($cityCounts->get($region, 0))
+                    + $cityNames->sum(fn($name) => $cityCounts->get($name, 0));
+                return [$region => $count];
+            });
+        });
     }
 }
