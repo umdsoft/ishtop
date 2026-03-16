@@ -86,6 +86,7 @@ return [
 
     'yandex' => [
         'site_verification' => env('YANDEX_SITE_VERIFICATION'),
+        'metrika_id' => env('YANDEX_METRIKA_ID'),
     ],
 
     'meta' => [
