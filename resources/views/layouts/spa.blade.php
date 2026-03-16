@@ -22,14 +22,15 @@
     <meta property="og:description" content="{{ $ogDescription ?? $description ?? '' }}">
     <meta property="og:url" content="{{ url()->current() }}">
     <meta property="og:site_name" content="KadrGo">
-    @if(!empty($ogImage))
-        <meta property="og:image" content="{{ $ogImage }}">
-    @endif
+    <meta property="og:image" content="{{ $ogImage ?? asset('og-image.svg') }}">
+    <meta property="og:locale" content="uz_UZ">
+    <meta property="og:locale:alternate" content="ru_RU">
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{{ $ogTitle ?? $title ?? 'KadrGo' }}">
     <meta name="twitter:description" content="{{ $ogDescription ?? $description ?? '' }}">
+    <meta name="twitter:image" content="{{ $ogImage ?? asset('og-image.svg') }}">
 
     {{-- JSON-LD --}}
     @if(!empty($jsonLd))
@@ -37,7 +38,8 @@
     @endif
 
     {{-- Fonts --}}
-    <link rel="preconnect" href="https://fonts.bunny.net">
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/website.css', 'resources/js/website.js'])

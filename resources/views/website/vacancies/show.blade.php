@@ -10,10 +10,11 @@
     <meta property="og:description" content="{{ Str::limit(strip_tags($vacancy->description($lang)), 200) }}">
     <meta property="og:url" content="{{ route('vacancies.show', $vacancy) }}">
     <meta property="og:site_name" content="KadrGo">
-    @if($vacancy->employer?->logo_url)
-        <meta property="og:image" content="{{ $vacancy->employer->logo_url }}">
-    @endif
+    <meta property="og:image" content="{{ $vacancy->employer?->logo_url ?: asset('og-image.svg') }}">
+    <meta property="og:locale" content="uz_UZ">
+    <meta property="og:locale:alternate" content="ru_RU">
 @endsection
+@section('twitter_image', $vacancy->employer?->logo_url ?: asset('og-image.svg'))
 
 @section('json_ld')
     @include('website.partials.json-ld', ['vacancy' => $vacancy])
@@ -156,7 +157,7 @@
                     <h3 class="text-lg font-semibold text-surface-900 mb-4">{{ __('web.about_company') }}</h3>
                     <div class="flex items-center gap-3 mb-4">
                         @if($vacancy->employer?->logo_url)
-                            <img src="{{ $vacancy->employer->logo_url }}" alt="{{ $vacancy->company_name }}" class="w-12 h-12 rounded-xl object-cover">
+                            <img src="{{ $vacancy->employer->logo_url }}" alt="{{ $vacancy->company_name }}" class="w-12 h-12 rounded-xl object-cover" loading="lazy">
                         @else
                             <div class="w-12 h-12 rounded-xl bg-brand-100 text-brand-600 flex items-center justify-center text-lg font-bold">
                                 {{ mb_substr($vacancy->company_name ?? 'C', 0, 1) }}
@@ -236,21 +237,38 @@
         @endif
     </div>
 
-    {{-- Leaflet map --}}
+    {{-- Leaflet map (lazy loaded via IntersectionObserver) --}}
     @if($vacancy->latitude && $vacancy->longitude)
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
         <script>
-            document.addEventListener('DOMContentLoaded', function () {
-                var map = L.map('vacancy-map').setView([{{ $vacancy->latitude }}, {{ $vacancy->longitude }}], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap'
-                }).addTo(map);
-                L.marker([{{ $vacancy->latitude }}, {{ $vacancy->longitude }}])
-                    .addTo(map)
-                    .bindPopup(@json($vacancy->title($lang) . '<br>' . $vacancy->city . ($vacancy->district ? ', ' . $vacancy->district : '')))
-                    .openPopup();
-            });
+            (function() {
+                var mapEl = document.getElementById('vacancy-map');
+                if (!mapEl) return;
+                var loaded = false;
+                var observer = new IntersectionObserver(function(entries) {
+                    if (entries[0].isIntersecting && !loaded) {
+                        loaded = true;
+                        observer.disconnect();
+                        var css = document.createElement('link');
+                        css.rel = 'stylesheet';
+                        css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                        document.head.appendChild(css);
+                        var js = document.createElement('script');
+                        js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                        js.onload = function() {
+                            var map = L.map('vacancy-map').setView([{{ $vacancy->latitude }}, {{ $vacancy->longitude }}], 15);
+                            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                                attribution: '&copy; OpenStreetMap'
+                            }).addTo(map);
+                            L.marker([{{ $vacancy->latitude }}, {{ $vacancy->longitude }}])
+                                .addTo(map)
+                                .bindPopup(@json($vacancy->title($lang) . '<br>' . $vacancy->city . ($vacancy->district ? ', ' . $vacancy->district : '')))
+                                .openPopup();
+                        };
+                        document.body.appendChild(js);
+                    }
+                }, { rootMargin: '200px' });
+                observer.observe(mapEl);
+            })();
         </script>
     @endif
 

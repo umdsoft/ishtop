@@ -33,16 +33,30 @@
         <meta property="og:description" content="@yield('meta_description')">
         <meta property="og:url" content="{{ url()->current() }}">
         <meta property="og:site_name" content="KadrGo">
+        <meta property="og:image" content="{{ asset('og-image.svg') }}">
+        <meta property="og:image:width" content="1200">
+        <meta property="og:image:height" content="630">
+        <meta property="og:locale" content="uz_UZ">
+        <meta property="og:locale:alternate" content="ru_RU">
     @endif
 
     {{-- Twitter Card --}}
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="@yield('title', 'KadrGo')">
     <meta name="twitter:description" content="@yield('meta_description')">
+    <meta name="twitter:image" content="@yield('twitter_image', asset('og-image.svg'))">
 
     @yield('json_ld')
 
-    <link rel="preconnect" href="https://fonts.bunny.net">
+    {{-- DNS Prefetch for external resources --}}
+    <link rel="dns-prefetch" href="https://fonts.bunny.net">
+    <link rel="dns-prefetch" href="https://mc.yandex.ru">
+    <link rel="dns-prefetch" href="https://www.googletagmanager.com">
+    <link rel="dns-prefetch" href="https://connect.facebook.net">
+    <link rel="dns-prefetch" href="https://cdn.jsdelivr.net">
+
+    {{-- Font loading --}}
+    <link rel="preconnect" href="https://fonts.bunny.net" crossorigin>
     <link href="https://fonts.bunny.net/css?family=inter:400,500,600,700,800&display=swap" rel="stylesheet">
 
     @vite(['resources/css/website.css'])

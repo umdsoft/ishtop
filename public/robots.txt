@@ -3,5 +3,21 @@ Disallow: /panel/
 Disallow: /miniapp/
 Disallow: /api/
 Disallow: /dash/
+Disallow: /login
+Disallow: /register
+Disallow: /password/
+Disallow: /_debugbar/
+Disallow: /sanctum/
+Disallow: /storage/
+
+Allow: /
+Allow: /vacancies
+Allow: /sitemap.xml
+Allow: /favicon.svg
+Allow: /og-image.svg
+
+Crawl-delay: 1
 
 Sitemap: https://kadrgo.uz/sitemap.xml
+
+Host: https://kadrgo.uz

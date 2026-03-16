@@ -3,6 +3,38 @@
 @section('title', __('web.vacancies') . ' — KadrGo')
 @section('meta_description', __('web.hero_subtitle'))
 
+@section('json_ld')
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'BreadcrumbList',
+    'itemListElement' => array_values(array_filter([
+        ['@type' => 'ListItem', 'position' => 1, 'name' => __('web.home'), 'item' => url('/')],
+        ['@type' => 'ListItem', 'position' => 2, 'name' => __('web.vacancies'), 'item' => route('vacancies.index')],
+        $expandedRoot && ($breadcrumbCatLd = $categories->firstWhere('slug', $expandedRoot))
+            ? ['@type' => 'ListItem', 'position' => 3, 'name' => $breadcrumbCatLd->name($lang)]
+            : null,
+    ])),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+</script>
+@if($vacancies->isNotEmpty())
+<script type="application/ld+json">
+{!! json_encode([
+    '@context' => 'https://schema.org',
+    '@type' => 'ItemList',
+    'name' => __('web.vacancies') . ' — KadrGo',
+    'numberOfItems' => $vacancies->total(),
+    'itemListElement' => $vacancies->map(fn($v, $i) => [
+        '@type' => 'ListItem',
+        'position' => $i + 1,
+        'url' => route('vacancies.show', $v),
+        'name' => $v->title($lang),
+    ])->values()->toArray(),
+], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRETTY_PRINT) !!}
+</script>
+@endif
+@endsection
+
 @section('content')
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 lg:py-8">

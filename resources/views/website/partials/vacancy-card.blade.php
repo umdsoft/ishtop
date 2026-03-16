@@ -46,7 +46,7 @@
         {{-- Row 3: Company --}}
         <div class="flex items-center gap-1.5 mb-3">
             @if($vacancy->employer?->logo_url)
-                <img src="{{ $vacancy->employer->logo_url }}" alt="" class="w-4 h-4 rounded object-cover">
+                <img src="{{ $vacancy->employer->logo_url }}" alt="" class="w-4 h-4 rounded object-cover" loading="lazy">
             @else
                 <div class="w-4 h-4 rounded bg-surface-100 flex items-center justify-center">
                     <svg class="w-2.5 h-2.5 text-surface-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
