@@ -102,7 +102,7 @@
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">
                 {{ vacancy.employer?.company_name || '—' }}
               </td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.category }}</td>
+              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.category_name || vacancy.category }}</td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.city }}</td>
               <td class="py-3 px-4 text-surface-500 dark:text-surface-400 text-xs">
                 {{ formatDate(vacancy.created_at) }}

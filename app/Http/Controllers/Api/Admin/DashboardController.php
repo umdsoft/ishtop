@@ -163,6 +163,14 @@ class DashboardController extends Controller
             ->latest()
             ->get(['id', 'title_uz', 'title_ru', 'category', 'city', 'employer_id', 'created_at']);
 
+        // slug → name_uz
+        $slugs = $vacancies->pluck('category')->unique()->filter()->toArray();
+        $catNames = \App\Models\Category::whereIn('slug', $slugs)->pluck('name_uz', 'slug');
+
+        $vacancies->each(function ($v) use ($catNames) {
+            $v->category_name = $catNames->get($v->category, $v->category);
+        });
+
         return response()->json(['vacancies' => $vacancies]);
     }
 

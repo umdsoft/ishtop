@@ -104,15 +104,22 @@ const props = defineProps({
     type: Number,
     default: 10,
   },
+  lastPage: {
+    type: Number,
+    default: 0,
+  },
   maxVisible: {
     type: Number,
     default: 7,
   },
 });
 
-const emit = defineEmits(['update:currentPage', 'change']);
+const emit = defineEmits(['update:currentPage', 'change', 'page-change']);
 
-const totalPages = computed(() => Math.ceil(props.total / props.perPage));
+const totalPages = computed(() => {
+  if (props.lastPage) return props.lastPage;
+  return Math.ceil(props.total / props.perPage);
+});
 
 const fromItem = computed(() => {
   if (props.total === 0) return 0;
@@ -175,6 +182,7 @@ function goToPage(page) {
   if (page >= 1 && page <= totalPages.value && page !== props.currentPage) {
     emit('update:currentPage', page);
     emit('change', page);
+    emit('page-change', page);
   }
 }
 </script>
