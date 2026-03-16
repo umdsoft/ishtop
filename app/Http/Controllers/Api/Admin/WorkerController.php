@@ -19,7 +19,7 @@ class WorkerController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('specialization', 'like', "%{$search}%")
+                $q->where('specialty', 'like', "%{$search}%")
                     ->orWhereHas('user', function ($q) use ($search) {
                         $q->where('first_name', 'like', "%{$search}%")
                             ->orWhere('last_name', 'like', "%{$search}%")
@@ -48,11 +48,7 @@ class WorkerController extends Controller
     /**
      * Regional statistics — workers & vacancies grouped by region and district.
      *
-     * Data comes from two sources with different conventions:
-     *   Telegram bot: city = region name, district = city/district name
-     *   Miniapp:      city = city name,   district = region name (reversed!)
-     *
-     * We handle both patterns by building a lookup map from the cities table.
+     * Only counts workers with completed profiles (has specialty AND city).
      */
     public function regionalStats(): JsonResponse
     {
@@ -60,25 +56,32 @@ class WorkerController extends Controller
         $regions = collect($locations['regions']);
         $allCities = collect($locations['cities']);
 
-        // Build lookup: city name → region key
+        // Build lookup maps for location resolution
         $regionKeys = $regions->pluck('key')->toArray();
         $cityNameToRegion = [];
+        $normalizedCityLookup = []; // "gurlan" → "Gurlan"
         foreach ($allCities as $c) {
             $cityNameToRegion[$c['name_uz']] = $c['region'];
             $cityNameToRegion[$c['name_ru']] = $c['region'];
+            $normalizedCityLookup[mb_strtolower($c['name_uz'])] = $c['name_uz'];
+            $normalizedCityLookup[mb_strtolower($c['name_ru'])] = $c['name_ru'];
         }
 
-        // ── Workers: resolve each record to (region, district_name) ──
+        // Completed profile = has specialty AND city
+        $completedScope = fn ($q) => $q
+            ->whereNotNull('specialty')->where('specialty', '!=', '')
+            ->whereNotNull('city')->where('city', '!=', '');
+
+        // ── Workers: resolve each completed profile to (region, district) ──
         $workerRows = WorkerProfile::select('city', 'district')
-            ->whereNotNull('city')
-            ->where('city', '!=', '')
+            ->where($completedScope)
             ->get();
 
-        $workerRegionCounts = [];   // region → count
-        $workerDistrictCounts = []; // region → { district_name → count }
+        $workerRegionCounts = [];
+        $workerDistrictCounts = [];
 
         foreach ($workerRows as $row) {
-            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion);
+            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion, $normalizedCityLookup);
             if (!$resolved['region']) continue;
 
             $region = $resolved['region'];
@@ -103,7 +106,7 @@ class WorkerController extends Controller
         $vacancyDistrictCounts = [];
 
         foreach ($vacancyRows as $row) {
-            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion);
+            $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion, $normalizedCityLookup);
             if (!$resolved['region']) continue;
 
             $region = $resolved['region'];
@@ -117,9 +120,9 @@ class WorkerController extends Controller
             }
         }
 
-        // ── Summary ──
-        $totalWorkers = WorkerProfile::count();
-        $activeWorkers = WorkerProfile::where('search_status', 'open')->count();
+        // ── Summary (only completed profiles) ──
+        $totalWorkers = WorkerProfile::where($completedScope)->count();
+        $activeWorkers = WorkerProfile::where($completedScope)->where('search_status', 'open')->count();
         $totalActiveVacancies = Vacancy::where('status', 'active')->count();
         $totalApplications = DB::table('applications')->count();
 
@@ -171,57 +174,70 @@ class WorkerController extends Controller
     /**
      * Resolve city/district fields to a normalized (region, district_name).
      *
-     * Handles both data patterns:
-     *  Pattern A (Telegram): city="Xorazm viloyati", district="Urganch"
-     *  Pattern B (Miniapp):  city="Urganch",         district="Xorazm viloyati"
-     *  Pattern C (no district): city="Xorazm viloyati", district=null
+     * Handles multiple data patterns from different sources:
+     *  - city="Xorazm viloyati", district="Urganch"  (region + city)
+     *  - city="Urganch", district="Xorazm viloyati"  (reversed)
+     *  - city="Urganch", district="Xorazm"           (short region)
+     *  - city="Gurlan", district=null                 (city-only)
+     *  - city="Urganch shahar", district=null         (city with suffix)
+     *  - city="Ургенч", district=null                 (Russian name)
      */
     private function resolveLocation(
         ?string $city,
         ?string $district,
         array $regionKeys,
-        array $cityNameToRegion
+        array $cityNameToRegion,
+        array $normalizedCityLookup
     ): array {
         $city = trim($city ?? '');
         $district = trim($district ?? '');
 
         // Pattern A: city is a region name
         if (in_array($city, $regionKeys, true)) {
-            return [
-                'region' => $city,
-                'district' => $district ?: null,
-            ];
+            return ['region' => $city, 'district' => $district ?: null];
         }
 
         // Pattern B: district is a region name, city is a district name
         if ($district && in_array($district, $regionKeys, true)) {
-            return [
-                'region' => $district,
-                'district' => $city,
-            ];
+            return ['region' => $district, 'district' => $city];
         }
 
-        // city is a district/city name — resolve via lookup
+        // Pattern C: exact city name lookup
         if (isset($cityNameToRegion[$city])) {
-            return [
-                'region' => $cityNameToRegion[$city],
-                'district' => $city,
-            ];
+            return ['region' => $cityNameToRegion[$city], 'district' => $city];
         }
 
-        // district is a district/city name
+        // Pattern D: exact district name lookup
         if ($district && isset($cityNameToRegion[$district])) {
-            return [
-                'region' => $cityNameToRegion[$district],
-                'district' => $district,
-            ];
+            return ['region' => $cityNameToRegion[$district], 'district' => $district];
         }
 
-        // Fallback — try fuzzy: maybe "Xorazm" without "viloyati"
+        // Pattern E: strip suffixes — "Urganch shahar"→"Urganch", "Xiva tumani"→"Xiva"
+        $stripped = preg_replace('/\s+(shahri?|tumani?|shahar|город|район)$/iu', '', $city);
+        if ($stripped !== $city && isset($cityNameToRegion[$stripped])) {
+            return ['region' => $cityNameToRegion[$stripped], 'district' => $stripped];
+        }
+
+        // Pattern F: fuzzy region match — "Xorazm" → "Xorazm viloyati", "Хоразм" → ...
+        $cityLower = mb_strtolower($city);
         foreach ($regionKeys as $rk) {
-            if ($city && str_starts_with($rk, $city)) {
+            $rkLower = mb_strtolower($rk);
+            if ($cityLower && (str_starts_with($rkLower, $cityLower) || str_starts_with($cityLower, mb_strtolower(explode(' ', $rk)[0])))) {
                 return ['region' => $rk, 'district' => $district ?: null];
             }
+        }
+
+        // Pattern G: case-insensitive + normalized city lookup
+        if (isset($normalizedCityLookup[$cityLower])) {
+            $canonical = $normalizedCityLookup[$cityLower];
+            return ['region' => $cityNameToRegion[$canonical], 'district' => $canonical];
+        }
+
+        // Pattern H: strip suffix then case-insensitive
+        $strippedLower = mb_strtolower($stripped);
+        if ($strippedLower !== $cityLower && isset($normalizedCityLookup[$strippedLower])) {
+            $canonical = $normalizedCityLookup[$strippedLower];
+            return ['region' => $cityNameToRegion[$canonical], 'district' => $canonical];
         }
 
         return ['region' => null, 'district' => null];

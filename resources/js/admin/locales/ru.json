@@ -87,7 +87,7 @@
   "workers": {
     "title": "Статистика работников",
     "subtitle": "Работники и вакансии по регионам",
-    "totalWorkers": "Всего работников",
+    "totalWorkers": "Заполнили резюме",
     "activeWorkers": "Активные работники",
     "activeVacancies": "Активные вакансии",
     "totalApplications": "Всего заявок",
