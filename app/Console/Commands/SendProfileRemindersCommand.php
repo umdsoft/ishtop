@@ -82,10 +82,11 @@ class SendProfileRemindersCommand extends Command
                 ],
             ]);
 
-            // Send Telegram message — callback opens resume builder conversation
+            // Send Telegram message — web_app button opens miniapp profile editor
+            $miniappUrl = config('app.url') . '/miniapp/profile/worker/edit';
             $keyboard = [
                 'inline_keyboard' => [
-                    [['text' => $lang === 'ru' ? '📝 Заполнить анкету' : '📝 Anketani to\'ldirish', 'callback_data' => 'resume:create']],
+                    [['text' => $lang === 'ru' ? '📝 Заполнить анкету' : '📝 Anketani to\'ldirish', 'web_app' => ['url' => $miniappUrl]]],
                 ],
             ];
 
