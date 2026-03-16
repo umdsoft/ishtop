@@ -78,4 +78,14 @@ return [
         'key' => env('YANDEX_MAPS_API_KEY'),
     ],
 
+    // SEO & Analytics
+    'google' => [
+        'site_verification' => env('GOOGLE_SITE_VERIFICATION'),
+        'analytics_id' => env('GOOGLE_ANALYTICS_ID'),
+    ],
+
+    'yandex' => [
+        'site_verification' => env('YANDEX_SITE_VERIFICATION'),
+    ],
+
 ];

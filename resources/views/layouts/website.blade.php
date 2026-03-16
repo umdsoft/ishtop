@@ -11,6 +11,14 @@
     <link rel="canonical" href="@yield('canonical', url()->current())">
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 
+    {{-- Search Engine Verification --}}
+    @if(config('services.google.site_verification'))
+        <meta name="google-site-verification" content="{{ config('services.google.site_verification') }}">
+    @endif
+    @if(config('services.yandex.site_verification'))
+        <meta name="yandex-verification" content="{{ config('services.yandex.site_verification') }}">
+    @endif
+
     {{-- Hreflang --}}
     <link rel="alternate" hreflang="uz" href="{{ url()->current() }}?lang=uz">
     <link rel="alternate" hreflang="ru" href="{{ url()->current() }}?lang=ru">
@@ -51,5 +59,15 @@
 
     @include('website.partials.footer')
 
+    {{-- Google Analytics 4 --}}
+    @if(config('services.google.analytics_id'))
+        <script async src="https://www.googletagmanager.com/gtag/js?id={{ config('services.google.analytics_id') }}"></script>
+        <script>
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '{{ config('services.google.analytics_id') }}');
+        </script>
+    @endif
 </body>
 </html>
