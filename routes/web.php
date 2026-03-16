@@ -30,6 +30,9 @@ Route::middleware('web.locale')->group(function () {
     // Vakansiya tafsiloti — slug orqali (SSR)
     Route::get('/vacancies/{vacancy:slug}', [WebController::class, 'show'])->name('vacancies.show');
 
+    // Vakansiyaga ariza yuborish (web form)
+    Route::post('/vacancies/{vacancy}/apply', [WebController::class, 'apply'])->name('vacancy.apply');
+
     // Eski UUID URL'lardan 301 redirect
     Route::get('/vacancies/{uuid}', [WebController::class, 'legacyRedirect'])->whereUuid('uuid');
 });
