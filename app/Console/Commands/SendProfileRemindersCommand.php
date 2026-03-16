@@ -22,7 +22,6 @@ class SendProfileRemindersCommand extends Command
     public function handle(): int
     {
         $botToken = config('nutgram.token');
-        $botUsername = config('nutgram.bot_username', 'kadrgobot');
 
         if (!$botToken) {
             $this->error('Bot token not configured');
@@ -83,10 +82,10 @@ class SendProfileRemindersCommand extends Command
                 ],
             ]);
 
-            // Send Telegram message
+            // Send Telegram message — callback opens resume builder conversation
             $keyboard = [
                 'inline_keyboard' => [
-                    [['text' => $lang === 'ru' ? '📝 Заполнить анкету' : '📝 Anketani to\'ldirish', 'url' => "https://t.me/{$botUsername}/app"]],
+                    [['text' => $lang === 'ru' ? '📝 Заполнить анкету' : '📝 Anketani to\'ldirish', 'callback_data' => 'resume:create']],
                 ],
             ];
 
