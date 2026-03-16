@@ -251,6 +251,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     Route::post('users/{user}/toggle-block', [Admin\UserController::class, 'toggleBlock']);
 
     // Workers
+    Route::get('workers/regional-stats', [Admin\WorkerController::class, 'regionalStats']);
     Route::apiResource('workers', Admin\WorkerController::class)->only(['index', 'show']);
 
     // Employers
