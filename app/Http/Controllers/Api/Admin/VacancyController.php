@@ -15,7 +15,10 @@ class VacancyController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Vacancy::with('employer:id,company_name')
+        $query = Vacancy::with([
+                'employer:id,company_name',
+                'categoryRelation:id,name_uz,name_ru,emoji',
+            ])
             ->withCount('applications');
 
         if ($request->filled('status')) {

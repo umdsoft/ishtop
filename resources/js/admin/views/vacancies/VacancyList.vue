@@ -2,6 +2,7 @@
   <div class="space-y-6">
     <div class="flex items-center justify-between">
       <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ $t('vacancies.title') }}</h1>
+      <span class="text-sm text-surface-500 dark:text-surface-400">Jami: {{ total }}</span>
     </div>
 
     <!-- City filter badge -->
@@ -19,9 +20,9 @@
         <select
           v-model="filters.status"
           @change="applyFilter('status', filters.status)"
-          class="px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm"
+          class="px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm text-surface-900 dark:text-surface-100"
         >
-          <option value="">{{ $t('common.all') }}</option>
+          <option value="">Barcha status</option>
           <option value="pending">Kutilmoqda</option>
           <option value="active">Faol</option>
           <option value="closed">Yopilgan</option>
@@ -30,7 +31,7 @@
         <select
           v-model="filters.work_type"
           @change="applyFilter('work_type', filters.work_type)"
-          class="px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm"
+          class="px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm text-surface-900 dark:text-surface-100"
         >
           <option value="">Barcha ish turi</option>
           <option value="full_time">To'liq stavka</option>
@@ -47,14 +48,23 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-surface-200 dark:border-surface-800">
-              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer" @click="setSort('title_uz')">Sarlavha</th>
+              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer hover:text-surface-700 dark:hover:text-surface-300 transition-colors" @click="setSort('title_uz')">
+                Sarlavha
+                <span v-if="currentSort === 'title_uz'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+              </th>
               <th class="text-left py-3 px-4 font-medium text-surface-500">Kompaniya</th>
               <th class="text-left py-3 px-4 font-medium text-surface-500">Kategoriya</th>
               <th class="text-left py-3 px-4 font-medium text-surface-500">Shahar</th>
               <th class="text-left py-3 px-4 font-medium text-surface-500">{{ $t('common.status') }}</th>
-              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer" @click="setSort('views_count')">Ko'rishlar</th>
+              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer hover:text-surface-700 dark:hover:text-surface-300 transition-colors" @click="setSort('views_count')">
+                Ko'rishlar
+                <span v-if="currentSort === 'views_count'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+              </th>
               <th class="text-left py-3 px-4 font-medium text-surface-500">Arizalar</th>
-              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer" @click="setSort('created_at')">{{ $t('common.date') }}</th>
+              <th class="text-left py-3 px-4 font-medium text-surface-500 cursor-pointer hover:text-surface-700 dark:hover:text-surface-300 transition-colors" @click="setSort('created_at')">
+                {{ $t('common.date') }}
+                <span v-if="currentSort === 'created_at'" class="ml-1 text-xs">{{ sortDir === 'asc' ? '↑' : '↓' }}</span>
+              </th>
               <th class="text-right py-3 px-4 font-medium text-surface-500">{{ $t('common.actions') }}</th>
             </tr>
           </thead>
@@ -62,15 +72,32 @@
             <tr
               v-for="vacancy in items"
               :key="vacancy.id"
-              class="border-b border-surface-100 dark:border-surface-800/50 hover:bg-surface-50 dark:hover:bg-surface-800/30 cursor-pointer"
+              class="border-b border-surface-100 dark:border-surface-800/50 hover:bg-surface-50 dark:hover:bg-surface-800/30 cursor-pointer transition-colors"
               @click="$router.push(`/vacancies/${vacancy.id}`)"
             >
               <td class="py-3 px-4">
-                <p class="font-medium text-surface-900 dark:text-surface-100">{{ vacancy.title_uz }}</p>
+                <div class="flex items-center gap-2">
+                  <div>
+                    <p class="font-medium text-surface-900 dark:text-surface-100 line-clamp-1">{{ vacancy.title_uz }}</p>
+                    <p v-if="vacancy.title_ru && vacancy.title_ru !== vacancy.title_uz" class="text-xs text-surface-400 dark:text-surface-500 line-clamp-1 mt-0.5">{{ vacancy.title_ru }}</p>
+                  </div>
+                  <span v-if="vacancy.is_top" class="shrink-0 text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">TOP</span>
+                </div>
               </td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.employer?.company_name || '—' }}</td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.category?.name || '—' }}</td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.city || '—' }}</td>
+              <td class="py-3 px-4">
+                <p class="text-surface-600 dark:text-surface-400 line-clamp-1">{{ vacancy.employer?.company_name || '—' }}</p>
+              </td>
+              <td class="py-3 px-4">
+                <span v-if="vacancy.category_relation" class="inline-flex items-center gap-1 text-surface-600 dark:text-surface-400">
+                  <span v-if="vacancy.category_relation.emoji">{{ vacancy.category_relation.emoji }}</span>
+                  <span class="line-clamp-1">{{ vacancy.category_relation.name_uz }}</span>
+                </span>
+                <span v-else-if="vacancy.category" class="text-surface-500 dark:text-surface-400 line-clamp-1">{{ vacancy.category }}</span>
+                <span v-else class="text-surface-400">—</span>
+              </td>
+              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">
+                <span class="line-clamp-1">{{ shortenCity(vacancy.city) }}</span>
+              </td>
               <td class="py-3 px-4">
                 <div class="flex items-center gap-2">
                   <button
@@ -93,12 +120,12 @@
                       ]"
                     />
                   </button>
-                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', statusClass(vacancy.status)]">
+                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium whitespace-nowrap', statusClass(vacancy.status)]">
                     {{ statusLabel(vacancy.status) }}
                   </span>
                 </div>
               </td>
-              <td class="py-3 px-4 text-surface-600 dark:text-surface-400">{{ vacancy.views_count || 0 }}</td>
+              <td class="py-3 px-4 text-surface-600 dark:text-surface-400 tabular-nums">{{ vacancy.views_count || 0 }}</td>
               <td class="py-3 px-4" @click.stop>
                 <span
                   v-if="vacancy.applications_count > 0"
@@ -110,22 +137,24 @@
                 </span>
                 <span v-else class="text-surface-400">0</span>
               </td>
-              <td class="py-3 px-4 text-surface-500 text-xs">{{ formatDate(vacancy.created_at) }}</td>
+              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDate(vacancy.created_at) }}</td>
               <td class="py-3 px-4 text-right" @click.stop>
-                <div class="flex items-center justify-end gap-2">
+                <div class="flex items-center justify-end gap-1.5">
                   <button
                     v-if="vacancy.status === 'pending'"
                     @click="approveVacancy(vacancy)"
-                    class="text-xs px-3 py-1.5 rounded-lg font-medium bg-success-50 text-success-700 hover:bg-success-100 dark:bg-success-950/30 dark:text-success-400 transition-colors"
+                    class="p-1.5 rounded-lg bg-success-50 text-success-600 hover:bg-success-100 dark:bg-success-950/30 dark:text-success-400 dark:hover:bg-success-900/40 transition-colors"
+                    title="Tasdiqlash"
                   >
-                    <CheckIcon class="w-4 h-4 inline" />
+                    <CheckIcon class="w-4 h-4" />
                   </button>
                   <button
                     v-if="vacancy.status === 'pending'"
                     @click="rejectVacancy(vacancy)"
-                    class="text-xs px-3 py-1.5 rounded-lg font-medium bg-danger-50 text-danger-700 hover:bg-danger-100 dark:bg-danger-950/30 dark:text-danger-400 transition-colors"
+                    class="p-1.5 rounded-lg bg-danger-50 text-danger-600 hover:bg-danger-100 dark:bg-danger-950/30 dark:text-danger-400 dark:hover:bg-danger-900/40 transition-colors"
+                    title="Rad etish"
                   >
-                    <XMarkIcon class="w-4 h-4 inline" />
+                    <XMarkIcon class="w-4 h-4" />
                   </button>
                 </div>
               </td>
@@ -134,7 +163,10 @@
         </table>
       </div>
       <div v-if="loading" class="p-8 text-center text-surface-500">{{ $t('common.loading') }}</div>
-      <div v-if="!loading && items.length === 0" class="p-8 text-center text-surface-500">{{ $t('common.noData') }}</div>
+      <div v-if="!loading && items.length === 0" class="p-12 text-center">
+        <DocumentTextIcon class="w-10 h-10 mx-auto text-surface-300 dark:text-surface-600 mb-3" />
+        <p class="text-surface-500 dark:text-surface-400">{{ $t('common.noData') }}</p>
+      </div>
     </AppCard>
 
     <!-- Pagination -->
@@ -151,7 +183,7 @@
           <textarea
             v-model="closeReason"
             rows="3"
-            class="w-full px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-none"
+            class="w-full px-3 py-2 bg-surface-50 dark:bg-surface-800 border border-surface-300 dark:border-surface-700 rounded-lg text-sm text-surface-900 dark:text-surface-100 focus:ring-2 focus:ring-brand-500 focus:border-brand-500 resize-none"
             placeholder="Masalan: Vakansiya muddati tugagan, nomuvofiq kontent..."
           />
         </div>
@@ -179,15 +211,28 @@ import { useResourceList } from '../../composables/useAdminApi';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
-import { CheckIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { CheckIcon, XMarkIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
 
 const route = useRoute();
 const router = useRouter();
 
+const currentSort = ref('created_at');
+const sortDir = ref('desc');
+
 const {
   items, total, currentPage, lastPage, loading, search, filters,
-  fetchItems, goToPage, setSort, applySearch, applyFilter,
+  fetchItems, goToPage, setSort: _setSort, applySearch, applyFilter,
 } = useResourceList('/vacancies');
+
+function setSort(field) {
+  if (currentSort.value === field) {
+    sortDir.value = sortDir.value === 'desc' ? 'asc' : 'desc';
+  } else {
+    currentSort.value = field;
+    sortDir.value = 'desc';
+  }
+  _setSort(field);
+}
 
 // Apply city filter from query param
 const cityFilterLabel = ref(null);
@@ -201,6 +246,11 @@ function clearCityFilter() {
   delete filters.value.city;
   router.replace({ path: '/vacancies' });
   fetchItems();
+}
+
+function shortenCity(city) {
+  if (!city) return '—';
+  return city.replace(' viloyati', '').replace(' shahri', ' sh.');
 }
 
 function formatDate(d) {
