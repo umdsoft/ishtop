@@ -58,15 +58,15 @@
               </td>
               <td class="py-3 px-4">
                 <div class="flex items-center gap-3">
-                  <div v-if="app.user?.avatar_url" class="w-8 h-8 rounded-full overflow-hidden shrink-0">
-                    <img :src="app.user.avatar_url" class="w-full h-full object-cover" />
+                  <div v-if="app.worker?.user?.avatar_url" class="w-8 h-8 rounded-full overflow-hidden shrink-0">
+                    <img :src="app.worker?.user.avatar_url" class="w-full h-full object-cover" />
                   </div>
                   <div v-else class="w-8 h-8 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 text-xs font-bold shrink-0">
-                    {{ (app.user?.first_name?.[0] || '?').toUpperCase() }}
+                    {{ (app.worker?.user?.first_name?.[0] || '?').toUpperCase() }}
                   </div>
                   <div class="min-w-0">
-                    <p class="font-medium text-surface-900 dark:text-surface-100 truncate">{{ app.user?.first_name }} {{ app.user?.last_name }}</p>
-                    <p class="text-xs text-surface-500 dark:text-surface-400">{{ app.user?.phone || '' }}</p>
+                    <p class="font-medium text-surface-900 dark:text-surface-100 truncate">{{ app.worker?.user?.first_name }} {{ app.worker?.user?.last_name }}</p>
+                    <p class="text-xs text-surface-500 dark:text-surface-400">{{ app.worker?.user?.phone || '' }}</p>
                   </div>
                 </div>
               </td>

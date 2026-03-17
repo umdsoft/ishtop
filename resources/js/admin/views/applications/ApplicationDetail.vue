@@ -64,22 +64,22 @@
 
         <!-- User Info -->
         <AppCard title="Foydalanuvchi">
-          <div class="space-y-2 text-sm" v-if="application.user">
+          <div class="space-y-2 text-sm" v-if="application.worker?.user">
             <div class="flex items-center gap-3 mb-3">
               <div class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 text-sm font-bold">
-                {{ (application.user.first_name?.[0] || 'U').toUpperCase() }}
+                {{ (application.worker?.user.first_name?.[0] || 'U').toUpperCase() }}
               </div>
               <div>
-                <p class="font-medium text-surface-900 dark:text-surface-100">{{ application.user.first_name }} {{ application.user.last_name }}</p>
-                <p v-if="application.user.username" class="text-xs text-surface-500">@{{ application.user.username }}</p>
+                <p class="font-medium text-surface-900 dark:text-surface-100">{{ application.worker?.user.first_name }} {{ application.worker?.user.last_name }}</p>
+                <p v-if="application.worker?.user.username" class="text-xs text-surface-500">@{{ application.worker?.user.username }}</p>
               </div>
             </div>
             <div>
               <span class="text-surface-500">Telefon: </span>
-              <span class="font-medium text-surface-900 dark:text-surface-100">{{ application.user.phone || '—' }}</span>
+              <span class="font-medium text-surface-900 dark:text-surface-100">{{ application.worker?.user.phone || '—' }}</span>
             </div>
             <button
-              @click="$router.push(`/users/${application.user.id}`)"
+              @click="$router.push(`/users/${application.worker?.user.id}`)"
               class="text-xs text-brand-600 dark:text-brand-400 hover:underline mt-2"
             >
               Profilni ko'rish

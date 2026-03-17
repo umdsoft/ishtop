@@ -14,12 +14,13 @@ class ApplicationController extends Controller
         $query = Application::with([
             'vacancy:id,title_uz,title_ru,employer_id',
             'vacancy.employer:id,company_name',
-            'user:id,first_name,last_name,phone,avatar_url',
+            'worker:id,user_id',
+            'worker.user:id,first_name,last_name,phone,avatar_url',
         ]);
 
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('user', function ($q) use ($search) {
+            $query->whereHas('worker.user', function ($q) use ($search) {
                 $q->where('first_name', 'like', "%{$search}%")
                     ->orWhere('last_name', 'like', "%{$search}%");
             });
@@ -41,7 +42,7 @@ class ApplicationController extends Controller
 
     public function show(Application $application): JsonResponse
     {
-        $application->load(['vacancy', 'vacancy.employer', 'user', 'user.workerProfile']);
+        $application->load(['vacancy', 'vacancy.employer', 'worker.user']);
 
         return response()->json(['application' => $application]);
     }

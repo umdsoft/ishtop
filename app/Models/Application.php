@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasOneThrough;
 
 class Application extends Model
 {
@@ -50,6 +51,18 @@ class Application extends Model
     public function worker(): BelongsTo
     {
         return $this->belongsTo(WorkerProfile::class, 'worker_id');
+    }
+
+    public function user(): HasOneThrough
+    {
+        return $this->hasOneThrough(
+            User::class,
+            WorkerProfile::class,
+            'id',        // worker_profiles.id (matched by applications.worker_id)
+            'id',        // users.id (matched by worker_profiles.user_id)
+            'worker_id', // applications.worker_id
+            'user_id'    // worker_profiles.user_id
+        );
     }
 
     public function questionnaireResponse(): HasOne
