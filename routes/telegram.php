@@ -85,17 +85,30 @@ $bot->onCommand('cancel', function (Nutgram $bot) {
     $bot->sendMessage($text);
 });
 
-// ── Persistent keyboard text handlers ──
-$bot->onText('🔍 Ish qidirish', fn(Nutgram $bot) => (new SearchHandler())($bot));
-$bot->onText('🔍 Поиск работы', fn(Nutgram $bot) => (new SearchHandler())($bot));
-$bot->onText('📝 Rezume', function (Nutgram $bot) { (new MenuHandler())->resume($bot); });
-$bot->onText('📝 Резюме', function (Nutgram $bot) { (new MenuHandler())->resume($bot); });
-$bot->onText('📋 Arizalarim', fn(Nutgram $bot) => (new AppsHandler())($bot));
-$bot->onText('📋 Мои заявки', fn(Nutgram $bot) => (new AppsHandler())($bot));
-$bot->onText('🤍 Saqlanganlar', fn(Nutgram $bot) => (new SavedHandler())($bot));
-$bot->onText('🤍 Сохранённые', fn(Nutgram $bot) => (new SavedHandler())($bot));
-$bot->onText('📌 Menyu', fn(Nutgram $bot) => (new MenuHandler())($bot));
-$bot->onText('📌 Меню', fn(Nutgram $bot) => (new MenuHandler())($bot));
+// ── Legacy keyboard text handlers (eski foydalanuvchilar uchun) ──
+// Eski tugma bosilganda: asl funksiyani bajaring + yangi keyboard yuborish
+$legacyKeyboardHandler = function (Nutgram $bot, callable $action): void {
+    $action($bot);
+    // Yangi keyboard yuborish (faqat "Ilovani ochish")
+    $user = User::where('telegram_id', $bot->user()->id)->first();
+    $lang = $user?->language?->value ?? 'uz';
+    $keyboard = \App\Telegram\Keyboards\PersistentMenuKeyboard::make($lang, $bot->user()->id);
+    $hint = $lang === 'ru'
+        ? '📱 Используйте кнопку «Открыть приложение» для быстрого доступа'
+        : '📱 Tez kirish uchun «Ilovani ochish» tugmasidan foydalaning';
+    $bot->sendMessage(text: $hint, reply_markup: $keyboard);
+};
+
+$bot->onText('🔍 Ish qidirish', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new SearchHandler())($b)));
+$bot->onText('🔍 Поиск работы', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new SearchHandler())($b)));
+$bot->onText('📝 Rezume', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new MenuHandler())->resume($b)));
+$bot->onText('📝 Резюме', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new MenuHandler())->resume($b)));
+$bot->onText('📋 Arizalarim', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new AppsHandler())($b)));
+$bot->onText('📋 Мои заявки', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new AppsHandler())($b)));
+$bot->onText('🤍 Saqlanganlar', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new SavedHandler())($b)));
+$bot->onText('🤍 Сохранённые', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new SavedHandler())($b)));
+$bot->onText('📌 Menyu', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new MenuHandler())($b)));
+$bot->onText('📌 Меню', fn(Nutgram $bot) => $legacyKeyboardHandler($bot, fn($b) => (new MenuHandler())($b)));
 
 // ── Callback Queries ──
 
