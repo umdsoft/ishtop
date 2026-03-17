@@ -56,7 +56,7 @@ class Vacancy extends Model
     {
         parent::boot();
 
-        static::creating(function (Vacancy $vacancy) {
+        static::saving(function (Vacancy $vacancy) {
             if (empty($vacancy->slug)) {
                 $vacancy->slug = $vacancy->generateSlug();
             }
@@ -102,7 +102,7 @@ class Vacancy extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('status', VacancyStatus::ACTIVE);
+        return $query->where('status', VacancyStatus::ACTIVE)->whereNotNull('slug');
     }
 
     public function scopeInCategory($query, string $category)

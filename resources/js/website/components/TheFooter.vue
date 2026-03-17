@@ -45,9 +45,8 @@
         <div>
           <h4 class="text-white font-semibold text-sm mb-3">{{ $t('company') }}</h4>
           <ul class="space-y-2">
-            <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('about_us') }}</a></li>
-            <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('contacts') }}</a></li>
-            <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('help') }}</a></li>
+            <li><router-link to="/faq" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('help') }}</router-link></li>
+            <li><a href="https://t.me/kadrgo_support" target="_blank" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('contacts') }}</a></li>
           </ul>
         </div>
 
@@ -55,8 +54,8 @@
         <div>
           <h4 class="text-white font-semibold text-sm mb-3">{{ $t('legal') }}</h4>
           <ul class="space-y-2">
-            <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('terms') }}</a></li>
-            <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('privacy') }}</a></li>
+            <li><router-link to="/terms" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('terms') }}</router-link></li>
+            <li><router-link to="/privacy" class="text-surface-400 hover:text-white text-sm transition-colors">{{ $t('privacy') }}</router-link></li>
           </ul>
         </div>
       </div>

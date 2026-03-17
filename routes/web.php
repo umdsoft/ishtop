@@ -35,6 +35,11 @@ Route::middleware('web.locale')->group(function () {
 
     // Eski UUID URL'lardan 301 redirect
     Route::get('/vacancies/{uuid}', [WebController::class, 'legacyRedirect'])->whereUuid('uuid');
+
+    // FAQ va huquqiy sahifalar (Vue SPA orqali)
+    Route::get('/faq', [WebController::class, 'spa'])->name('faq');
+    Route::get('/terms', [WebController::class, 'spa'])->name('terms');
+    Route::get('/privacy', [WebController::class, 'spa'])->name('privacy');
 });
 
 // ── Public Website — Vue SPA (catch-all, must be LAST) ──

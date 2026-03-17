@@ -131,5 +131,51 @@
   "login_job_seeker": "Ish qidiruvchiman",
   "login_job_seeker_desc": "Vakansiyalarga ariza berish — Telegram bot orqali",
   "login_recruiter": "Ish beruvchiman",
-  "login_recruiter_desc": "Rekruter panelga kirish — CRM, vakansiyalar boshqaruvi"
+  "login_recruiter_desc": "Rekruter panelga kirish — CRM, vakansiyalar boshqaruvi",
+  "faq_title": "Ko'p beriladigan savollar",
+  "faq_subtitle": "KadrGo platformasi haqida eng ko'p beriladigan savollarga javoblar",
+  "faq_badge": "FAQ",
+  "faq_cta_title": "Javob topmadingizmi?",
+  "faq_cta_subtitle": "Bizning qo'llab-quvvatlash jamoamiz doimo yordam berishga tayyor",
+  "faq_cta_btn": "Qo'llab-quvvatlash xizmatiga yozish",
+  "faq": [
+    { "q": "KadrGo nima?", "a": "KadrGo — O'zbekistondagi ish qidirish va ishchi yollash platformasi. Telegram bot (@kadrgobot), mini-ilova va kadrgo.uz veb-sayti orqali foydalanish mumkin." },
+    { "q": "KadrGo bepulmi?", "a": "Ha, ish qidiruvchilar uchun platforma mutlaqo bepul. Ish beruvchilar uchun asosiy xizmatlar bepul, premium xizmatlar (TOP e'lon, Shoshilinch e'lon) pullik." },
+    { "q": "Qanday qilib ish topsa bo'ladi?", "a": "Telegram bot @kadrgobot ga yozing yoki kadrgo.uz saytiga kiring. O'zingizga mos vakansiyani toping va ariza yuboring — bu atigi 1-2 daqiqa vaqt oladi." },
+    { "q": "Qaysi hududlarda vakansiyalar bor?", "a": "Toshkent, Samarqand, Buxoro, Farg'ona, Andijon va O'zbekistonning barcha viloyatlarida vakansiyalar mavjud." },
+    { "q": "Ro'yxatdan o'tish kerakmi?", "a": "Vakansiyalarni ko'rish uchun ro'yxatdan o'tish shart emas. Ariza yuborish uchun Telegram orqali avtomatik kirish ishlaydi — qo'shimcha ro'yxatdan o'tish talab etilmaydi." },
+    { "q": "Ariza yuborildimi — buni qanday bilaman?", "a": "Ariza muvaffaqiyatli yuborilganda sizga Telegram orqali tasdiqlash xabari keladi. Arizalaringiz holatini mini-ilovadagi \"Arizalarim\" bo'limida kuzatishingiz mumkin." },
+    { "q": "Ish beruvchi sifatida qanday vakansiya joylashtirsam bo'ladi?", "a": "Telegram bot orqali yoki kadrgo.uz/panel sahifasidan rekruter paneliga kirib vakansiya e'lon qilishingiz mumkin. Birinchi e'lon bepul!" },
+    { "q": "TOP va Shoshilinch e'lon nima?", "a": "TOP e'lon — vakansiyangiz ro'yxat tepasida ko'rinadi va ko'proq nomzodlarga yetib boradi. Shoshilinch e'lon — maxsus belgi bilan ajralib turadi va tezroq natija beradi." },
+    { "q": "Ma'lumotlarim xavfsizmi?", "a": "Ha, biz foydalanuvchilar ma'lumotlarini himoya qilish uchun zamonaviy xavfsizlik choralarini qo'llaymiz. Shaxsiy ma'lumotlaringiz uchinchi tomonlarga ruxsatsiz berilmaydi." },
+    { "q": "Qanday bog'lanish mumkin?", "a": "Telegram orqali @kadrgo_support ga yozing yoki saytdagi bog'lanish formasidan foydalaning. Biz doimo yordam berishga tayyormiz!" }
+  ],
+  "terms_title": "Foydalanish shartlari",
+  "terms_updated": "Oxirgi yangilanish: 2026-yil 17-mart",
+  "terms_badge": "Hujjat",
+  "terms_warning_note": "Diqqat! Ushbu band platformaning javobgarlik chegaralarini belgilaydi. Iltimos, diqqat bilan o'qing.",
+  "terms_sections": [
+    { "title": "Umumiy qoidalar", "content": "Ushbu foydalanish shartlari KadrGo platformasi (kadrgo.uz veb-sayti, Telegram bot @kadrgobot va mini-ilova) xizmatlaridan foydalanish tartibini belgilaydi. Platformadan foydalanish orqali siz ushbu shartlarga rozilik bildirasiz. Agar siz ushbu shartlar bilan rozi bo'lmasangiz, platformadan foydalanmasligingizni so'raymiz." },
+    { "title": "Platforma xizmatlari", "content": "KadrGo ish qidiruvchilar va ish beruvchilarni bog'lovchi vositachi platforma hisoblanadi. Platforma quyidagi xizmatlarni taqdim etadi: vakansiyalarni joylashtirish va ko'rish, ish qidiruvchilar anketalarini yaratish, ariza yuborish va qabul qilish, nomzodlarni boshqarish tizimi." },
+    { "title": "Javobgarlik chegaralari", "content": "KadrGo platformasi faqat vositachi sifatida ishlaydi. Har bir vakansiya e'loni, ish taklifi va rezyume (anketa) uchun to'liq javobgarlik ularni joylashtirgan foydalanuvchi zimmasiga tushadi.\n\nPlatforma:\n— E'lonlar mazmunining to'g'riligi yoki qonuniyligiga kafolat bermaydi\n— Ish beruvchi va ish qidiruvchi o'rtasidagi mehnat munosabatlarida ishtirok etmaydi\n— Maosh to'lanishi, mehnat sharoitlari yoki ish beruvchining boshqa majburiyatlari uchun javobgar emas\n— Foydalanuvchilar tomonidan taqdim etilgan ma'lumotlarning aniqligi uchun kafolat bermaydi\n\nIsh beruvchilar O'zbekiston Respublikasi mehnat qonunchiligi talablariga rioya qilishlari shart. Ish qidiruvchilar ariza yuborishdan oldin vakansiya shartlarini diqqat bilan o'qishlari tavsiya etiladi.", "warning": true },
+    { "title": "Foydalanuvchi majburiyatlari", "content": "Foydalanuvchilar quyidagilarga rioya qilishlari shart:\n— Faqat to'g'ri va haqiqiy ma'lumotlarni kiritish\n— Boshqa shaxslarning huquqlarini hurmat qilish\n— Platformadan qonunga zid maqsadlarda foydalanmaslik\n— Bir nechta soxta akkauntlar yaratmaslik\n— Boshqa foydalanuvchilarga spam yoki nojo'ya xabarlar yubormaslik" },
+    { "title": "Taqiqlangan harakatlar", "content": "Platformada quyidagi harakatlar taqiqlanadi:\n— Soxta yoki chalg'ituvchi vakansiyalar joylashtirish\n— Noqonuniy faoliyat bilan bog'liq e'lonlar berish\n— Boshqa foydalanuvchilarning shaxsiy ma'lumotlarini ruxsatsiz to'plash\n— Platformaning texnik tizimlariga zarar yetkazishga urinish\n— Firibgarlik, aldov yoki nohalol harakatlar\n\nUshbu qoidalarni buzgan foydalanuvchilar ogohlantirishsiz bloklanishi mumkin." },
+    { "title": "Pullik xizmatlar", "content": "Platformaning ayrim xizmatlari (TOP e'lon, Shoshilinch e'lon va boshqalar) pullik hisoblanadi. Narxlar va shartlar platform ichida ko'rsatiladi. To'lovlar qaytarilmasligi mumkin — har bir holat alohida ko'rib chiqiladi." },
+    { "title": "Intellektual mulk", "content": "KadrGo nomi, logotipi, dizayni va dasturiy ta'minoti KadrGo jamoasiga tegishli. Foydalanuvchilar tomonidan joylashtirilgan kontent (vakansiya matni, anketa ma'lumotlari) foydalanuvchining o'ziga tegishli bo'lib, platforma ushbu kontentni xizmat ko'rsatish maqsadida ko'rsatish huquqiga ega." },
+    { "title": "Shartlarni o'zgartirish", "content": "KadrGo ushbu foydalanish shartlarini istalgan vaqtda o'zgartirish huquqini o'zida saqlab qoladi. O'zgarishlar platformada e'lon qilingan paytdan boshlab kuchga kiradi. Muhim o'zgarishlar haqida foydalanuvchilarga xabar beriladi." }
+  ],
+  "privacy_title": "Maxfiylik siyosati",
+  "privacy_updated": "Oxirgi yangilanish: 2026-yil 17-mart",
+  "privacy_badge": "Ma'lumotlar himoyasi",
+  "privacy_trust_title": "Biz sizning xavfsizligingiz haqida qayg'uramiz",
+  "privacy_trust_desc": "Ma'lumotlaringiz HTTPS shifrlash bilan himoyalangan va sizning roziligingiz siz uchinchi tomonlarga berilmaydi.",
+  "privacy_sections": [
+    { "title": "Yig'iladigan ma'lumotlar", "content": "Biz quyidagi ma'lumotlarni yig'amiz:\n— Shaxsiy ma'lumotlar: ism, familiya, telefon raqami, Telegram ID\n— Anketa ma'lumotlari: mutaxassislik, tajriba, ta'lim, ko'nikmalar, shahar\n— Texnik ma'lumotlar: IP manzil, brauzer turi, qurilma ma'lumotlari, cookie fayllar\n— Foydalanish ma'lumotlari: ko'rilgan sahifalar, qidiruv so'rovlari, platforma ichidagi harakatlar" },
+    { "title": "Ma'lumotlardan foydalanish maqsadi", "content": "Yig'ilgan ma'lumotlardan quyidagi maqsadlarda foydalanamiz:\n— Platforma xizmatlarini taqdim etish va yaxshilash\n— Foydalanuvchilarga mos vakansiyalarni tavsiya qilish\n— Ish beruvchilarga nomzodlar haqida ma'lumot berish\n— Xavfsizlikni ta'minlash va firibgarlikni oldini olish\n— Statistik tahlillar va hisobotlar tayyorlash\n— Foydalanuvchilarga bildirishnomalar va yangiliklar yuborish" },
+    { "title": "Ma'lumotlarni uchinchi tomonlar bilan almashish", "content": "Biz foydalanuvchilarning shaxsiy ma'lumotlarini uchinchi tomonlarga sotmaymiz. Ma'lumotlar quyidagi hollardagina almashilishi mumkin:\n— Ish beruvchilarga ariza yuborilganda (ish qidiruvchining roziligi bilan)\n— Qonun talablariga muvofiq davlat organlariga\n— Platforma xizmatlarini ta'minlash uchun texnik hamkorlar bilan (serverlar, analitika)\n\nBarcha hamkorlar ma'lumotlar maxfiyligini ta'minlash majburiyatini oladi." },
+    { "title": "Cookie va analitika", "content": "Platformamiz cookie fayllar va analitika xizmatlaridan foydalanadi:\n— Zaruriy cookie: tizimga kirish, til sozlamalari\n— Analitika: Google Analytics, Yandex Metrika — sayt foydalanishini tahlil qilish uchun\n— Marketing: Meta Pixel — reklama samaradorligini o'lchash uchun\n\nSiz brauzer sozlamalari orqali cookie fayllarni boshqarishingiz mumkin." },
+    { "title": "Ma'lumotlar xavfsizligi", "content": "Biz foydalanuvchilar ma'lumotlarini himoya qilish uchun quyidagi choralarni qo'llaymiz:\n— HTTPS shifrlash orqali ma'lumotlar uzatish\n— Ma'lumotlar bazasiga kirishni cheklash\n— Muntazam xavfsizlik tekshiruvlari\n— Parollarni xesh qilish" },
+    { "title": "Foydalanuvchi huquqlari", "content": "Siz quyidagi huquqlarga egasiz:\n— O'z ma'lumotlaringizni ko'rish va tahrirlash\n— Akkauntingizni o'chirish va ma'lumotlaringizni yo'q qilishni so'rash\n— Bildirishnomalardan voz kechish\n— Ma'lumotlaringiz qanday ishlatilayotganini so'rash\n\nUshbu huquqlardan foydalanish uchun @kadrgo_support ga murojaat qiling." },
+    { "title": "Bog'lanish", "content": "Maxfiylik siyosati bo'yicha savollaringiz bo'lsa, biz bilan bog'laning:\n— Telegram: @kadrgo_support\n— Veb-sayt: kadrgo.uz\n— E-mail: info@kadrgo.uz" }
+  ]
 }

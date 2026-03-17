@@ -286,6 +286,21 @@ class WebController extends Controller
         return back()->with('success', __('web.application_sent'));
     }
 
+    public function faq()
+    {
+        return view('website.faq');
+    }
+
+    public function terms()
+    {
+        return view('website.terms');
+    }
+
+    public function privacy()
+    {
+        return view('website.privacy');
+    }
+
     public function setLocale(string $locale)
     {
         if (!in_array($locale, ['uz', 'ru'])) {

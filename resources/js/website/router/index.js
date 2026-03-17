@@ -29,6 +29,24 @@ const routes = [
         meta: { title: 'Vakansiya — KadrGo' },
       },
       {
+        path: 'faq',
+        name: 'faq',
+        component: () => import('@website/pages/FaqPage.vue'),
+        meta: { title: 'FAQ — KadrGo' },
+      },
+      {
+        path: 'terms',
+        name: 'terms',
+        component: () => import('@website/pages/TermsPage.vue'),
+        meta: { title: 'Foydalanish shartlari — KadrGo' },
+      },
+      {
+        path: 'privacy',
+        name: 'privacy',
+        component: () => import('@website/pages/PrivacyPage.vue'),
+        meta: { title: 'Maxfiylik siyosati — KadrGo' },
+      },
+      {
         path: ':pathMatch(.*)*',
         name: 'not-found',
         component: () => import('@website/pages/NotFoundPage.vue'),

@@ -44,9 +44,8 @@
             <div>
                 <h4 class="text-white font-semibold text-sm mb-3">{{ __('web.company') }}</h4>
                 <ul class="space-y-2">
-                    <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.about_us') }}</a></li>
-                    <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.contacts') }}</a></li>
-                    <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.help') }}</a></li>
+                    <li><a href="{{ route('faq') }}" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.help') }}</a></li>
+                    <li><a href="https://t.me/kadrgo_support" target="_blank" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.contacts') }}</a></li>
                 </ul>
             </div>
 
@@ -54,8 +53,8 @@
             <div>
                 <h4 class="text-white font-semibold text-sm mb-3">{{ __('web.legal') }}</h4>
                 <ul class="space-y-2">
-                    <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.terms') }}</a></li>
-                    <li><a href="#" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.privacy') }}</a></li>
+                    <li><a href="{{ route('terms') }}" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.terms') }}</a></li>
+                    <li><a href="{{ route('privacy') }}" class="text-surface-400 hover:text-white text-sm transition-colors">{{ __('web.privacy') }}</a></li>
                 </ul>
             </div>
         </div>

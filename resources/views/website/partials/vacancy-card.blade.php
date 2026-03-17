@@ -1,6 +1,6 @@
 @php $lang = app()->getLocale(); @endphp
 
-<a href="{{ route('vacancies.show', $vacancy) }}"
+<a href="{{ $vacancy->slug ? route('vacancies.show', $vacancy) : '#' }}"
    class="group relative flex flex-col bg-white rounded-xl border border-surface-100 hover:border-brand-200 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
 
     {{-- TOP/Urgent highlight bar --}}

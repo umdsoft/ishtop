@@ -13,6 +13,7 @@ use App\Telegram\Handlers\SavedHandler;
 use App\Telegram\Handlers\SearchHandler;
 use App\Telegram\Handlers\SettingsHandler;
 use App\Telegram\Handlers\StartHandler;
+use App\Telegram\Handlers\TermsHandler;
 use App\Models\User;
 use SergiX44\Nutgram\Nutgram;
 
@@ -75,6 +76,7 @@ $bot->onCommand('apps', AppsHandler::class);
 $bot->onCommand('saved', SavedHandler::class);
 $bot->onCommand('notifications', NotificationsHandler::class);
 $bot->onCommand('settings', SettingsHandler::class);
+$bot->onCommand('terms', TermsHandler::class);
 $bot->onCommand('web', [MenuHandler::class, 'web']);
 $bot->onCommand('cancel', function (Nutgram $bot) {
     $user = User::where('telegram_id', $bot->user()->id)->first();

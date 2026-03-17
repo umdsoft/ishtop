@@ -52,3 +52,7 @@ select.appearance-none {
 .float-slow { animation: float-slow 6s ease-in-out infinite; }
 .float-medium { animation: float-medium 4.5s ease-in-out infinite; }
 .float-fast { animation: float-fast 3.5s ease-in-out infinite; }
+
+/* Policy/Terms prose content */
+.prose-content strong { font-weight: 600; color: #1e293b; }
+.prose-content br { content: ''; display: block; margin-top: 0.5rem; }

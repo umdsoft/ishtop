@@ -55,9 +55,10 @@ class StartHandler
             }
 
             // Oddiy welcome — persistent keyboard o'rnatish
+            $termsUrl = config('app.url') . '/terms';
             $welcome = $userLang === 'ru'
-                ? "👋 Здравствуйте, {$user->first_name}!\n\n*KadrGo* — Найди работу не выходя из Telegram!\n\n📌 Используйте кнопки ниже для быстрого доступа"
-                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*KadrGo* — Kadrlar harakatda! Ish va ishchi — bir joyda.\n\n📌 Pastdagi tugmalardan foydalaning";
+                ? "👋 Здравствуйте, {$user->first_name}!\n\n*KadrGo* — Найди работу не выходя из Telegram!\n\n📌 Используйте кнопки ниже для быстрого доступа\n\n📄 Используя бот, вы соглашаетесь с [условиями использования]({$termsUrl})"
+                : "👋 Assalomu alaykum, {$user->first_name}!\n\n*KadrGo* — Kadrlar harakatda! Ish va ishchi — bir joyda.\n\n📌 Pastdagi tugmalardan foydalaning\n\n📄 Botdan foydalanib, siz [foydalanish shartlari]({$termsUrl})ga rozilik bildirasiz";
 
             $bot->sendMessage(
                 text: $welcome,
