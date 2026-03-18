@@ -33,7 +33,7 @@ class UpdateVacancyRequest extends FormRequest
             'experience_required' => 'nullable|string|max:50',
             'contact_phone' => 'nullable|string|max:20',
             'contact_method' => 'nullable|string|max:30',
-            'status' => 'nullable|string|in:draft,paused,closed',
+            'status' => 'nullable|string|in:draft,pending,active,paused,closed',
         ];
     }
 }
