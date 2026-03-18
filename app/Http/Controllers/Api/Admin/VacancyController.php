@@ -64,18 +64,29 @@ class VacancyController extends Controller
     {
         $vacancy->load([
             'employer:id,company_name,phone',
-            'employer.user:id,first_name,last_name',
+            'employer.user:id,first_name,last_name,username,telegram_id',
             'categoryRelation:id,name_uz,name_ru,emoji',
-            'applications',
+            'applications' => fn($q) => $q
+                ->with([
+                    'worker:id,user_id,full_name,city,specialty,experience_years,expected_salary_min,expected_salary_max,photo_url,skills',
+                    'worker.user:id,first_name,last_name,phone,username,telegram_id',
+                ])
+                ->latest(),
         ]);
         $vacancy->loadCount('applications');
 
-        // Append work_type label for frontend
+        // Stage counts for pipeline
+        $stageCounts = $vacancy->applications
+            ->groupBy(fn($a) => $a->stage instanceof \App\Enums\ApplicationStage ? $a->stage->value : $a->stage)
+            ->map->count();
+
+        // Append computed fields
         $data = $vacancy->toArray();
         $data['work_type_label'] = $vacancy->work_type?->label();
         $data['category_name'] = $vacancy->categoryRelation
             ? ($vacancy->categoryRelation->name_uz . ' / ' . $vacancy->categoryRelation->name_ru)
             : null;
+        $data['stage_counts'] = $stageCounts;
 
         return response()->json(['vacancy' => $data]);
     }
