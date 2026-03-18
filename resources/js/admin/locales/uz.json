@@ -188,6 +188,22 @@
     "cacheClearedSuccess": "Kesh muvaffaqiyatli tozalandi",
     "cacheClearedError": "Keshni tozalashda xatolik"
   },
+  "reports": {
+    "title": "Shikoyatlar",
+    "reporter": "Shikoyatchi",
+    "reason": "Sabab",
+    "type": "Turi",
+    "target": "Maqsad",
+    "pending": "Kutilmoqda",
+    "resolved": "Hal qilingan",
+    "dismissed": "Rad etilgan",
+    "resolve": "Hal qilish",
+    "dismiss": "Rad etish",
+    "vacancy": "Vakansiya",
+    "employer": "Ish beruvchi",
+    "user": "Foydalanuvchi",
+    "workerProfile": "Ishchi profil"
+  },
   "banners": {
     "title": "Bannerlar",
     "image": "Rasm",

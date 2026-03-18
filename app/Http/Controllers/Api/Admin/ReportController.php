@@ -11,10 +11,21 @@ class ReportController extends Controller
 {
     public function index(Request $request): JsonResponse
     {
-        $query = Report::with(['reporter:id,first_name,last_name', 'reportable']);
+        $query = Report::with(['reporter:id,first_name,last_name,phone', 'reportable']);
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('reason', 'like', "%{$search}%")
+                    ->orWhereHas('reporter', function ($q) use ($search) {
+                        $q->where('first_name', 'like', "%{$search}%")
+                            ->orWhere('last_name', 'like', "%{$search}%");
+                    });
+            });
         }
 
         $query->latest();
@@ -35,5 +46,12 @@ class ReportController extends Controller
         $report->update(['status' => 'resolved']);
 
         return response()->json(['message' => 'Shikoyat hal qilindi', 'report' => $report->fresh()]);
+    }
+
+    public function dismiss(Report $report): JsonResponse
+    {
+        $report->update(['status' => 'dismissed']);
+
+        return response()->json(['message' => 'Shikoyat rad etildi', 'report' => $report->fresh()]);
     }
 }

@@ -284,6 +284,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
     // Reports
     Route::apiResource('reports', Admin\ReportController::class)->only(['index', 'show']);
     Route::post('reports/{report}/resolve', [Admin\ReportController::class, 'resolve']);
+    Route::post('reports/{report}/dismiss', [Admin\ReportController::class, 'dismiss']);
 
     // Settings
     Route::get('settings', [Admin\SettingController::class, 'index']);

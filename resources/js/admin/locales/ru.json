@@ -188,6 +188,22 @@
     "cacheClearedSuccess": "Кеш успешно очищен",
     "cacheClearedError": "Ошибка при очистке кеша"
   },
+  "reports": {
+    "title": "Жалобы",
+    "reporter": "Заявитель",
+    "reason": "Причина",
+    "type": "Тип",
+    "target": "Объект",
+    "pending": "Ожидание",
+    "resolved": "Решено",
+    "dismissed": "Отклонено",
+    "resolve": "Решить",
+    "dismiss": "Отклонить",
+    "vacancy": "Вакансия",
+    "employer": "Работодатель",
+    "user": "Пользователь",
+    "workerProfile": "Профиль работника"
+  },
   "banners": {
     "title": "Баннеры",
     "image": "Изображение",
