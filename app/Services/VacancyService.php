@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\VacancyStatus;
+use App\Models\Category;
 use App\Models\Vacancy;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -11,6 +12,14 @@ class VacancyService
 {
     public function create(array $data): Vacancy
     {
+        // Auto-resolve category_id from category slug
+        if (!empty($data['category']) && empty($data['category_id'])) {
+            $category = Category::where('slug', $data['category'])->first();
+            if ($category) {
+                $data['category_id'] = $category->id;
+            }
+        }
+
         return DB::transaction(function () use ($data) {
             $vacancy = Vacancy::create(array_merge($data, [
                 'status' => VacancyStatus::PENDING,

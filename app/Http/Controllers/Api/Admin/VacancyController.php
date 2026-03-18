@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\Admin;
 use App\Enums\VacancyStatus;
 use App\Http\Controllers\Controller;
 use App\Jobs\NotifyMatchingWorkersJob;
+use App\Models\Category;
 use App\Models\Vacancy;
 use App\Services\TelegramNotificationService;
 use Illuminate\Http\JsonResponse;
@@ -83,9 +84,21 @@ class VacancyController extends Controller
         // Append computed fields
         $data = $vacancy->toArray();
         $data['work_type_label'] = $vacancy->work_type?->label();
-        $data['category_name'] = $vacancy->categoryRelation
-            ? ($vacancy->categoryRelation->name_uz . ' / ' . $vacancy->categoryRelation->name_ru)
-            : null;
+
+        // Resolve category name: from relation, or fallback to slug lookup
+        if ($vacancy->categoryRelation) {
+            $data['category_name'] = $vacancy->categoryRelation->name_uz . ' / ' . $vacancy->categoryRelation->name_ru;
+        } elseif ($vacancy->category) {
+            $cat = Category::where('slug', $vacancy->category)->first();
+            if ($cat) {
+                $data['category_name'] = $cat->name_uz . ' / ' . $cat->name_ru;
+                // Auto-fix: set category_id for future queries
+                $vacancy->update(['category_id' => $cat->id]);
+            } else {
+                $data['category_name'] = $vacancy->category;
+            }
+        }
+
         $data['stage_counts'] = $stageCounts;
 
         return response()->json(['vacancy' => $data]);

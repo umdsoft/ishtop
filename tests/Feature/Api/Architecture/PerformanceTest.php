@@ -72,37 +72,45 @@ class PerformanceTest extends TestCase
     {
         $employer = EmployerProfile::factory()->create();
 
-        // Create 5 open workers in Toshkent
+        $testCategory = 'it';
+
+        // Create 5 open workers in Toshkent with matching category
         WorkerProfile::factory()->count(5)->create([
             'search_status' => 'open',
             'city' => 'Toshkent',
+            'preferred_categories' => [$testCategory],
         ]);
 
-        // Create 3 passive workers in Samarqand
+        // Create 3 passive workers in Samarqand with matching category
         WorkerProfile::factory()->count(3)->create([
             'search_status' => 'passive',
             'city' => 'Samarqand',
+            'preferred_categories' => [$testCategory],
         ]);
 
         // Create 2 closed workers (should not be counted)
         WorkerProfile::factory()->count(2)->create([
             'search_status' => 'closed',
             'city' => 'Toshkent',
+            'preferred_categories' => [$testCategory],
         ]);
 
         $vacancy1 = Vacancy::factory()->active()->create([
             'employer_id' => $employer->id,
             'city' => 'Toshkent',
+            'category' => $testCategory,
         ]);
 
         $vacancy2 = Vacancy::factory()->active()->create([
             'employer_id' => $employer->id,
             'city' => 'Samarqand',
+            'category' => $testCategory,
         ]);
 
         $vacancy3 = Vacancy::factory()->active()->create([
             'employer_id' => $employer->id,
             'city' => null,
+            'category' => $testCategory,
         ]);
 
         $service = app(MatchingService::class);
@@ -131,15 +139,18 @@ class PerformanceTest extends TestCase
     public function test_matching_service_batch_count_excludes_applied_workers(): void
     {
         $employer = EmployerProfile::factory()->create();
+        $testCategory = 'it';
 
         $workers = WorkerProfile::factory()->count(5)->create([
             'search_status' => 'open',
             'city' => 'Toshkent',
+            'preferred_categories' => [$testCategory],
         ]);
 
         $vacancy = Vacancy::factory()->active()->create([
             'employer_id' => $employer->id,
             'city' => 'Toshkent',
+            'category' => $testCategory,
         ]);
 
         // 2 workers applied to this vacancy

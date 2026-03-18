@@ -569,10 +569,11 @@ class MatchingService
     /**
      * Apply category-aware filter to WorkerProfile query based on vacancy category.
      *
-     * - Vacancy is subcategory (e.g., marketing-sales-manager):
-     *   Match ONLY exact subcategory + no-preference. NO parent, NO siblings.
-     * - Vacancy is parent category (e.g., marketing):
-     *   Match parent + all children (marketing-*) + no-preference.
+     * Only matches workers who explicitly selected a matching category.
+     * Workers with no preferred_categories are excluded (incomplete profile).
+     *
+     * - Subcategory (e.g., education-teacher): exact match + parent match
+     * - Parent category (e.g., education): parent + all children (education-*)
      */
     private function applyCategoryFilterForWorkers($query, ?string $vacancyCategory): void
     {
@@ -583,18 +584,16 @@ class MatchingService
         $isSubCategory = $parent !== $category;
 
         $query->where(function ($q) use ($parent, $category, $isSubCategory) {
-            // Workers with no preference → open to all categories
-            $q->whereNull('preferred_categories')
-              ->orWhere('preferred_categories', '[]');
-
             // Exact category match
-            $q->orWhereJsonContains('preferred_categories', $category);
+            $q->whereJsonContains('preferred_categories', $category);
 
-            if (!$isSubCategory) {
-                // Vacancy is parent category → also match workers who selected any child
+            if ($isSubCategory) {
+                // Subcategory: also match workers who selected the parent
+                $q->orWhereJsonContains('preferred_categories', $parent);
+            } else {
+                // Parent category: also match workers who selected any child
                 $q->orWhere('preferred_categories', 'LIKE', '%"' . $parent . '-%');
             }
-            // Subcategory: NO parent match, NO sibling match — exact only
         });
     }
 
