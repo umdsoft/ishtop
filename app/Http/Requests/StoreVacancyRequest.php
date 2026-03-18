@@ -30,13 +30,18 @@ class StoreVacancyRequest extends FormRequest
             'district' => 'nullable|string|max:100',
             'latitude' => 'nullable|numeric|between:-90,90',
             'longitude' => 'nullable|numeric|between:-180,180',
-            'salary_min' => 'nullable|integer|min:0',
-            'salary_max' => 'nullable|integer|min:0|gte:salary_min',
+            'salary_min' => 'nullable|integer|min:0|max:2000000000',
+            'salary_max' => 'nullable|integer|min:0|max:2000000000|gte:salary_min',
             'salary_type' => 'nullable|string|in:fixed,range,negotiable',
             'currency' => 'nullable|string|in:uzs,usd',
             'experience_required' => 'nullable|string|max:50',
             'contact_phone' => 'nullable|string|max:20',
+            'contact_name' => 'nullable|string|max:100',
+            'contact_email' => 'nullable|email|max:100',
             'contact_method' => 'nullable|string|max:30',
+            'is_top' => 'nullable|boolean',
+            'has_questionnaire' => 'nullable|boolean',
+            'expires_at' => 'nullable|date',
         ];
     }
 }

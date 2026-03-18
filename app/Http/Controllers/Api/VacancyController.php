@@ -107,6 +107,9 @@ class VacancyController extends Controller
 
         $validated = $request->validated();
 
+        // Auto-translate missing language fields
+        $validated = $this->autoTranslate($validated);
+
         $vacancy->update($validated);
 
         return response()->json(['vacancy' => $vacancy->fresh()]);
@@ -138,7 +141,7 @@ class VacancyController extends Controller
 
         // Collect fields that need translation
         $fieldsToTranslate = [];
-        foreach (['title', 'description', 'requirements'] as $field) {
+        foreach (['title', 'description', 'requirements', 'responsibilities'] as $field) {
             $srcKey = "{$field}_{$from}";
             $dstKey = "{$field}_{$to}";
             if (!empty($data[$srcKey]) && empty($data[$dstKey])) {

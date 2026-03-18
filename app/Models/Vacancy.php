@@ -25,7 +25,7 @@ class Vacancy extends Model
         'responsibilities_uz', 'responsibilities_ru',
         'salary_min', 'salary_max', 'salary_type', 'currency',
         'work_type', 'experience_required', 'city', 'district',
-        'latitude', 'longitude', 'contact_phone', 'contact_method',
+        'latitude', 'longitude', 'contact_phone', 'contact_name', 'contact_email', 'contact_method',
         'status', 'is_top', 'is_urgent',
         'top_until', 'urgent_until', 'has_questionnaire',
         'published_at', 'expires_at', 'close_reason',

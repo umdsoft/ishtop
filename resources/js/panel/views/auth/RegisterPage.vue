@@ -29,13 +29,14 @@
           v-model="form.firstName"
           :label="$t('auth.firstName')"
           placeholder="Umidbek"
+          :error="errors.first_name"
           required
         />
         <AppInput
           v-model="form.lastName"
           :label="$t('auth.lastName')"
           placeholder="Karimov"
-          required
+          :error="errors.last_name"
         />
       </div>
 
@@ -45,6 +46,7 @@
         type="tel"
         :label="$t('auth.phone')"
         placeholder="+998 90 123 45 67"
+        :error="errors.phone"
         required
       />
 
@@ -52,6 +54,7 @@
         v-model="form.login"
         :label="$t('auth.loginField')"
         placeholder="umidbek_k"
+        :error="errors.login"
         required
       />
 
@@ -60,6 +63,7 @@
         type="password"
         :label="$t('auth.password')"
         placeholder="••••••••"
+        :error="errors.password"
         required
       />
 
@@ -104,6 +108,7 @@ const form = ref({
 });
 
 const loading = ref(false);
+const errors = ref({});
 
 function onPhoneInput(val) {
   let digits = val.replace(/\D/g, '');
@@ -130,6 +135,7 @@ function onPhoneInput(val) {
 
 async function handleRegister() {
   loading.value = true;
+  errors.value = {};
 
   const result = await authStore.register({
     first_name: form.value.firstName,
@@ -145,7 +151,15 @@ async function handleRegister() {
     toast.success('Ro\'yxatdan muvaffaqiyatli o\'tdingiz!');
     router.push('/dashboard');
   } else {
-    toast.error(result.message || 'Registration failed');
+    // Show field-level errors
+    if (result.errors && Object.keys(result.errors).length > 0) {
+      for (const [field, messages] of Object.entries(result.errors)) {
+        errors.value[field] = Array.isArray(messages) ? messages[0] : messages;
+      }
+      toast.error('Ma\'lumotlarni tekshiring');
+    } else {
+      toast.error(result.message || 'Ro\'yxatdan o\'tishda xatolik');
+    }
   }
 }
 </script>

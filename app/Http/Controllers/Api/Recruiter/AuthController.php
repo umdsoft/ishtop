@@ -33,10 +33,7 @@ class AuthController extends Controller
             return response()->json(['message' => 'Login yoki parol noto\'g\'ri'], 401);
         }
 
-        if (!$user->employerProfiles()->exists()) {
-            return response()->json(['message' => 'Recruiter profili topilmadi'], 403);
-        }
-
+        $this->ensureEmployerProfile($user);
         $this->ensureActiveEmployer($user);
 
         $token = $user->createToken('recruiter-api')->plainTextToken;
@@ -54,7 +51,18 @@ class AuthController extends Controller
             'last_name' => 'nullable|string|max:100',
             'login' => 'required|string|min:3|max:50|regex:/^[a-zA-Z0-9_]+$/|unique:users,username',
             'password' => 'required|string|min:8',
-            'phone' => 'required|string|regex:/^\+998\d{9}$/',
+            'phone' => 'required|string|regex:/^\+998\d{9}$/|unique:users,phone',
+        ], [
+            'first_name.required' => 'Ism kiritish shart',
+            'login.required' => 'Login kiritish shart',
+            'login.min' => 'Login kamida 3 ta belgidan iborat bo\'lishi kerak',
+            'login.regex' => 'Login faqat harf, raqam va pastki chiziq (_) bo\'lishi mumkin',
+            'login.unique' => 'Bu login band. Boshqa login tanlang',
+            'password.required' => 'Parol kiritish shart',
+            'password.min' => 'Parol kamida 8 ta belgidan iborat bo\'lishi kerak',
+            'phone.required' => 'Telefon raqam kiritish shart',
+            'phone.regex' => 'Telefon raqam formati noto\'g\'ri (+998XXXXXXXXX)',
+            'phone.unique' => 'Bu telefon raqam allaqachon ro\'yxatdan o\'tgan',
         ]);
 
         $user = User::create([

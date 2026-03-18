@@ -94,42 +94,178 @@
                 :error="errors.title"
               />
 
-              <AppSelect
-                v-model="form.category_id"
-                :options="categories"
-                label="Kategoriya"
-                label-key="name"
-                value-key="slug"
-                placeholder="Kategoriya tanlang"
-                searchable
-                required
-                :error="errors.category_id"
-              />
+              <div>
+                <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+                  Kategoriya <span class="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  @click="showCategoryModal = true"
+                  class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left text-sm transition-colors"
+                  :class="errors.category_id
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-surface-300 dark:border-surface-700 hover:border-brand-400 dark:hover:border-brand-500'"
+                >
+                  <span :class="selectedCategoryLabel ? 'text-surface-900 dark:text-surface-100' : 'text-surface-400 dark:text-surface-500'">
+                    {{ selectedCategoryLabel || 'Kategoriya tanlang' }}
+                  </span>
+                  <ChevronDownIcon class="w-4 h-4 text-surface-400" />
+                </button>
+                <p v-if="errors.category_id" class="mt-1 text-xs text-red-500">{{ errors.category_id }}</p>
+              </div>
 
-              <div class="grid grid-cols-2 gap-4">
-                <AppSelect
-                  v-model="form.region_id"
-                  :options="regions"
-                  label="Viloyat"
-                  label-key="name"
-                  value-key="id"
-                  placeholder="Viloyatni tanlang"
-                  searchable
-                  required
-                  :error="errors.region_id"
-                />
+              <!-- Category Modal -->
+              <AppModal :show="showCategoryModal" title="Kategoriya tanlang" size="lg" @close="showCategoryModal = false">
+                <div class="mb-4">
+                  <div class="relative">
+                    <MagnifyingGlassIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      v-model="categorySearch"
+                      type="text"
+                      placeholder="Kategoriya qidirish..."
+                      class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 text-sm text-surface-900 dark:text-surface-100 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div class="max-h-[28rem] overflow-y-auto space-y-1">
+                  <template v-for="cat in filteredCategories" :key="cat.slug">
+                    <!-- Parent category header -->
+                    <button
+                      type="button"
+                      @click="toggleCategory(cat.slug)"
+                      class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors"
+                      :class="expandedCategory === cat.slug
+                        ? 'bg-brand-50 dark:bg-brand-900/20'
+                        : 'hover:bg-surface-100 dark:hover:bg-surface-800'"
+                    >
+                      <ChevronRightIcon
+                        class="w-4 h-4 text-surface-400 transition-transform duration-200 flex-shrink-0"
+                        :class="{ 'rotate-90': expandedCategory === cat.slug || categorySearch }"
+                      />
+                      <span class="text-sm font-semibold" :class="expandedCategory === cat.slug ? 'text-brand-600 dark:text-brand-400' : 'text-surface-800 dark:text-surface-200'">
+                        {{ cat.name_uz }}
+                      </span>
+                      <span class="ml-auto text-xs text-surface-400">{{ cat.filteredChildren.length }}</span>
+                    </button>
+                    <!-- Children (sub-categories) -->
+                    <div v-if="expandedCategory === cat.slug || categorySearch" class="ml-4 pl-3 border-l-2 border-surface-200 dark:border-surface-700 space-y-0.5 pb-1">
+                      <button
+                        v-for="child in cat.filteredChildren"
+                        :key="child.slug"
+                        type="button"
+                        @click="selectCategory(cat, child)"
+                        class="w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center gap-2"
+                        :class="form.category_id && (typeof form.category_id === 'object' ? form.category_id.slug : form.category_id) === child.slug
+                          ? 'bg-brand-500 text-white font-medium'
+                          : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
+                      >
+                        {{ child.name_uz }}
+                      </button>
+                    </div>
+                  </template>
+                  <div v-if="filteredCategories.length === 0" class="px-4 py-8 text-center text-sm text-surface-400">
+                    Natija topilmadi
+                  </div>
+                </div>
+              </AppModal>
 
-                <AppSelect
-                  v-model="form.district_id"
-                  :options="filteredDistricts"
-                  label="Tuman/Shahar"
-                  label-key="name"
-                  value-key="id"
-                  placeholder="Tumanni tanlang"
-                  searchable
-                  :disabled="!form.region_id"
-                  :error="errors.district_id"
-                />
+              <div>
+                <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+                  Lokatsiya <span class="text-red-500">*</span>
+                </label>
+                <button
+                  type="button"
+                  @click="showLocationModal = true"
+                  class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl border text-left text-sm transition-colors"
+                  :class="errors.region_id
+                    ? 'border-red-500 dark:border-red-500'
+                    : 'border-surface-300 dark:border-surface-700 hover:border-brand-400 dark:hover:border-brand-500'"
+                >
+                  <span :class="selectedLocationLabel ? 'text-surface-900 dark:text-surface-100' : 'text-surface-400 dark:text-surface-500'">
+                    {{ selectedLocationLabel || 'Viloyat va tumanni tanlang' }}
+                  </span>
+                  <ChevronDownIcon class="w-4 h-4 text-surface-400" />
+                </button>
+                <p v-if="errors.region_id" class="mt-1 text-xs text-red-500">{{ errors.region_id }}</p>
+              </div>
+
+              <!-- Location Modal -->
+              <AppModal :show="showLocationModal" title="Lokatsiya tanlang" size="lg" @close="showLocationModal = false">
+                <div class="mb-4">
+                  <div class="relative">
+                    <MagnifyingGlassIcon class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-surface-400" />
+                    <input
+                      v-model="locationSearch"
+                      type="text"
+                      placeholder="Viloyat yoki tuman qidirish..."
+                      class="w-full pl-9 pr-3 py-2.5 rounded-xl border border-surface-300 dark:border-surface-700 bg-surface-0 dark:bg-surface-800 text-sm text-surface-900 dark:text-surface-100 placeholder-surface-400 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-transparent"
+                    />
+                  </div>
+                </div>
+                <div class="max-h-[28rem] overflow-y-auto space-y-1">
+                  <template v-for="region in filteredLocations" :key="region.key">
+                    <!-- Region header -->
+                    <button
+                      type="button"
+                      @click="toggleLocation(region.key)"
+                      class="w-full flex items-center gap-3 px-3 py-3 rounded-xl text-left transition-colors"
+                      :class="expandedLocation === region.key
+                        ? 'bg-brand-50 dark:bg-brand-900/20'
+                        : 'hover:bg-surface-100 dark:hover:bg-surface-800'"
+                    >
+                      <ChevronRightIcon
+                        class="w-4 h-4 text-surface-400 transition-transform duration-200 flex-shrink-0"
+                        :class="{ 'rotate-90': expandedLocation === region.key || locationSearch }"
+                      />
+                      <span class="text-sm font-semibold" :class="expandedLocation === region.key ? 'text-brand-600 dark:text-brand-400' : 'text-surface-800 dark:text-surface-200'">
+                        {{ region.name }}
+                      </span>
+                      <span class="ml-auto text-xs text-surface-400">{{ region.filteredDistricts.length }}</span>
+                    </button>
+                    <!-- Districts -->
+                    <div v-if="expandedLocation === region.key || locationSearch" class="ml-4 pl-3 border-l-2 border-surface-200 dark:border-surface-700 space-y-0.5 pb-1">
+                      <button
+                        v-for="dist in region.filteredDistricts"
+                        :key="dist.id"
+                        type="button"
+                        @click="selectLocation(region, dist)"
+                        class="w-full text-left px-3 py-2.5 text-sm rounded-lg transition-colors flex items-center gap-2"
+                        :class="form.district_id && (typeof form.district_id === 'object' ? form.district_id.id : form.district_id) === dist.id
+                          ? 'bg-brand-500 text-white font-medium'
+                          : 'text-surface-700 dark:text-surface-300 hover:bg-surface-100 dark:hover:bg-surface-800'"
+                      >
+                        {{ dist.name }}
+                      </button>
+                    </div>
+                  </template>
+                  <div v-if="filteredLocations.length === 0" class="px-4 py-8 text-center text-sm text-surface-400">
+                    Natija topilmadi
+                  </div>
+                </div>
+              </AppModal>
+
+              <!-- Map -->
+              <div v-if="form.district_id">
+                <label class="block text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">
+                  Xaritadan belgilang
+                </label>
+                <p class="text-xs text-surface-400 dark:text-surface-500 mb-2">
+                  Xaritada bosib aniq manzilni belgilang yoki markerni suring
+                </p>
+                <div ref="mapRef" class="w-full h-[240px] rounded-xl overflow-hidden border border-surface-300 dark:border-surface-700"></div>
+                <div class="flex items-center gap-2 mt-2">
+                  <button
+                    type="button"
+                    @click="useMyLocation"
+                    class="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium transition-colors bg-surface-100 dark:bg-surface-800 text-surface-700 dark:text-surface-300 hover:bg-surface-200 dark:hover:bg-surface-700"
+                  >
+                    <MapPinIcon class="w-4 h-4" />
+                    Mening joylashuvim
+                  </button>
+                  <span v-if="form.latitude" class="text-xs text-surface-400 ml-auto">
+                    {{ form.latitude.toFixed(4) }}, {{ form.longitude.toFixed(4) }}
+                  </span>
+                </div>
               </div>
 
               <AppInput
@@ -193,18 +329,22 @@
 
                   <div v-if="!form.salary_negotiable" class="grid grid-cols-2 gap-4">
                     <AppInput
-                      v-model.number="form.salary_min"
-                      type="number"
+                      :model-value="formatSalary(form.salary_min)"
+                      @update:model-value="v => form.salary_min = parseSalary(v)"
+                      type="text"
+                      inputmode="numeric"
                       label="Minimal (so'm)"
-                      placeholder="3000000"
+                      placeholder="3 000 000"
                       :error="errors.salary_min"
                     />
 
                     <AppInput
-                      v-model.number="form.salary_max"
-                      type="number"
+                      :model-value="formatSalary(form.salary_max)"
+                      @update:model-value="v => form.salary_max = parseSalary(v)"
+                      type="text"
+                      inputmode="numeric"
                       label="Maksimal (so'm)"
-                      placeholder="5000000"
+                      placeholder="5 000 000"
                       :error="errors.salary_max"
                     />
                   </div>
@@ -279,7 +419,6 @@
                 v-model="form.contact_name"
                 label="Kontakt shaxs"
                 placeholder="Umidbek Karimov"
-                required
                 :error="errors.contact_name"
               />
 
@@ -419,11 +558,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
-import { ArrowLeftIcon, InformationCircleIcon, LanguageIcon, SparklesIcon, ExclamationTriangleIcon } from '@heroicons/vue/24/outline';
+import { ArrowLeftIcon, InformationCircleIcon, LanguageIcon, SparklesIcon, ExclamationTriangleIcon, ChevronDownIcon, ChevronRightIcon, MagnifyingGlassIcon, MapPinIcon } from '@heroicons/vue/24/outline';
+import AppModal from '../../components/ui/AppModal.vue';
 import AppCard from '../../components/ui/AppCard.vue';
 import AppButton from '../../components/ui/AppButton.vue';
 import AppInput from '../../components/ui/AppInput.vue';
@@ -432,7 +572,9 @@ import AppSelect from '../../components/ui/AppSelect.vue';
 import AppCheckbox from '../../components/ui/AppCheckbox.vue';
 import AppDatePicker from '../../components/ui/AppDatePicker.vue';
 import { useLocations } from '../../composables/useLocations.js';
+import { useAuthStore } from '../../stores/auth';
 const { regions, cities: allCities, load: loadLocations, getDistrictsForRegion } = useLocations();
+const authStore = useAuthStore();
 
 const router = useRouter();
 
@@ -457,25 +599,23 @@ onMounted(async () => {
   // Load categories from API
   try {
     const { data } = await axios.get('/api/categories');
-    const opts = [];
-    (data.categories || []).forEach(cat => {
-      if (cat.children && cat.children.length > 0) {
-        cat.children.forEach(child => {
-          opts.push({ slug: child.slug, name: `${cat.name_uz} → ${child.name_uz}` });
-        });
-      } else {
-        opts.push({ slug: cat.slug, name: cat.name_uz });
-      }
-    });
-    categories.value = opts;
+    rawCategories.value = data.categories || [];
   } catch {
     // Fallback if API fails
+  }
+
+  // Pre-fill contact info from user profile
+  const user = authStore.user;
+  if (user) {
+    form.value.contact_name = [user.first_name, user.last_name].filter(Boolean).join(' ');
+    form.value.contact_phone = user.phone || '';
   }
 });
 
 const form = ref({
   language: 'uz',
   title: '',
+  parent_category: null,
   category_id: null,
   region_id: null,
   district_id: null,
@@ -498,23 +638,63 @@ const form = ref({
   is_featured: false,
   auto_reject_unqualified: false,
   require_questionnaire: true,
+  latitude: null,
+  longitude: null,
 });
 
+const mapRef = ref(null);
 const errors = ref({});
 const loading = ref(false);
 const loadingPhase = ref(''); // 'translating' | 'saving' | ''
 
-const categories = ref([]);
+const rawCategories = ref([]);
+const showCategoryModal = ref(false);
+const categorySearch = ref('');
+const expandedCategory = ref(null);
+
+function toggleCategory(slug) {
+  expandedCategory.value = expandedCategory.value === slug ? null : slug;
+}
+
+const filteredCategories = computed(() => {
+  const q = categorySearch.value.toLowerCase().trim();
+  return rawCategories.value
+    .map(cat => {
+      const children = (cat.children || []).filter(ch =>
+        !q || ch.name_uz.toLowerCase().includes(q) || ch.name_ru?.toLowerCase().includes(q)
+      );
+      return children.length ? { ...cat, filteredChildren: children } : null;
+    })
+    .filter(Boolean);
+});
+
+const selectedCategoryLabel = computed(() => {
+  const catId = form.value.category_id;
+  const slug = catId && typeof catId === 'object' ? catId.slug : catId;
+  if (!slug) return '';
+  for (const cat of rawCategories.value) {
+    const child = (cat.children || []).find(ch => ch.slug === slug);
+    if (child) return `${cat.name_uz} → ${child.name_uz}`;
+  }
+  return slug;
+});
+
+function selectCategory(parent, child) {
+  form.value.parent_category = parent.slug;
+  form.value.category_id = { slug: child.slug, name: child.name_uz };
+  showCategoryModal.value = false;
+  categorySearch.value = '';
+}
 
 const employmentTypes = [
   { value: 'full_time', label: 'To\'liq ish kuni' },
   { value: 'part_time', label: 'Yarim ish kuni' },
   { value: 'remote', label: 'Masofaviy' },
-  { value: 'freelance', label: 'Freelance' },
+  { value: 'temporary', label: 'Vaqtinchalik' },
 ];
 
 const experienceLevels = [
-  { value: 'entry', label: 'Boshlang\'ich (0-1 yil)' },
+  { value: 'no_experience', label: 'Tajribasiz' },
   { value: 'junior', label: 'Junior (1-3 yil)' },
   { value: 'mid', label: 'Middle (3-5 yil)' },
   { value: 'senior', label: 'Senior (5+ yil)' },
@@ -531,11 +711,130 @@ form.value.employment_type = employmentTypes[0];
 form.value.experience_level = experienceLevels[2];
 form.value.status = statusOptions[0];
 
-const filteredDistricts = computed(() => {
+const showLocationModal = ref(false);
+const locationSearch = ref('');
+const expandedLocation = ref(null);
+
+function toggleLocation(key) {
+  expandedLocation.value = expandedLocation.value === key ? null : key;
+}
+
+const filteredLocations = computed(() => {
+  const q = locationSearch.value.toLowerCase().trim();
+  return regions.value
+    .map(region => {
+      const districts = getDistrictsForRegion(region.key).filter(d =>
+        !q || d.name.toLowerCase().includes(q) || d.name_uz?.toLowerCase().includes(q) || d.name_ru?.toLowerCase().includes(q) || region.name.toLowerCase().includes(q)
+      );
+      return districts.length ? { ...region, filteredDistricts: districts } : null;
+    })
+    .filter(Boolean);
+});
+
+const selectedLocationLabel = computed(() => {
   const region = form.value.region_id;
-  const regionKey = region && typeof region === 'object' ? region.key : null;
-  if (!regionKey) return [];
-  return getDistrictsForRegion(regionKey);
+  const dist = form.value.district_id;
+  const regionName = region && typeof region === 'object' ? region.name : '';
+  const distName = dist && typeof dist === 'object' ? dist.name : '';
+  if (regionName && distName) return `${regionName} → ${distName}`;
+  if (regionName) return regionName;
+  return '';
+});
+
+function selectLocation(region, dist) {
+  form.value.region_id = regions.value.find(r => r.key === region.key) || null;
+  form.value.district_id = dist;
+  showLocationModal.value = false;
+  locationSearch.value = '';
+  // Init map at district coordinates
+  if (dist.latitude && dist.longitude) {
+    nextTick(() => initMap(dist.latitude, dist.longitude));
+  }
+}
+
+// --- Leaflet Map ---
+let leafletMap = null;
+let leafletMarker = null;
+let L = null;
+
+async function loadLeaflet() {
+  if (L) return;
+  const leaflet = await import('leaflet');
+  await import('leaflet/dist/leaflet.css');
+  L = leaflet.default || leaflet;
+}
+
+async function initMap(lat, lng) {
+  destroyMap();
+  if (!mapRef.value) return;
+
+  await loadLeaflet();
+  leafletMap = L.map(mapRef.value, {
+    center: [lat, lng],
+    zoom: 14,
+    zoomControl: false,
+    attributionControl: false,
+  });
+
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+  }).addTo(leafletMap);
+
+  L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
+  placeMarker(lat, lng);
+
+  leafletMap.on('click', (e) => {
+    placeMarker(e.latlng.lat, e.latlng.lng);
+  });
+}
+
+function placeMarker(lat, lng) {
+  if (leafletMarker) {
+    leafletMarker.setLatLng([lat, lng]);
+  } else {
+    leafletMarker = L.marker([lat, lng], {
+      draggable: true,
+      icon: L.divIcon({
+        className: 'custom-pin',
+        html: '<div style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;"><svg width="28" height="28" viewBox="0 0 24 24" fill="#0D9488"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg></div>',
+        iconSize: [32, 32],
+        iconAnchor: [16, 32],
+      }),
+    }).addTo(leafletMap);
+
+    leafletMarker.on('dragend', () => {
+      const pos = leafletMarker.getLatLng();
+      form.value.latitude = pos.lat;
+      form.value.longitude = pos.lng;
+    });
+  }
+
+  form.value.latitude = lat;
+  form.value.longitude = lng;
+}
+
+function useMyLocation() {
+  if (!navigator.geolocation) return;
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords;
+      if (leafletMap) {
+        leafletMap.setView([latitude, longitude], 16);
+        placeMarker(latitude, longitude);
+      }
+    },
+    () => { /* silently fail */ },
+    { enableHighAccuracy: true, timeout: 10000 }
+  );
+}
+
+function destroyMap() {
+  if (leafletMarker) { leafletMarker = null; }
+  if (leafletMap) { leafletMap.remove(); leafletMap = null; }
+}
+
+onBeforeUnmount(() => {
+  destroyMap();
 });
 
 const minDeadline = computed(() => {
@@ -543,6 +842,17 @@ const minDeadline = computed(() => {
   tomorrow.setDate(tomorrow.getDate() + 1);
   return tomorrow.toISOString().split('T')[0];
 });
+
+function formatSalary(val) {
+  if (val === null || val === undefined || val === '') return '';
+  return String(val).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+function parseSalary(val) {
+  const num = parseInt(String(val).replace(/\s/g, ''), 10);
+  if (isNaN(num)) return null;
+  return Math.min(num, 2000000000);
+}
 
 function getFormData() {
   const data = { ...form.value };
@@ -567,6 +877,7 @@ function getFormData() {
       : data.category_id;
   }
   delete data.category_id;
+  delete data.parent_category;
 
   // Map employment_type to work_type (backend field name)
   if (data.employment_type && typeof data.employment_type === 'object') {
@@ -615,14 +926,23 @@ function getFormData() {
     data.status = data.status.value;
   }
 
-  // Remove fields not in backend schema
-  delete data.contact_name;
-  delete data.contact_email;
-  delete data.max_applicants;
-  delete data.deadline;
+  // Map is_featured to is_top (backend field)
+  data.is_top = !!data.is_featured;
   delete data.is_featured;
-  delete data.auto_reject_unqualified;
+
+  // Map require_questionnaire to has_questionnaire (backend field)
+  data.has_questionnaire = !!data.require_questionnaire;
   delete data.require_questionnaire;
+
+  // Map deadline to expires_at (backend field)
+  if (data.deadline) {
+    data.expires_at = data.deadline;
+  }
+  delete data.deadline;
+
+  // Remove fields not in backend schema
+  delete data.max_applicants;
+  delete data.auto_reject_unqualified;
   delete data.benefits;
   delete data.address;
 
@@ -749,10 +1069,6 @@ function validateForm() {
     newErrors.description = 'Tavsif kiritilishi shart';
   }
 
-  if (!form.value.contact_name) {
-    newErrors.contact_name = 'Kontakt shaxs kiritilishi shart';
-  }
-
   if (!form.value.contact_phone) {
     newErrors.contact_phone = 'Telefon raqami kiritilishi shart';
   }
@@ -760,6 +1076,12 @@ function validateForm() {
   if (!form.value.salary_negotiable) {
     const minSalary = form.value.salary_min;
     const maxSalary = form.value.salary_max;
+    if (minSalary && minSalary > 2000000000) {
+      newErrors.salary_min = 'Maosh 2 000 000 000 dan oshmasligi kerak';
+    }
+    if (maxSalary && maxSalary > 2000000000) {
+      newErrors.salary_max = 'Maosh 2 000 000 000 dan oshmasligi kerak';
+    }
     if (minSalary && maxSalary && minSalary > maxSalary) {
       newErrors.salary_min = 'Minimal maosh maksimaldan katta bo\'lmasligi kerak';
     }

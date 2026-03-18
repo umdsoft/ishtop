@@ -529,7 +529,9 @@ async function submitVacancy() {
     if (!data.salary_min && !data.salary_max) data.salary_type = 'negotiable'
     if (form.value.experience_required) data.experience_required = form.value.experience_required
     if (form.value.contact_phone) data.contact_phone = form.value.contact_phone
-    if (form.value.city) data.city = form.value.city
+    // city = viloyat nomi, district = tuman/shahar nomi
+    if (selectedRegion.value) data.city = selectedRegion.value
+    if (form.value.city) data.district = form.value.city
     if (form.value.latitude) {
       data.latitude = form.value.latitude
       data.longitude = form.value.longitude

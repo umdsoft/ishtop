@@ -19,6 +19,9 @@
 
             {{-- Desktop nav --}}
             <div class="hidden md:flex items-center gap-6">
+                <a href="/panel" class="text-surface-600 hover:text-brand-500 font-medium transition-colors">
+                    {{ __('web.for_employers') }}
+                </a>
                 <a href="{{ route('vacancies.index') }}" class="text-surface-600 hover:text-brand-500 font-medium transition-colors">
                     {{ __('web.vacancies') }}
                 </a>
@@ -51,6 +54,9 @@
          x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0"
          class="md:hidden border-t border-surface-100 bg-white">
         <div class="px-4 py-4 space-y-3">
+            <a href="/panel" class="block text-surface-700 hover:text-brand-500 font-medium py-2">
+                {{ __('web.for_employers') }}
+            </a>
             <a href="{{ route('vacancies.index') }}" class="block text-surface-700 hover:text-brand-500 font-medium py-2">
                 {{ __('web.vacancies') }}
             </a>

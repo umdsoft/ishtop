@@ -30,6 +30,8 @@ export function useLocations() {
         name_uz: c.name_uz,
         name_ru: c.name_ru,
         type: c.type,
+        latitude: c.latitude ? parseFloat(c.latitude) : null,
+        longitude: c.longitude ? parseFloat(c.longitude) : null,
       }));
       loaded.value = true;
     } catch (e) {
