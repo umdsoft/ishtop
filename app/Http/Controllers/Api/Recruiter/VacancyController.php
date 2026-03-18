@@ -152,6 +152,9 @@ class VacancyController extends Controller
 
         $validated = $request->validated();
 
+        // Auto-translate missing language fields (free for all plans)
+        $validated = $this->autoTranslate($validated);
+
         $vacancyModel->update($validated);
 
         return response()->json(['vacancy' => $vacancyModel->fresh()]);
