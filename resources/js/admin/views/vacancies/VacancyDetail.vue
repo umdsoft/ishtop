@@ -49,43 +49,74 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left column -->
+        <!-- Left column: Vakansiya ma'lumotlari -->
         <div class="lg:col-span-2 space-y-6">
           <!-- Asosiy ma'lumotlar -->
           <AppCard title="Asosiy ma'lumotlar">
             <div class="grid grid-cols-2 gap-x-6 gap-y-4">
-              <InfoField label="Kategoriya">
-                <span v-if="vacancy.category_relation" class="inline-flex items-center gap-1.5">
-                  <span v-if="vacancy.category_relation.emoji">{{ vacancy.category_relation.emoji }}</span>
-                  <span>{{ vacancy.category_relation.name_uz }}</span>
-                  <span v-if="vacancy.category_relation.name_ru" class="text-surface-400 text-xs">/ {{ vacancy.category_relation.name_ru }}</span>
-                </span>
-                <span v-else-if="vacancy.category_name">{{ vacancy.category_name }}</span>
-                <span v-else-if="vacancy.category">{{ vacancy.category }}</span>
-                <span v-else class="text-surface-400">—</span>
-              </InfoField>
-              <InfoField label="Ish turi" :value="vacancy.work_type_label || workTypeLabel(vacancy.work_type)" />
-              <InfoField label="Maosh">
-                <span v-if="vacancy.salary_min || vacancy.salary_max">
-                  <span v-if="vacancy.salary_min">{{ Number(vacancy.salary_min).toLocaleString() }}</span>
-                  <span v-if="vacancy.salary_min && vacancy.salary_max"> — </span>
-                  <span v-if="vacancy.salary_max">{{ Number(vacancy.salary_max).toLocaleString() }}</span>
-                  <span class="text-surface-400 text-xs ml-1">so'm</span>
-                </span>
-                <span v-else class="text-surface-400">Kelishiladi</span>
-              </InfoField>
-              <InfoField label="Tajriba" :value="experienceLabel(vacancy.experience_required)" />
-              <InfoField label="Shahar" :value="vacancy.city" />
-              <InfoField label="Tuman/Rayon" :value="vacancy.district" />
-              <InfoField label="Aloqa telefoni" :value="vacancy.contact_phone" />
-              <InfoField label="Aloqa usuli" :value="vacancy.contact_method" />
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Kategoriya</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  <span v-if="vacancy.category_relation">
+                    {{ vacancy.category_relation.emoji }} {{ vacancy.category_relation.name_uz }}
+                    <span v-if="vacancy.category_relation.name_ru" class="text-surface-400 text-xs">/ {{ vacancy.category_relation.name_ru }}</span>
+                  </span>
+                  <span v-else-if="vacancy.category_name">{{ vacancy.category_name }}</span>
+                  <span v-else-if="vacancy.category">{{ vacancy.category }}</span>
+                  <span v-else class="text-surface-400">—</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Ish turi</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.work_type_label || workTypeLabel(vacancy.work_type) }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Maosh</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">
+                  <span v-if="vacancy.salary_min || vacancy.salary_max">
+                    <span v-if="vacancy.salary_min">{{ Number(vacancy.salary_min).toLocaleString() }}</span>
+                    <span v-if="vacancy.salary_min && vacancy.salary_max"> — </span>
+                    <span v-if="vacancy.salary_max">{{ Number(vacancy.salary_max).toLocaleString() }}</span>
+                    <span class="text-surface-400 text-xs ml-1">so'm</span>
+                  </span>
+                  <span v-else class="text-surface-400">Kelishiladi</span>
+                </dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Tajriba</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ experienceLabel(vacancy.experience_required) }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Shahar</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.city || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Tuman/Rayon</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.district || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Aloqa telefoni</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.contact_phone || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Aloqa usuli</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.contact_method || '—' }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Til</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.language === 'ru' ? 'Ruscha' : "O'zbekcha" }}</dd>
+              </div>
+              <div>
+                <dt class="text-xs text-surface-500 mb-0.5">Yaratilgan</dt>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ formatDate(vacancy.created_at) }}</dd>
+              </div>
             </div>
           </AppCard>
 
-          <!-- Tavsif -->
+          <!-- Tavsif: uz/ru tab -->
           <AppCard>
             <template #header>
-              <div class="flex items-center gap-3 px-6 py-4 border-b border-surface-200 dark:border-surface-700">
+              <div class="flex items-center gap-2 px-6 py-3">
                 <button
                   v-for="lang in ['uz', 'ru']" :key="lang"
                   @click="descLang = lang"
@@ -98,143 +129,34 @@
                 </button>
               </div>
             </template>
-            <div class="space-y-4">
-              <div v-if="descLang === 'uz'">
-                <h4 class="text-sm font-semibold text-surface-500 mb-2">Tavsif</h4>
-                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.description_uz || '—' }}</p>
-                <template v-if="vacancy.requirements_uz">
-                  <h4 class="text-sm font-semibold text-surface-500 mb-2 mt-5">Talablar</h4>
-                  <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.requirements_uz }}</p>
-                </template>
-                <template v-if="vacancy.responsibilities_uz">
-                  <h4 class="text-sm font-semibold text-surface-500 mb-2 mt-5">Mas'uliyatlar</h4>
-                  <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.responsibilities_uz }}</p>
-                </template>
-              </div>
-              <div v-else>
-                <h4 class="text-sm font-semibold text-surface-500 mb-2">Описание</h4>
-                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.description_ru || '—' }}</p>
-                <template v-if="vacancy.requirements_ru">
-                  <h4 class="text-sm font-semibold text-surface-500 mb-2 mt-5">Требования</h4>
-                  <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.requirements_ru }}</p>
-                </template>
-                <template v-if="vacancy.responsibilities_ru">
-                  <h4 class="text-sm font-semibold text-surface-500 mb-2 mt-5">Обязанности</h4>
-                  <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.responsibilities_ru }}</p>
-                </template>
-              </div>
+            <div v-if="descLang === 'uz'">
+              <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2">Tavsif</h4>
+              <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.description_uz || '—' }}</p>
+              <template v-if="vacancy.requirements_uz">
+                <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2 mt-5">Talablar</h4>
+                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.requirements_uz }}</p>
+              </template>
+              <template v-if="vacancy.responsibilities_uz">
+                <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2 mt-5">Mas'uliyatlar</h4>
+                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.responsibilities_uz }}</p>
+              </template>
             </div>
-          </AppCard>
-
-          <!-- Nomzodlar (Applications) -->
-          <AppCard noPadding>
-            <template #header>
-              <div class="px-6 py-4 border-b border-surface-200 dark:border-surface-700 flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                  Nomzodlar
-                  <span v-if="vacancy.applications?.length" class="ml-2 text-sm font-normal text-surface-500">({{ vacancy.applications.length }})</span>
-                </h3>
-                <!-- Stage filter pills -->
-                <div v-if="vacancy.stage_counts && Object.keys(vacancy.stage_counts).length" class="flex flex-wrap gap-1.5">
-                  <button
-                    @click="stageFilter = null"
-                    :class="['px-2.5 py-1 text-xs font-medium rounded-full transition-colors',
-                      !stageFilter ? 'bg-brand-500 text-white' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700']"
-                  >Barchasi</button>
-                  <button
-                    v-for="(count, stage) in vacancy.stage_counts" :key="stage"
-                    @click="stageFilter = stage"
-                    :class="['px-2.5 py-1 text-xs font-medium rounded-full transition-colors',
-                      stageFilter === stage ? 'bg-brand-500 text-white' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400 hover:bg-surface-200 dark:hover:bg-surface-700']"
-                  >{{ stageLabel(stage) }} ({{ count }})</button>
-                </div>
-              </div>
-            </template>
-
-            <div v-if="!vacancy.applications?.length" class="p-8 text-center">
-              <UserGroupIcon class="w-10 h-10 mx-auto text-surface-300 dark:text-surface-600 mb-3" />
-              <p class="text-surface-500">Hali nomzodlar yo'q</p>
-            </div>
-
-            <div v-else class="divide-y divide-surface-100 dark:divide-surface-800/50">
-              <div
-                v-for="app in filteredApplications" :key="app.id"
-                class="px-6 py-4 hover:bg-surface-50 dark:hover:bg-surface-800/30 transition-colors"
-              >
-                <div class="flex items-center gap-4">
-                  <!-- Avatar -->
-                  <div class="shrink-0">
-                    <img
-                      v-if="app.worker?.photo_url"
-                      :src="app.worker.photo_url"
-                      class="w-10 h-10 rounded-full object-cover"
-                      :alt="app.worker?.full_name"
-                    >
-                    <div v-else class="w-10 h-10 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-sm">
-                      {{ (app.worker?.full_name?.[0] || app.worker?.user?.first_name?.[0] || '?').toUpperCase() }}
-                    </div>
-                  </div>
-
-                  <!-- Info -->
-                  <div class="flex-1 min-w-0">
-                    <div class="flex items-center gap-2">
-                      <p class="font-medium text-surface-900 dark:text-surface-100 truncate">
-                        {{ app.worker?.full_name || [app.worker?.user?.first_name, app.worker?.user?.last_name].filter(Boolean).join(' ') || 'Noma\'lum' }}
-                      </p>
-                      <span :class="['text-[10px] px-1.5 py-0.5 rounded-full font-semibold', stageClass(app.stage)]">
-                        {{ stageLabel(app.stage) }}
-                      </span>
-                    </div>
-                    <div class="flex items-center gap-3 text-xs text-surface-500 mt-0.5">
-                      <span v-if="app.worker?.specialty">{{ app.worker.specialty }}</span>
-                      <span v-if="app.worker?.city">{{ app.worker.city }}</span>
-                      <span v-if="app.worker?.experience_years">{{ app.worker.experience_years }} yil</span>
-                    </div>
-                  </div>
-
-                  <!-- Score + contact -->
-                  <div class="shrink-0 flex items-center gap-3">
-                    <div v-if="app.matching_score" class="text-center">
-                      <div :class="['text-sm font-bold', scoreColor(app.matching_score)]">{{ app.matching_score }}%</div>
-                      <div class="text-[10px] text-surface-400">moslik</div>
-                    </div>
-                    <a
-                      v-if="app.worker?.user?.username"
-                      :href="`https://t.me/${app.worker.user.username}`"
-                      target="_blank"
-                      class="p-2 rounded-lg text-[#0088cc] hover:bg-[#0088cc]/10 transition-colors"
-                      title="Telegram"
-                    >
-                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
-                    </a>
-                    <a
-                      v-if="app.worker?.user?.phone"
-                      :href="`tel:${app.worker.user.phone}`"
-                      class="p-2 rounded-lg text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
-                      title="Telefon"
-                    >
-                      <PhoneIcon class="w-4 h-4" />
-                    </a>
-                  </div>
-                </div>
-
-                <!-- Skills -->
-                <div v-if="app.worker?.skills?.length" class="mt-2 ml-14 flex flex-wrap gap-1">
-                  <span
-                    v-for="skill in app.worker.skills.slice(0, 6)" :key="skill"
-                    class="text-[10px] px-1.5 py-0.5 bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400 rounded"
-                  >{{ skill }}</span>
-                  <span v-if="app.worker.skills.length > 6" class="text-[10px] px-1.5 py-0.5 text-surface-400">+{{ app.worker.skills.length - 6 }}</span>
-                </div>
-
-                <!-- Date -->
-                <p class="text-[10px] text-surface-400 mt-1 ml-14">{{ formatDate(app.created_at) }}</p>
-              </div>
+            <div v-else>
+              <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2">Описание</h4>
+              <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.description_ru || '—' }}</p>
+              <template v-if="vacancy.requirements_ru">
+                <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2 mt-5">Требования</h4>
+                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.requirements_ru }}</p>
+              </template>
+              <template v-if="vacancy.responsibilities_ru">
+                <h4 class="text-xs font-semibold text-surface-500 uppercase tracking-wide mb-2 mt-5">Обязанности</h4>
+                <p class="text-surface-900 dark:text-surface-100 whitespace-pre-line text-sm leading-relaxed">{{ vacancy.responsibilities_ru }}</p>
+              </template>
             </div>
           </AppCard>
         </div>
 
-        <!-- Right sidebar -->
+        <!-- Right sidebar: Ish beruvchi + Nomzodlar -->
         <div class="space-y-6">
           <!-- Ish beruvchi -->
           <AppCard title="Ish beruvchi">
@@ -248,43 +170,119 @@
                   <p v-if="vacancy.employer.user" class="text-xs text-surface-500">{{ vacancy.employer.user.first_name }} {{ vacancy.employer.user.last_name }}</p>
                 </div>
               </div>
-              <div class="space-y-2 text-sm pt-2 border-t border-surface-100 dark:border-surface-800">
+              <div class="space-y-2 text-sm">
                 <div v-if="vacancy.employer.phone" class="flex items-center gap-2">
-                  <PhoneIcon class="w-3.5 h-3.5 text-surface-400" />
+                  <PhoneIcon class="w-3.5 h-3.5 text-surface-400 shrink-0" />
                   <a :href="`tel:${vacancy.employer.phone}`" class="text-surface-700 dark:text-surface-300 hover:text-brand-600">{{ vacancy.employer.phone }}</a>
                 </div>
                 <div v-if="vacancy.employer.user?.username" class="flex items-center gap-2">
-                  <svg class="w-3.5 h-3.5 text-[#0088cc]" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                  <svg class="w-3.5 h-3.5 text-[#0088cc] shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
                   <a :href="`https://t.me/${vacancy.employer.user.username}`" target="_blank" class="text-[#0088cc] hover:underline">@{{ vacancy.employer.user.username }}</a>
                 </div>
-                <div v-if="vacancy.employer.user?.telegram_id" class="flex items-center gap-2 text-surface-400 text-xs">
-                  <span>ID: {{ vacancy.employer.user.telegram_id }}</span>
+                <div v-if="vacancy.employer.user?.telegram_id" class="text-surface-400 text-xs">
+                  ID: {{ vacancy.employer.user.telegram_id }}
                 </div>
               </div>
             </div>
             <p v-else class="text-sm text-surface-500">Ma'lumot yo'q</p>
           </AppCard>
 
-          <!-- Qo'shimcha -->
-          <AppCard title="Qo'shimcha">
-            <dl class="space-y-3 text-sm">
-              <div class="flex justify-between">
-                <dt class="text-surface-500">Til</dt>
-                <dd class="font-medium text-surface-900 dark:text-surface-100">{{ vacancy.language === 'ru' ? 'Ruscha' : "O'zbekcha" }}</dd>
+          <!-- Nomzodlar (Sidebar) -->
+          <AppCard noPadding>
+            <div class="px-6 py-4 flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                Nomzodlar
+                <span v-if="vacancy.applications?.length" class="text-sm font-normal text-surface-500">({{ vacancy.applications.length }})</span>
+              </h3>
+            </div>
+
+            <!-- Stage filter pills -->
+            <div v-if="vacancy.stage_counts && Object.keys(vacancy.stage_counts).length" class="px-6 pb-3 flex flex-wrap gap-1.5">
+              <button
+                @click="stageFilter = null"
+                :class="['px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors',
+                  !stageFilter ? 'bg-brand-500 text-white' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400']"
+              >Barchasi</button>
+              <button
+                v-for="(count, stage) in vacancy.stage_counts" :key="stage"
+                @click="stageFilter = stage"
+                :class="['px-2 py-0.5 text-[11px] font-medium rounded-full transition-colors',
+                  stageFilter === stage ? 'bg-brand-500 text-white' : 'bg-surface-100 dark:bg-surface-800 text-surface-600 dark:text-surface-400']"
+              >{{ stageLabel(stage) }} {{ count }}</button>
+            </div>
+
+            <div v-if="!vacancy.applications?.length" class="px-6 pb-6 text-center">
+              <UserGroupIcon class="w-8 h-8 mx-auto text-surface-300 dark:text-surface-600 mb-2" />
+              <p class="text-sm text-surface-500">Hali nomzodlar yo'q</p>
+            </div>
+
+            <div v-else class="max-h-[600px] overflow-y-auto">
+              <div
+                v-for="app in filteredApplications" :key="app.id"
+                class="px-4 py-3 hover:bg-surface-50 dark:hover:bg-surface-800/30 transition-colors"
+              >
+                <div class="flex items-start gap-3">
+                  <!-- Avatar -->
+                  <div class="shrink-0">
+                    <img
+                      v-if="app.worker?.photo_url"
+                      :src="app.worker.photo_url"
+                      class="w-9 h-9 rounded-full object-cover"
+                    >
+                    <div v-else class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-xs">
+                      {{ (app.worker?.full_name?.[0] || app.worker?.user?.first_name?.[0] || '?').toUpperCase() }}
+                    </div>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <p class="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">
+                        {{ app.worker?.full_name || [app.worker?.user?.first_name, app.worker?.user?.last_name].filter(Boolean).join(' ') || "Noma'lum" }}
+                      </p>
+                      <span :class="['text-[9px] px-1.5 py-0.5 rounded-full font-semibold shrink-0', stageClass(app.stage)]">
+                        {{ stageLabel(app.stage) }}
+                      </span>
+                    </div>
+                    <p v-if="app.worker?.specialty" class="text-xs text-surface-500 truncate">{{ app.worker.specialty }}</p>
+                    <div class="flex items-center gap-2 mt-1 text-[11px] text-surface-400">
+                      <span v-if="app.worker?.city">{{ app.worker.city }}</span>
+                      <span v-if="app.worker?.experience_years">{{ app.worker.experience_years }} yil</span>
+                      <span>{{ formatDateShort(app.created_at) }}</span>
+                    </div>
+                    <!-- Skills compact -->
+                    <div v-if="app.worker?.skills?.length" class="mt-1.5 flex flex-wrap gap-1">
+                      <span
+                        v-for="skill in app.worker.skills.slice(0, 4)" :key="skill"
+                        class="text-[9px] px-1.5 py-0.5 bg-surface-100 dark:bg-surface-800 text-surface-500 dark:text-surface-400 rounded"
+                      >{{ skill }}</span>
+                      <span v-if="app.worker.skills.length > 4" class="text-[9px] text-surface-400">+{{ app.worker.skills.length - 4 }}</span>
+                    </div>
+                  </div>
+
+                  <!-- Contact -->
+                  <div class="shrink-0 flex flex-col gap-1">
+                    <a
+                      v-if="app.worker?.user?.username"
+                      :href="`https://t.me/${app.worker.user.username}`"
+                      target="_blank"
+                      class="p-1.5 rounded-lg text-[#0088cc] hover:bg-[#0088cc]/10 transition-colors"
+                      title="Telegram"
+                    >
+                      <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z"/></svg>
+                    </a>
+                    <a
+                      v-if="app.worker?.user?.phone"
+                      :href="`tel:${app.worker.user.phone}`"
+                      class="p-1.5 rounded-lg text-surface-500 hover:bg-surface-100 dark:hover:bg-surface-800 transition-colors"
+                      title="Telefon"
+                    >
+                      <PhoneIcon class="w-3.5 h-3.5" />
+                    </a>
+                  </div>
+                </div>
               </div>
-              <div class="flex justify-between">
-                <dt class="text-surface-500">Yaratilgan</dt>
-                <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(vacancy.created_at) }}</dd>
-              </div>
-              <div v-if="vacancy.is_urgent" class="flex justify-between">
-                <dt class="text-surface-500">Shoshilinch</dt>
-                <dd class="font-medium text-danger-500">Ha</dd>
-              </div>
-              <div v-if="vacancy.has_questionnaire" class="flex justify-between">
-                <dt class="text-surface-500">So'rovnoma</dt>
-                <dd class="font-medium text-brand-600 dark:text-brand-400">Mavjud</dd>
-              </div>
-            </dl>
+            </div>
           </AppCard>
         </div>
       </div>
@@ -305,15 +303,6 @@ const vacancy = ref(null);
 const loading = ref(true);
 const descLang = ref('uz');
 const stageFilter = ref(null);
-
-// Simple InfoField component inline
-const InfoField = {
-  props: { label: String, value: [String, Number] },
-  template: `<div>
-    <dt class="text-xs text-surface-500 mb-0.5">{{ label }}</dt>
-    <dd class="text-sm font-medium text-surface-900 dark:text-surface-100"><slot>{{ value || '—' }}</slot></dd>
-  </div>`,
-};
 
 const filteredApplications = computed(() => {
   if (!vacancy.value?.applications) return [];
@@ -374,12 +363,6 @@ function workTypeLabel(type) {
 function experienceLabel(exp) {
   const map = { no_experience: 'Kerak emas', intern: 'Stajiyor', junior: 'Junior (1-2 yil)', mid: "O'rta (2-4 yil)", senior: 'Senior (4+ yil)', '0-1': '0-1 yil', '1-3': '1-3 yil', '3-5': '3-5 yil', '5+': '5+ yil' };
   return map[exp] || exp || '—';
-}
-
-function scoreColor(score) {
-  if (score >= 80) return 'text-success-500';
-  if (score >= 50) return 'text-warning-500';
-  return 'text-danger-500';
 }
 
 async function fetchVacancy() {
