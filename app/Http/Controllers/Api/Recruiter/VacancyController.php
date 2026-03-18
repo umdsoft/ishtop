@@ -110,6 +110,9 @@ class VacancyController extends Controller
             ], 403);
         }
 
+        // Auto-translate missing language fields (free for all plans)
+        $validated = $this->autoTranslate($validated);
+
         $vacancy = $this->vacancyService->create(array_merge($validated, [
             'employer_id' => $employer->id,
         ]));
@@ -243,5 +246,48 @@ class VacancyController extends Controller
         }
 
         return response()->json(['translated' => $translated]);
+    }
+
+    /**
+     * Auto-translate vacancy fields if only one language is provided.
+     */
+    private function autoTranslate(array $data): array
+    {
+        $from = $data['language'] ?? null;
+
+        if (!$from) {
+            $hasUz = !empty($data['title_uz']) || !empty($data['description_uz']);
+            $hasRu = !empty($data['title_ru']) || !empty($data['description_ru']);
+            $from = $hasRu && !$hasUz ? 'ru' : 'uz';
+        }
+
+        $to = $from === 'uz' ? 'ru' : 'uz';
+
+        $fieldsToTranslate = [];
+        foreach (['title', 'description', 'requirements', 'responsibilities'] as $field) {
+            $srcKey = "{$field}_{$from}";
+            $dstKey = "{$field}_{$to}";
+            if (!empty($data[$srcKey]) && empty($data[$dstKey])) {
+                $fieldsToTranslate[$field] = $data[$srcKey];
+            }
+        }
+
+        if (empty($fieldsToTranslate)) {
+            return $data;
+        }
+
+        try {
+            $translated = $this->aiService->translateVacancy($fieldsToTranslate, $from, $to);
+            foreach ($translated as $field => $value) {
+                $dstKey = "{$field}_{$to}";
+                if (!empty($value)) {
+                    $data[$dstKey] = $value;
+                }
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Recruiter auto-translate failed: ' . $e->getMessage());
+        }
+
+        return $data;
     }
 }

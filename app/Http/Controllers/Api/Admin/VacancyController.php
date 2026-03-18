@@ -62,10 +62,22 @@ class VacancyController extends Controller
 
     public function show(Vacancy $vacancy): JsonResponse
     {
-        $vacancy->load(['employer:id,company_name,phone', 'applications']);
+        $vacancy->load([
+            'employer:id,company_name,phone',
+            'employer.user:id,first_name,last_name',
+            'categoryRelation:id,name_uz,name_ru,emoji',
+            'applications',
+        ]);
         $vacancy->loadCount('applications');
 
-        return response()->json(['vacancy' => $vacancy]);
+        // Append work_type label for frontend
+        $data = $vacancy->toArray();
+        $data['work_type_label'] = $vacancy->work_type?->label();
+        $data['category_name'] = $vacancy->categoryRelation
+            ? ($vacancy->categoryRelation->name_uz . ' / ' . $vacancy->categoryRelation->name_ru)
+            : null;
+
+        return response()->json(['vacancy' => $data]);
     }
 
     public function update(Request $request, Vacancy $vacancy): JsonResponse
