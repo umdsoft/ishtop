@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\WorkType;
-use App\Models\City;
 use App\Models\Vacancy;
 use App\Models\WorkerProfile;
 use Illuminate\Support\Collection;
@@ -99,20 +98,17 @@ class MatchingService
 
     public function findMatchesForVacancy(Vacancy $vacancy, int $limit = 20): Collection
     {
-        $query = WorkerProfile::active();
-
-        // Category filter: parent-child aware
-        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
-
-        // Location filter: same viloyat (region) for on-site, no filter for remote
-        $this->applyLocationFilterForWorkers($query, $vacancy);
-
-        $candidates = $query->limit($limit * 3)->get();
+        $candidates = $this->buildCandidateQuery($vacancy)
+            ->limit($limit * 3)
+            ->get();
 
         return $candidates->map(function ($worker) use ($vacancy) {
             $worker->match_score = $this->calculateMatchScore($worker, $vacancy);
             return $worker;
-        })->sortByDesc('match_score')->take($limit)->values();
+        })->filter(fn($w) => $w->match_score >= 15)
+          ->sortByDesc('match_score')
+          ->take($limit)
+          ->values();
     }
 
     /**
@@ -120,29 +116,21 @@ class MatchingService
      */
     public function getRecommendedCandidates(Vacancy $vacancy, int $perPage = 20): \Illuminate\Contracts\Pagination\LengthAwarePaginator
     {
-        $query = WorkerProfile::query()
-            ->whereIn('search_status', ['open', 'passive'])
-            ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id));
+        $query = $this->buildCandidateQuery($vacancy)
+            ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id))
+            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'preferred_categories', 'photo_url', 'search_status', 'latitude', 'longitude');
 
-        // Category filter: parent-child aware
-        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
+        $workers = $query->paginate($perPage);
 
-        // Location filter: same viloyat for on-site, no filter for remote
-        $this->applyLocationFilterForWorkers($query, $vacancy);
-
-        $workers = $query
-            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'preferred_categories', 'photo_url', 'search_status', 'latitude', 'longitude')
-            ->paginate($perPage);
-
-        // Calculate match score for each worker
-        $workers->getCollection()->transform(function ($worker) use ($vacancy) {
+        // Calculate match score and filter low scores
+        $scored = $workers->getCollection()->transform(function ($worker) use ($vacancy) {
             $worker->match_score = $this->calculateMatchScore($worker, $vacancy);
             return $worker;
-        });
+        })->filter(fn($w) => $w->match_score >= 15)
+          ->sortByDesc('match_score')
+          ->values();
 
-        // Sort by match_score descending (within the page)
-        $sorted = $workers->getCollection()->sortByDesc('match_score')->values();
-        $workers->setCollection($sorted);
+        $workers->setCollection($scored);
 
         return $workers;
     }
@@ -152,17 +140,9 @@ class MatchingService
      */
     public function countRecommendedCandidates(Vacancy $vacancy): int
     {
-        $query = WorkerProfile::query()
-            ->whereIn('search_status', ['open', 'passive'])
-            ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id));
-
-        // Category filter: parent-child aware (same as getRecommendedCandidates)
-        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
-
-        // Location filter: same viloyat for on-site, no filter for remote
-        $this->applyLocationFilterForWorkers($query, $vacancy);
-
-        return $query->count();
+        return $this->buildCandidateQuery($vacancy)
+            ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id))
+            ->count();
     }
 
     /**
@@ -227,12 +207,14 @@ class MatchingService
             'detail' => $this->skillsDetail($worker, $vacancy, $skillsScore),
         ];
 
-        // 2. Location (15)
+        // 2. Location (15) — city = viloyat, district = shahar/tuman
         $locScore = $this->locationScore($worker, $vacancy);
-        $workerLoc = $worker->city ?: null;
-        if ($worker->district) $workerLoc .= ", {$worker->district}";
-        $vacancyLoc = $vacancy->city ?: null;
-        if ($vacancy->district) $vacancyLoc .= ", {$vacancy->district}";
+        $workerLoc = $worker->district
+            ? "{$worker->district}, {$worker->city}"
+            : ($worker->city ?: null);
+        $vacancyLoc = $vacancy->district
+            ? "{$vacancy->district}, {$vacancy->city}"
+            : ($vacancy->city ?: null);
         $criteria[] = [
             'key' => 'location',
             'label' => 'Joylashuv',
@@ -399,18 +381,18 @@ class MatchingService
     {
         $score = 0.0;
 
-        $workerCity = $worker->city ? $this->normalizeCityName($worker->city) : null;
-        $vacancyCity = $vacancy->city ? $this->normalizeCityName($vacancy->city) : null;
+        // Both city fields now store region name (e.g. "Xorazm viloyati")
+        $workerRegion = $worker->city ? mb_strtolower(trim($worker->city)) : null;
+        $vacancyRegion = $vacancy->city ? mb_strtolower(trim($vacancy->city)) : null;
 
-        $cityMatch = $workerCity && $vacancyCity
-            && mb_strtolower($workerCity) === mb_strtolower($vacancyCity);
+        $regionMatch = $workerRegion && $vacancyRegion && $workerRegion === $vacancyRegion;
 
-        if ($cityMatch) {
+        if ($regionMatch) {
             $score += 10;
 
-            // District bonus
+            // District bonus — both store specific city/tuman name
             if ($worker->district && $vacancy->district
-                && mb_strtolower($worker->district) === mb_strtolower($vacancy->district)) {
+                && mb_strtolower(trim($worker->district)) === mb_strtolower(trim($vacancy->district))) {
                 $score += 5;
             }
         } elseif ($worker->latitude && $worker->longitude && $vacancy->latitude && $vacancy->longitude) {
@@ -567,10 +549,34 @@ class MatchingService
     }
 
     /**
+     * Build the base candidate query with search_status, category, and location filters.
+     * All matching methods (findMatchesForVacancy, getRecommendedCandidates, countRecommendedCandidates)
+     * share this same base query for consistency (DRY).
+     */
+    private function buildCandidateQuery(Vacancy $vacancy): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = WorkerProfile::query()
+            ->where(function ($q) {
+                // Include open, passive, AND null search_status (many users haven't set it)
+                $q->whereIn('search_status', ['open', 'passive'])
+                  ->orWhereNull('search_status');
+            });
+
+        // Category filter: parent-child aware, includes specialty fallback
+        $this->applyCategoryFilterForWorkers($query, $vacancy->category);
+
+        // Location filter: same viloyat for on-site, no filter for remote
+        $this->applyLocationFilterForWorkers($query, $vacancy);
+
+        return $query;
+    }
+
+    /**
      * Apply category-aware filter to WorkerProfile query based on vacancy category.
      *
-     * Only matches workers who explicitly selected a matching category.
-     * Workers with no preferred_categories are excluded (incomplete profile).
+     * Matches workers who:
+     * 1. Explicitly selected a matching category in preferred_categories
+     * 2. OR have no preferred_categories but their specialty text matches category keywords
      *
      * - Subcategory (e.g., education-teacher): exact match + parent match
      * - Parent category (e.g., education): parent + all children (education-*)
@@ -583,25 +589,48 @@ class MatchingService
         $parent = $this->extractParentSlug($category);
         $isSubCategory = $parent !== $category;
 
-        $query->where(function ($q) use ($parent, $category, $isSubCategory) {
-            // Exact category match
+        // Build keywords list for specialty fallback
+        $keywords = self::CATEGORY_KEYWORDS[$category] ?? [];
+        if (empty($keywords) && $isSubCategory) {
+            $keywords = self::CATEGORY_KEYWORDS[$parent] ?? [];
+        }
+
+        $query->where(function ($q) use ($parent, $category, $isSubCategory, $keywords) {
+            // Strategy 1: preferred_categories slug matching
             $q->whereJsonContains('preferred_categories', $category);
 
             if ($isSubCategory) {
-                // Subcategory: also match workers who selected the parent
                 $q->orWhereJsonContains('preferred_categories', $parent);
             } else {
-                // Parent category: also match workers who selected any child
                 $q->orWhere('preferred_categories', 'LIKE', '%"' . $parent . '-%');
+            }
+
+            // Strategy 2: workers without preferred_categories — match via specialty text
+            if (!empty($keywords)) {
+                $q->orWhere(function ($sub) use ($keywords, $category) {
+                    $sub->where(function ($inner) {
+                        $inner->whereNull('preferred_categories')
+                              ->orWhere('preferred_categories', '[]')
+                              ->orWhere('preferred_categories', '');
+                    });
+                    $sub->where(function ($inner) use ($keywords, $category) {
+                        // Specialty contains category slug or any keyword
+                        $inner->where('specialty', 'LIKE', '%' . $category . '%');
+                        foreach ($keywords as $kw) {
+                            $inner->orWhere('specialty', 'LIKE', '%' . $kw . '%');
+                        }
+                    });
+                });
             }
         });
     }
 
     /**
-     * Apply region-aware location filter to WorkerProfile query.
+     * Apply region-based location filter to WorkerProfile query.
      *
+     * Both vacancy.city and worker_profile.city store region name (e.g. "Xorazm viloyati").
      * - remote vacancies: no location filter (scoring handles priority)
-     * - on-site vacancies: only workers from same viloyat (region) or no city
+     * - on-site vacancies: only workers from same viloyat or no city set
      */
     private function applyLocationFilterForWorkers($query, Vacancy $vacancy): void
     {
@@ -614,71 +643,14 @@ class MatchingService
 
         if ($workType === WorkType::REMOTE) return;
 
-        // Find the region for this vacancy's city
-        $regionCities = $this->getRegionCitiesForCity($vacancy->city);
-
-        if (empty($regionCities)) {
-            // Fallback: exact city match (try both original and normalized)
-            $normalized = $this->normalizeCityName($vacancy->city);
-            $query->where(function ($q) use ($vacancy, $normalized) {
-                $q->where('city', $vacancy->city)
-                  ->orWhere('city', $normalized)
-                  ->orWhereNull('city')
-                  ->orWhere('city', '');
-            });
-            return;
-        }
-
-        $query->where(function ($q) use ($regionCities) {
-            $q->whereIn('city', $regionCities)
+        // Both models store region name in city — direct comparison
+        $query->where(function ($q) use ($vacancy) {
+            $q->where('city', $vacancy->city)
               ->orWhereNull('city')
               ->orWhere('city', '');
         });
     }
 
-    /**
-     * Get all city names in the same region as the given city.
-     * Cached for 1 hour since cities rarely change.
-     *
-     * @return string[] city names in the same viloyat
-     */
-    private function getRegionCitiesForCity(string $cityName): array
-    {
-        return cache()->remember("region_cities_{$cityName}", 3600, function () use ($cityName) {
-            $city = City::where('name_uz', $cityName)
-                ->orWhere('name_ru', $cityName)
-                ->first();
-
-            // Fallback: strip common suffixes like "sh.", "shahar", "shahri", "tumani", "t."
-            if (!$city) {
-                $cleaned = $this->normalizeCityName($cityName);
-                if ($cleaned !== $cityName) {
-                    $city = City::where('name_uz', $cleaned)
-                        ->orWhere('name_ru', $cleaned)
-                        ->first();
-                }
-            }
-
-            if (!$city || !$city->region) return [];
-
-            return City::where('region', $city->region)
-                ->get(['name_uz', 'name_ru'])
-                ->flatMap(fn($c) => [$c->name_uz, $c->name_ru])
-                ->filter()
-                ->unique()
-                ->values()
-                ->all();
-        });
-    }
-
-    /**
-     * Normalize city name by stripping common Uzbek/Russian suffixes.
-     * "Urganch sh." → "Urganch", "Toshkent shahri" → "Toshkent"
-     */
-    private function normalizeCityName(string $name): string
-    {
-        return trim(preg_replace('/\s+(sh\.?|shahar|shahri|tumani|t\.|город|г\.)$/ui', '', trim($name)));
-    }
 
     /**
      * Extract parent slug from a category slug.
@@ -710,6 +682,7 @@ class MatchingService
         return match ($status) {
             'open'    => 5,
             'passive' => 2,
+            null      => 1, // Profile exists but status not set
             default   => 0,
         };
     }
@@ -821,11 +794,19 @@ class MatchingService
 
     private function locationDetail(WorkerProfile $worker, Vacancy $vacancy, float $score): string
     {
+        // city = viloyat, district = shahar/tuman
+        $workerLoc = $worker->district
+            ? "{$worker->district}, {$worker->city}"
+            : ($worker->city ?: null);
+        $vacancyLoc = $vacancy->district
+            ? "{$vacancy->district}, {$vacancy->city}"
+            : ($vacancy->city ?: null);
+
         if ($score >= 15) {
-            return "{$worker->city}, {$worker->district} — to'liq mos";
+            return "{$workerLoc} — to'liq mos";
         }
         if ($score >= 10) {
-            return "{$worker->city} — shahar mos";
+            return "{$worker->city} — viloyat mos";
         }
         if ($score > 0 && $worker->latitude && $vacancy->latitude) {
             $distance = $this->geoService->distanceBetween(
@@ -834,8 +815,8 @@ class MatchingService
             );
             return "Masofa: {$distance} km";
         }
-        if ($worker->city && $vacancy->city) {
-            return "Nomzod: {$worker->city}, Vakansiya: {$vacancy->city}";
+        if ($workerLoc && $vacancyLoc) {
+            return "Nomzod: {$workerLoc}, Vakansiya: {$vacancyLoc}";
         }
         return 'Ma\'lumot yetarli emas';
     }

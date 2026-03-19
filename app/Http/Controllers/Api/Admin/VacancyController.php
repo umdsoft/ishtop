@@ -7,12 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Jobs\NotifyMatchingWorkersJob;
 use App\Models\Category;
 use App\Models\Vacancy;
+use App\Services\MatchingService;
 use App\Services\TelegramNotificationService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 
 class VacancyController extends Controller
+{
+    public function __construct(
+        private MatchingService $matchingService,
+    ) {}
 {
     public function index(Request $request): JsonResponse
     {
@@ -102,6 +107,19 @@ class VacancyController extends Controller
         $data['stage_counts'] = $stageCounts;
 
         return response()->json(['vacancy' => $data]);
+    }
+
+    public function candidates(Request $request, Vacancy $vacancy): JsonResponse
+    {
+        $candidates = $this->matchingService->getRecommendedCandidates(
+            $vacancy,
+            $request->integer('per_page', 20)
+        );
+
+        return response()->json([
+            'candidates' => $candidates,
+            'total_count' => $candidates->total(),
+        ]);
     }
 
     public function update(Request $request, Vacancy $vacancy): JsonResponse

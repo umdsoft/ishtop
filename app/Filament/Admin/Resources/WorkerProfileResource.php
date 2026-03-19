@@ -36,7 +36,7 @@ class WorkerProfileResource extends Resource
                     ->label('Mutaxassislik')
                     ->disabled(),
                 Forms\Components\TextInput::make('city')
-                    ->label('Shahar')
+                    ->label('Viloyat')
                     ->disabled(),
                 Forms\Components\Select::make('search_status')
                     ->label('Qidiruv statusi')
@@ -64,7 +64,7 @@ class WorkerProfileResource extends Resource
                     ->label('Telefon')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('city')
-                    ->label('Shahar')
+                    ->label('Viloyat')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('specialty')
                     ->label('Mutaxassislik')
@@ -92,7 +92,7 @@ class WorkerProfileResource extends Resource
                     ->label('Qidiruv statusi')
                     ->options(SearchStatus::class),
                 Tables\Filters\SelectFilter::make('city')
-                    ->label('Shahar'),
+                    ->label('Viloyat'),
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),

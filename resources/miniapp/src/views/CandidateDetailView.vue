@@ -49,7 +49,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                 </svg>
-                {{ profile.city }}{{ profile.district ? ', ' + profile.district : '' }}
+                {{ profile.district ? profile.district + ', ' + profile.city : profile.city }}
               </span>
               <span v-if="profile.experience_years">
                 {{ profile.experience_years }} {{ t('common.year') }}
@@ -127,7 +127,7 @@
           </h3>
           <div class="space-y-3">
             <InfoRow :label="t('candidate.specialty')" :value="profile.specialty" />
-            <InfoRow :label="t('candidate.city')" :value="profile.city" />
+            <InfoRow :label="t('candidate.city')" :value="profile.district ? profile.district + ', ' + profile.city : profile.city" />
             <InfoRow :label="t('candidate.experience')" :value="profile.experience_years != null ? profile.experience_years + ' ' + t('common.year') : null" />
             <InfoRow :label="t('candidate.education')" :value="getEducationLabel(profile.education_level)" />
             <InfoRow :label="t('candidate.salary')" :value="formatSalaryRange(profile)" />

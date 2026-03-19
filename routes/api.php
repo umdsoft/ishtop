@@ -260,6 +260,7 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'admin'])->group(function ()
 
     // Vacancies
     Route::apiResource('vacancies', Admin\VacancyController::class)->except(['store']);
+    Route::get('vacancies/{vacancy}/candidates', [Admin\VacancyController::class, 'candidates']);
     Route::post('vacancies/{vacancy}/approve', [Admin\VacancyController::class, 'approve']);
     Route::post('vacancies/{vacancy}/reject', [Admin\VacancyController::class, 'reject']);
 

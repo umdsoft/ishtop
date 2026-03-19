@@ -87,11 +87,11 @@
                 <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ experienceLabel(vacancy.experience_required) }}</dd>
               </div>
               <div>
-                <dt class="text-xs text-surface-500 mb-0.5">Shahar</dt>
+                <dt class="text-xs text-surface-500 mb-0.5">Viloyat</dt>
                 <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.city || '—' }}</dd>
               </div>
               <div>
-                <dt class="text-xs text-surface-500 mb-0.5">Tuman/Rayon</dt>
+                <dt class="text-xs text-surface-500 mb-0.5">Shahar/Tuman</dt>
                 <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.district || '—' }}</dd>
               </div>
               <div>
@@ -187,11 +187,63 @@
             <p v-else class="text-sm text-surface-500">Ma'lumot yo'q</p>
           </AppCard>
 
-          <!-- Nomzodlar (Sidebar) -->
+          <!-- Mos nomzodlar (Sidebar) -->
           <AppCard noPadding>
             <div class="px-6 py-4 flex items-center justify-between">
               <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
-                Nomzodlar
+                Mos nomzodlar
+                <span v-if="matchingCandidatesTotal > 0" class="text-sm font-normal text-surface-500">({{ matchingCandidatesTotal }})</span>
+              </h3>
+            </div>
+
+            <div v-if="matchingCandidatesLoading" class="px-6 pb-6 text-center">
+              <div class="w-6 h-6 mx-auto border-2 border-brand-500 border-t-transparent rounded-full animate-spin mb-2"></div>
+              <p class="text-sm text-surface-500">Qidirilmoqda...</p>
+            </div>
+
+            <div v-else-if="matchingCandidates.length === 0" class="px-6 pb-6 text-center">
+              <UserGroupIcon class="w-8 h-8 mx-auto text-surface-300 dark:text-surface-600 mb-2" />
+              <p class="text-sm text-surface-500">Mos nomzod topilmadi</p>
+            </div>
+
+            <div v-else class="max-h-[400px] overflow-y-auto">
+              <div
+                v-for="candidate in matchingCandidates" :key="candidate.id"
+                class="px-4 py-3 hover:bg-surface-50 dark:hover:bg-surface-800/30 transition-colors"
+              >
+                <div class="flex items-start gap-3">
+                  <div class="shrink-0">
+                    <img v-if="candidate.photo_url" :src="candidate.photo_url" class="w-9 h-9 rounded-full object-cover" />
+                    <div v-else class="w-9 h-9 rounded-full bg-brand-100 dark:bg-brand-900/30 flex items-center justify-center text-brand-600 dark:text-brand-400 font-bold text-xs">
+                      {{ (candidate.full_name?.[0] || '?').toUpperCase() }}
+                    </div>
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5">
+                      <p class="text-sm font-medium text-surface-900 dark:text-surface-100 truncate">{{ candidate.full_name || "Noma'lum" }}</p>
+                      <span
+                        :class="['text-[9px] px-1.5 py-0.5 rounded-full font-bold shrink-0',
+                          candidate.match_score >= 70 ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400'
+                          : candidate.match_score >= 40 ? 'bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400'
+                          : 'bg-surface-100 dark:bg-surface-800 text-surface-500']"
+                      >{{ candidate.match_score }}%</span>
+                    </div>
+                    <p v-if="candidate.specialty" class="text-xs text-surface-500 truncate">{{ candidate.specialty }}</p>
+                    <div class="flex items-center gap-2 mt-1 text-[11px] text-surface-400">
+                      <span v-if="candidate.city">{{ candidate.city }}</span>
+                      <span v-if="candidate.experience_years">{{ candidate.experience_years }} yil</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </AppCard>
+
+          <!-- Arizalar (Sidebar) -->
+          <AppCard noPadding>
+            <div class="px-6 py-4 flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-surface-900 dark:text-surface-100">
+                Arizalar
                 <span v-if="vacancy.applications?.length" class="text-sm font-normal text-surface-500">({{ vacancy.applications.length }})</span>
               </h3>
             </div>
@@ -213,7 +265,7 @@
 
             <div v-if="!vacancy.applications?.length" class="px-6 pb-6 text-center">
               <UserGroupIcon class="w-8 h-8 mx-auto text-surface-300 dark:text-surface-600 mb-2" />
-              <p class="text-sm text-surface-500">Hali nomzodlar yo'q</p>
+              <p class="text-sm text-surface-500">Hali arizalar yo'q</p>
             </div>
 
             <div v-else class="max-h-[600px] overflow-y-auto">
@@ -303,6 +355,11 @@ const vacancy = ref(null);
 const loading = ref(true);
 const descLang = ref('uz');
 const stageFilter = ref(null);
+
+// Matching candidates
+const matchingCandidates = ref([]);
+const matchingCandidatesTotal = ref(0);
+const matchingCandidatesLoading = ref(false);
 
 const filteredApplications = computed(() => {
   if (!vacancy.value?.applications) return [];
@@ -396,5 +453,24 @@ async function rejectVacancy() {
   }
 }
 
-onMounted(fetchVacancy);
+async function fetchMatchingCandidates() {
+  if (!vacancy.value) return;
+  matchingCandidatesLoading.value = true;
+  try {
+    const { data } = await axios.get(`/api/admin/vacancies/${vacancy.value.id}/candidates`, {
+      params: { per_page: 20 },
+    });
+    matchingCandidates.value = data.candidates?.data || [];
+    matchingCandidatesTotal.value = data.total_count || 0;
+  } catch {
+    // Silently fail
+  } finally {
+    matchingCandidatesLoading.value = false;
+  }
+}
+
+onMounted(async () => {
+  await fetchVacancy();
+  fetchMatchingCandidates();
+});
 </script>

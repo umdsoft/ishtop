@@ -117,7 +117,7 @@
             <div class="h-px" style="background-color: var(--separator-color);"></div>
             <div class="flex justify-between items-center">
               <span class="text-[13px]" style="color: var(--tg-theme-hint-color);">{{ t('profile.city') }}</span>
-              <span class="text-[13px] font-medium" style="color: var(--tg-theme-text-color);">{{ workerProfile.city || '-' }}</span>
+              <span class="text-[13px] font-medium" style="color: var(--tg-theme-text-color);">{{ workerProfile.district ? workerProfile.district + ', ' + workerProfile.city : workerProfile.city || '-' }}</span>
             </div>
             <div class="h-px" style="background-color: var(--separator-color);"></div>
             <div class="flex justify-between items-center">

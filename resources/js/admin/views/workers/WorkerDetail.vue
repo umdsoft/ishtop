@@ -18,8 +18,8 @@
             <dd class="font-medium text-surface-900 dark:text-surface-100">{{ worker.specialization || '—' }}</dd>
           </div>
           <div>
-            <dt class="text-sm text-surface-500">Shahar</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ worker.city || '—' }}</dd>
+            <dt class="text-sm text-surface-500">Viloyat</dt>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ worker.district ? worker.district + ', ' + worker.city : worker.city || '—' }}</dd>
           </div>
           <div class="col-span-2">
             <dt class="text-sm text-surface-500">O'zi haqida</dt>

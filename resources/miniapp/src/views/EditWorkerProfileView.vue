@@ -76,8 +76,8 @@
 
       <div v-if="form.city" class="selected-tags mb-2">
         <span class="selected-tag location-tag">
-          {{ form.city }}
-          <span v-if="form.district" class="tag-region"> · {{ form.district }}</span>
+          {{ form.district || form.city }}
+          <span v-if="form.district && form.city" class="tag-region"> · {{ form.city }}</span>
           <button type="button" class="tag-remove location-tag-remove" @click="clearCity">
             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -836,8 +836,8 @@ function onPickerSelect(opt) {
       selectedCityId.value = opt.value
       const city = referenceStore.cities.find(c => c.id === opt.value)
       if (city) {
-        form.value.city = city.name_uz  // Always store name_uz in DB
-        form.value.district = city.region || ''
+        form.value.city = city.region || ''     // viloyat nomi (standart: city = region)
+        form.value.district = city.name_uz      // shahar/tuman nomi
       }
       activePicker.value = null
       break
@@ -904,11 +904,14 @@ onMounted(async () => {
         })),
       }
       if (form.value.city) {
-        const mc = referenceStore.cities.find(c => c.name_uz === form.value.city)
-        if (mc) {
-          selectedRegion.value = mc.region || ''
-          selectedCityId.value = mc.id
-          if (!form.value.district) form.value.district = mc.region || ''
+        // city = viloyat nomi (standart format)
+        selectedRegion.value = form.value.city
+        if (form.value.district) {
+          // district = shahar/tuman nomi — find matching city record
+          const mc = referenceStore.cities.find(c =>
+            c.region === form.value.city && c.name_uz === form.value.district
+          )
+          if (mc) selectedCityId.value = mc.id
         }
       }
     }

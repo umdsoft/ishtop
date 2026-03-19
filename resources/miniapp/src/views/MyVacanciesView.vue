@@ -108,7 +108,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
                 </svg>
-                {{ vacancy.city }}
+                {{ vacancy.district || vacancy.city }}
               </span>
               <span v-if="vacancy.work_type">
                 {{ getWorkTypeLabel(vacancy.work_type) }}
@@ -189,7 +189,7 @@
                     <div class="text-[10px] truncate" style="color: var(--tg-theme-hint-color);">
                       {{ candidate.specialty || '' }}
                       <template v-if="candidate.experience_years"> · {{ candidate.experience_years }} {{ t('my_vacancies.candidates_exp') }}</template>
-                      <template v-if="candidate.city"> · {{ candidate.city }}</template>
+                      <template v-if="candidate.city"> · {{ candidate.district || candidate.city }}</template>
                     </div>
                   </div>
                   <!-- Match score + chevron -->

@@ -88,7 +88,11 @@
       "Bash(python3 -c \":*)",
       "Bash(python3:*)",
       "Bash(python:*)",
-      "Bash(/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe:*)"
+      "Bash(/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe:*)",
+      "Bash(\"/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe\":*)",
+      "Bash(PYTHONIOENCODING=utf-8 \"/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe\" -c \":*)",
+      "Bash(PYTHONIOENCODING=utf-8 \"/c/Users/ujuma/AppData/Local/Programs/Python/Python313/python.exe\":*)",
+      "Bash(scp:*)"
     ]
   }
 }

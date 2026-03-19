@@ -129,8 +129,8 @@
           <InfoItem label="To'liq ism" :value="user.worker_profile.full_name" />
           <InfoItem label="Tug'ilgan sana" :value="formatDateShort(user.worker_profile.birth_date)" />
           <InfoItem label="Jinsi" :value="genderLabel(user.worker_profile.gender)" />
-          <InfoItem label="Shahar" :value="user.worker_profile.city" />
-          <InfoItem label="Tuman" :value="user.worker_profile.district" />
+          <InfoItem label="Viloyat" :value="user.worker_profile.city" />
+          <InfoItem label="Shahar/Tuman" :value="user.worker_profile.district" />
           <InfoItem label="Ta'lim" :value="educationLabel(user.worker_profile.education_level)" />
           <InfoItem label="Mutaxassislik" :value="user.worker_profile.specialty" />
           <InfoItem label="Tajriba" :value="user.worker_profile.experience_years != null ? `${user.worker_profile.experience_years} yil` : null" />

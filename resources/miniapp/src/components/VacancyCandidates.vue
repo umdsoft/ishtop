@@ -73,7 +73,7 @@
               <p class="text-[13px] font-semibold truncate" style="color: var(--tg-theme-text-color);">{{ candidate.full_name }}</p>
               <p class="text-[11px] truncate" style="color: var(--tg-theme-hint-color);">
                 {{ candidate.specialty || '' }}
-                <span v-if="candidate.city"> · {{ candidate.city }}</span>
+                <span v-if="candidate.city"> · {{ candidate.district || candidate.city }}</span>
                 <span v-if="candidate.experience_years"> · {{ candidate.experience_years }} {{ t('vacancy.own_candidates_exp') }}</span>
               </p>
             </div>

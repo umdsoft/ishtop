@@ -29,7 +29,7 @@
             '@type' => 'Place',
             'address' => [
                 '@type' => 'PostalAddress',
-                'addressLocality' => $vacancy->city ?? 'Toshkent',
+                'addressLocality' => $vacancy->district ?? $vacancy->city ?? 'Toshkent',
                 'addressCountry' => 'UZ',
             ],
         ],

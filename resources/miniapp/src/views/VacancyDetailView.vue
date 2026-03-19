@@ -86,7 +86,7 @@
           </div>
           <div class="min-w-0">
             <p class="info-label">{{ t('vacancy.location') }}</p>
-            <p class="info-value truncate">{{ vacancy.city || t('vacancy.no_city') }}</p>
+            <p class="info-value truncate">{{ vacancy.district ? vacancy.district + ', ' + vacancy.city : vacancy.city || t('vacancy.no_city') }}</p>
           </div>
         </div>
         <div v-if="vacancy.work_type" class="info-cell">

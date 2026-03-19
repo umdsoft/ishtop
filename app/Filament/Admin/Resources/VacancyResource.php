@@ -92,10 +92,10 @@ class VacancyResource extends Resource
                 Forms\Components\Section::make('Joylashuv')
                     ->schema([
                         Forms\Components\TextInput::make('city')
-                            ->label('Shahar')
+                            ->label('Viloyat')
                             ->required(),
                         Forms\Components\TextInput::make('district')
-                            ->label('Tuman'),
+                            ->label('Shahar/Tuman'),
                         Forms\Components\TextInput::make('contact_phone')
                             ->label('Aloqa telefoni')
                             ->tel(),
@@ -141,7 +141,7 @@ class VacancyResource extends Resource
                     ->label('Kategoriya')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('city')
-                    ->label('Shahar')
+                    ->label('Viloyat')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('work_type')
                     ->label('Ish turi')
