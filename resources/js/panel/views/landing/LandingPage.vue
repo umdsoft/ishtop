@@ -95,24 +95,19 @@
     </section>
 
     <!-- Stats -->
-    <section class="py-12 border-y border-surface-100 bg-surface-50/50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
-          <div class="text-center">
-            <div class="text-3xl md:text-4xl font-bold text-brand-600">14</div>
-            <div class="text-surface-500 mt-1 text-sm">Viloyat qamrovi</div>
-          </div>
-          <div class="text-center">
-            <div class="text-3xl md:text-4xl font-bold text-brand-600">50K+</div>
-            <div class="text-surface-500 mt-1 text-sm">Telegram auditoriyasi</div>
-          </div>
-          <div class="text-center">
-            <div class="text-3xl md:text-4xl font-bold text-brand-600">120+</div>
-            <div class="text-surface-500 mt-1 text-sm">Faol kompaniyalar</div>
-          </div>
-          <div class="text-center">
-            <div class="text-3xl md:text-4xl font-bold text-brand-600">5 daq</div>
-            <div class="text-surface-500 mt-1 text-sm">Vakansiya yaratish vaqti</div>
+    <section class="py-16 md:py-20 bg-surface-900 relative overflow-hidden">
+      <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-brand-900/40 via-transparent to-transparent"></div>
+      <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+          <div v-for="stat in stats" :key="stat.label"
+               class="relative bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 text-center group hover:bg-white/10 transition-all">
+            <div class="w-11 h-11 rounded-xl flex items-center justify-center mx-auto mb-3" :class="stat.iconBg">
+              <svg class="w-5 h-5" :class="stat.iconColor" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" :d="stat.iconPath"/>
+              </svg>
+            </div>
+            <div class="text-3xl md:text-4xl font-bold text-white mb-1">{{ stat.value }}</div>
+            <div class="text-surface-400 text-sm">{{ stat.label }}</div>
           </div>
         </div>
       </div>
@@ -122,6 +117,9 @@
     <section id="features" class="py-20 md:py-28">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
+          <div class="inline-flex items-center gap-2 bg-brand-50 text-brand-600 text-xs font-semibold px-3 py-1.5 rounded-full border border-brand-100 mb-4 uppercase tracking-wide">
+            Xususiyatlar
+          </div>
           <h2 class="text-3xl md:text-4xl font-bold text-surface-900 mb-4">
             Rekruting jarayonini avtomatlashtiring
           </h2>
@@ -132,9 +130,11 @@
 
         <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
           <div v-for="feature in features" :key="feature.title"
-               class="group p-6 bg-white rounded-2xl border border-surface-100 hover:border-brand-200 hover:shadow-lg hover:shadow-brand-50 transition-all">
-            <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 text-2xl" :class="feature.bg">
-              {{ feature.icon }}
+               class="group p-6 bg-white rounded-2xl border border-surface-100 hover:border-brand-200 hover:shadow-lg hover:shadow-brand-50 transition-all duration-300">
+            <div class="w-12 h-12 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110" :class="feature.bg">
+              <svg class="w-6 h-6" :class="feature.iconColor" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" :d="feature.iconPath"/>
+              </svg>
             </div>
             <h3 class="text-lg font-semibold text-surface-900 mb-2">{{ feature.title }}</h3>
             <p class="text-surface-500 text-sm leading-relaxed">{{ feature.desc }}</p>
@@ -401,13 +401,20 @@ import { ref } from 'vue';
 const mobileMenu = ref(false);
 const openFaq = ref(null);
 
+const stats = [
+  { value: '500+', label: 'Ro\'yxatdan o\'tgan foydalanuvchilar', iconBg: 'bg-brand-500/20', iconColor: 'text-brand-400', iconPath: 'M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128H5.228A2 2 0 015 19.128c0-1.113.285-2.16.786-3.07m0 0a9.38 9.38 0 012.625-.372c1.203 0 2.356.228 3.414.647M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z' },
+  { value: '200+', label: 'Ish izlovchi profillar', iconBg: 'bg-emerald-500/20', iconColor: 'text-emerald-400', iconPath: 'M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z' },
+  { value: '14', label: 'Viloyat qamrovi', iconBg: 'bg-violet-500/20', iconColor: 'text-violet-400', iconPath: 'M15 10.5a3 3 0 11-6 0 3 3 0 016 0z M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z' },
+  { value: '5 daq', label: 'Vakansiya yaratish vaqti', iconBg: 'bg-amber-500/20', iconColor: 'text-amber-400', iconPath: 'M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z' },
+];
+
 const features = [
-  { icon: '📝', title: 'Savolnoma builder', desc: '6 xil savol turi: ko\'p tanlov, raqamli, ochiq javob, knockout va boshqalar. Nomzodlarni avtomatik baholash.', bg: 'bg-brand-50' },
-  { icon: '📊', title: 'Kanban pipeline', desc: 'Drag-and-drop bilan nomzodlarni bosqichma-bosqich boshqaring. Yangi → Tekshirilmoqda → Intervyu → Qabul qilindi.', bg: 'bg-brand-50' },
-  { icon: '🎯', title: 'Talent Pool', desc: 'Barcha nomzodlar bazasi. Keyingi vakansiyalar uchun mos nomzodlarni toping va saqlang.', bg: 'bg-emerald-50' },
-  { icon: '📱', title: 'Telegram integratsiya', desc: 'Vakansiyalar Telegram kanalda avtomatik chop etiladi. Nomzodlar bot orqali ariza topshiradi.', bg: 'bg-violet-50' },
-  { icon: '📈', title: 'Analitika', desc: 'Real-time statistikalar: ko\'rishlar, arizalar, konversiya, o\'rtacha yopish vaqti va boshqalar.', bg: 'bg-amber-50' },
-  { icon: '💰', title: 'Tez to\'lov', desc: 'Payme va Click orqali to\'lovlar. Avtomatik hisob-kitob va cheklar.', bg: 'bg-rose-50' },
+  { title: 'Savolnoma builder', desc: '6 xil savol turi: ko\'p tanlov, raqamli, ochiq javob, knockout va boshqalar. Nomzodlarni avtomatik baholash.', bg: 'bg-brand-50', iconColor: 'text-brand-500', iconPath: 'M9 12h3.75M9 15h3.75M9 18h3.75m3 .75H18a2.25 2.25 0 002.25-2.25V6.108c0-1.135-.845-2.098-1.976-2.192a48.424 48.424 0 00-1.123-.08m-5.801 0c-.065.21-.1.433-.1.664 0 .414.336.75.75.75h4.5a.75.75 0 00.75-.75 2.25 2.25 0 00-.1-.664m-5.8 0A2.251 2.251 0 0113.5 2.25H15a2.25 2.25 0 012.15 1.586m-5.8 0c-.376.023-.75.05-1.124.08C9.095 4.01 8.25 4.973 8.25 6.108V8.25m0 0H4.875c-.621 0-1.125.504-1.125 1.125v11.25c0 .621.504 1.125 1.125 1.125h9.75c.621 0 1.125-.504 1.125-1.125V9.375c0-.621-.504-1.125-1.125-1.125H8.25z' },
+  { title: 'Kanban pipeline', desc: 'Drag-and-drop bilan nomzodlarni bosqichma-bosqich boshqaring. Yangi → Tekshirilmoqda → Intervyu → Qabul qilindi.', bg: 'bg-indigo-50', iconColor: 'text-indigo-500', iconPath: 'M9 4.5v15m6-15v15m-10.875 0h15.75c.621 0 1.125-.504 1.125-1.125V5.625c0-.621-.504-1.125-1.125-1.125H4.125C3.504 4.5 3 5.004 3 5.625v12.75c0 .621.504 1.125 1.125 1.125z' },
+  { title: 'Talent Pool', desc: 'Barcha nomzodlar bazasi. Keyingi vakansiyalar uchun mos nomzodlarni toping va saqlang.', bg: 'bg-emerald-50', iconColor: 'text-emerald-500', iconPath: 'M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z' },
+  { title: 'Telegram integratsiya', desc: 'Vakansiyalar Telegram kanalda avtomatik chop etiladi. Nomzodlar bot orqali ariza topshiradi.', bg: 'bg-sky-50', iconColor: 'text-sky-500', iconPath: 'M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5' },
+  { title: 'Analitika', desc: 'Real-time statistikalar: ko\'rishlar, arizalar, konversiya, o\'rtacha yopish vaqti va boshqalar.', bg: 'bg-amber-50', iconColor: 'text-amber-500', iconPath: 'M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z' },
+  { title: 'Tez to\'lov', desc: 'Payme va Click orqali to\'lovlar. Avtomatik hisob-kitob va cheklar.', bg: 'bg-rose-50', iconColor: 'text-rose-500', iconPath: 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z' },
 ];
 
 const steps = [
