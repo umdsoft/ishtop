@@ -4,6 +4,21 @@
  */
 
 /**
+ * Format location — full: "district, city" or city
+ */
+export function formatLocation(city, district) {
+  if (district && city) return `${district}, ${city}`
+  return city || district || ''
+}
+
+/**
+ * Format location — short: district preferred, fallback to city
+ */
+export function formatLocationShort(city, district) {
+  return district || city || ''
+}
+
+/**
  * Format salary range for display
  * @param {Object} vacancy - vacancy object with salary_min, salary_max
  * @param {Function} t - i18n translation function

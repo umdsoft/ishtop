@@ -42,11 +42,11 @@
           </div>
           <div>
             <dt class="text-sm text-surface-500">Yaratilgan sana</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(payment.created_at) }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(payment.created_at) }}</dd>
           </div>
           <div>
             <dt class="text-sm text-surface-500">Yangilangan sana</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(payment.updated_at) }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(payment.updated_at) }}</dd>
           </div>
           <div v-if="payment.description" class="col-span-2">
             <dt class="text-sm text-surface-500">Tavsif</dt>
@@ -95,15 +95,11 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime } from '@/shared/formatters';
 
 const route = useRoute();
 const payment = ref(null);
 const loading = ref(true);
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 function statusClass(status) {
   const map = {

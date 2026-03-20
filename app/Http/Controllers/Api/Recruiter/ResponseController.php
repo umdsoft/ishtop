@@ -13,7 +13,12 @@ class ResponseController extends Controller
 {
     public function show(Request $request, string $application): JsonResponse
     {
-        $app = Application::findOrFail($application);
+        $employer = $request->user()->employerProfile;
+        $app = Application::with('vacancy:id,employer_id')->findOrFail($application);
+
+        if (!$employer || $app->vacancy->employer_id !== $employer->id) {
+            return response()->json(['message' => 'Ruxsat yo\'q'], 403);
+        }
 
         $response = QuestionnaireResponse::where('application_id', $app->id)
             ->with(['answers' => function ($q) {
@@ -38,7 +43,12 @@ class ResponseController extends Controller
             'score' => 'required|integer|min:0|max:100',
         ]);
 
-        $answerModel = ResponseAnswer::findOrFail($answer);
+        $answerModel = ResponseAnswer::with('response.application.vacancy:id,employer_id')->findOrFail($answer);
+
+        $employer = $request->user()->employerProfile;
+        if (!$employer || $answerModel->response->application->vacancy->employer_id !== $employer->id) {
+            return response()->json(['message' => 'Ruxsat yo\'q'], 403);
+        }
 
         $answerModel->update([
             'manual_score' => $request->score,

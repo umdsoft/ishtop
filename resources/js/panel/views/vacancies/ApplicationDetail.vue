@@ -120,7 +120,7 @@
               <div v-if="application.worker?.city" class="flex justify-between text-sm">
                 <span class="text-surface-500 dark:text-surface-400">Manzil</span>
                 <span class="font-medium text-surface-900 dark:text-surface-100">
-                  {{ application.worker.city }}<span v-if="application.worker.district">, {{ application.worker.district }}</span>
+                  {{ formatLocation(application.worker.city, application.worker.district) }}
                 </span>
               </div>
               <div v-if="application.worker?.experience_years" class="flex justify-between text-sm">
@@ -720,6 +720,7 @@
 import { ref, computed, reactive, onMounted } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import axios from 'axios';
+import { formatLocation } from '@/shared/formatters';
 import { toast } from 'vue-sonner';
 import {
   ArrowLeftIcon,

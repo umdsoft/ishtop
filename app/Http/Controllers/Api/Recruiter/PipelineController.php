@@ -13,6 +13,18 @@ use Illuminate\Http\Request;
 
 class PipelineController extends Controller
 {
+    private function authorizeApplication(Request $request, string $applicationId): Application
+    {
+        $employer = $request->user()->employerProfile;
+        $app = Application::with('vacancy:id,employer_id')->findOrFail($applicationId);
+
+        if (!$employer || $app->vacancy->employer_id !== $employer->id) {
+            abort(403, 'Ruxsat yo\'q');
+        }
+
+        return $app;
+    }
+
     public function updateStage(Request $request, string $application): JsonResponse
     {
         $request->validate([
@@ -20,7 +32,7 @@ class PipelineController extends Controller
             'rejected_reason' => 'nullable|string|max:300',
         ]);
 
-        $app = Application::findOrFail($application);
+        $app = $this->authorizeApplication($request, $application);
         $stage = ApplicationStage::from($request->stage);
 
         $app->moveToStage($stage);
@@ -38,7 +50,7 @@ class PipelineController extends Controller
             'rating' => 'required|integer|min:1|max:5',
         ]);
 
-        $app = Application::findOrFail($application);
+        $app = $this->authorizeApplication($request, $application);
         $app->update(['recruiter_rating' => $request->rating]);
 
         return response()->json(['application' => $app->fresh()]);
@@ -50,7 +62,7 @@ class PipelineController extends Controller
             'note' => 'required|string|max:2000',
         ]);
 
-        $app = Application::findOrFail($application);
+        $app = $this->authorizeApplication($request, $application);
 
         $note = RecruiterNote::create([
             'application_id' => $app->id,
@@ -68,7 +80,7 @@ class PipelineController extends Controller
             'tags.*' => 'string|max:50',
         ]);
 
-        $app = Application::findOrFail($application);
+        $app = $this->authorizeApplication($request, $application);
         $userId = $request->user()->id;
 
         foreach ($request->tags as $tagName) {

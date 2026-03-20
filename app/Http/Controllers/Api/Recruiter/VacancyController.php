@@ -10,11 +10,13 @@ use App\Services\AiService;
 use App\Services\MatchingService;
 use App\Services\SubscriptionLimitService;
 use App\Services\VacancyService;
+use App\Traits\HasAutoTranslation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VacancyController extends Controller
 {
+    use HasAutoTranslation;
     public function __construct(
         private VacancyService $vacancyService,
         private AiService $aiService,
@@ -55,8 +57,8 @@ class VacancyController extends Controller
                 $q->where('title_uz', 'like', "%{$escaped}%")
                   ->orWhere('title_ru', 'like', "%{$escaped}%");
             }))
-            ->when($request->work_type, fn($q, $v) => $q->where('work_type', $v))
-            ->when($request->category, fn($q, $v) => $q->where('category', $v))
+            ->when($request->work_type, fn($q, $v) => $q->ofWorkType($v))
+            ->when($request->category, fn($q, $v) => $q->inCategory($v))
             ->withCount(['applications', 'applications as new_applications_count' => function ($q) {
                 $q->where('stage', 'new');
             }])
@@ -251,46 +253,4 @@ class VacancyController extends Controller
         return response()->json(['translated' => $translated]);
     }
 
-    /**
-     * Auto-translate vacancy fields if only one language is provided.
-     */
-    private function autoTranslate(array $data): array
-    {
-        $from = $data['language'] ?? null;
-
-        if (!$from) {
-            $hasUz = !empty($data['title_uz']) || !empty($data['description_uz']);
-            $hasRu = !empty($data['title_ru']) || !empty($data['description_ru']);
-            $from = $hasRu && !$hasUz ? 'ru' : 'uz';
-        }
-
-        $to = $from === 'uz' ? 'ru' : 'uz';
-
-        $fieldsToTranslate = [];
-        foreach (['title', 'description', 'requirements', 'responsibilities'] as $field) {
-            $srcKey = "{$field}_{$from}";
-            $dstKey = "{$field}_{$to}";
-            if (!empty($data[$srcKey]) && empty($data[$dstKey])) {
-                $fieldsToTranslate[$field] = $data[$srcKey];
-            }
-        }
-
-        if (empty($fieldsToTranslate)) {
-            return $data;
-        }
-
-        try {
-            $translated = $this->aiService->translateVacancy($fieldsToTranslate, $from, $to);
-            foreach ($translated as $field => $value) {
-                $dstKey = "{$field}_{$to}";
-                if (!empty($value)) {
-                    $data[$dstKey] = $value;
-                }
-            }
-        } catch (\Throwable $e) {
-            \Log::warning('Recruiter auto-translate failed: ' . $e->getMessage());
-        }
-
-        return $data;
-    }
 }

@@ -99,35 +99,11 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime as formatDate, getApplicationStatusCss as statusClass, getApplicationStatusLabel as statusLabel } from '@/shared/formatters';
 
 const route = useRoute();
 const application = ref(null);
 const loading = ref(true);
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function statusClass(status) {
-  const map = {
-    pending: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
-    accepted: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
-    rejected: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-    viewed: 'bg-info-100 text-info-700 dark:bg-info-900/30 dark:text-info-400',
-  };
-  return map[status] || 'bg-surface-100 text-surface-600';
-}
-
-function statusLabel(status) {
-  const map = {
-    pending: 'Kutilmoqda',
-    accepted: 'Qabul qilingan',
-    rejected: 'Rad etilgan',
-    viewed: 'Ko\'rilgan',
-  };
-  return map[status] || status;
-}
 
 async function fetchApplication() {
   try {

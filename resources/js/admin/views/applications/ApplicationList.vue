@@ -93,7 +93,7 @@
                 <span v-else class="text-surface-400 text-xs">—</span>
               </td>
               <td class="py-3 px-4 text-surface-600 dark:text-surface-400 text-xs capitalize">{{ app.source || '—' }}</td>
-              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDate(app.created_at) }}</td>
+              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDateTime(app.created_at) }}</td>
             </tr>
           </tbody>
         </table>
@@ -118,6 +118,7 @@ import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { DocumentTextIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime } from '@/shared/formatters';
 
 const route = useRoute();
 const router = useRouter();
@@ -144,11 +145,6 @@ function clearVacancyFilter() {
   delete filters.value.vacancy_id;
   router.replace({ path: '/applications' });
   fetchItems();
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 function scorePct(score, max) {

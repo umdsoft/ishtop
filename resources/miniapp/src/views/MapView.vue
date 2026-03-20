@@ -200,7 +200,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
                 <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
               </svg>
-              {{ selectedVacancy.district || selectedVacancy.city }}
+              {{ formatLocationShort(selectedVacancy.city, selectedVacancy.district) }}
               <span v-if="selectedVacancy.distance"> &bull; {{ selectedVacancy.distance }} km</span>
             </div>
 
@@ -279,7 +279,7 @@ import { useReferenceStore } from '@/stores/reference'
 import { useGeolocation } from '@/composables/useGeolocation'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
-import { formatSalary as _formatSalary } from '@/utils/formatters'
+import { formatSalary as _formatSalary, formatLocationShort } from '@/utils/formatters'
 import { useVacancyStore } from '@/stores/vacancy'
 import api from '@/utils/api'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'

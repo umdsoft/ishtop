@@ -10,8 +10,8 @@
           <h1 class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ vacancy?.title_uz || vacancy?.title_ru || 'Vakansiya' }}</h1>
           <p v-if="vacancy?.title_ru && vacancy?.title_uz" class="text-sm text-surface-500 mt-0.5">{{ vacancy.title_ru }}</p>
         </div>
-        <span v-if="vacancy" :class="['text-xs px-2.5 py-1 rounded-full font-semibold', statusClass(vacancy.status)]">
-          {{ statusLabel(vacancy.status) }}
+        <span v-if="vacancy" :class="['text-xs px-2.5 py-1 rounded-full font-semibold', getStatusCss(vacancy.status)]">
+          {{ getStatusLabel(vacancy.status) }}
         </span>
         <span v-if="vacancy?.is_top" class="text-xs px-2 py-0.5 rounded-full font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">TOP</span>
       </div>
@@ -39,11 +39,11 @@
           <p class="text-xs text-surface-500 mt-1">Arizalar</p>
         </div>
         <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ formatDateShort(vacancy.published_at) || '—' }}</p>
+          <p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ formatDate(vacancy.published_at) || '—' }}</p>
           <p class="text-xs text-surface-500 mt-1">E'lon qilingan</p>
         </div>
         <div class="bg-surface-0 dark:bg-surface-900 border border-surface-200 dark:border-surface-800 rounded-xl p-4 text-center">
-          <p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ formatDateShort(vacancy.expires_at) || '—' }}</p>
+          <p class="text-2xl font-bold text-surface-900 dark:text-surface-100">{{ formatDate(vacancy.expires_at) || '—' }}</p>
           <p class="text-xs text-surface-500 mt-1">Muddati</p>
         </div>
       </div>
@@ -68,7 +68,7 @@
               </div>
               <div>
                 <dt class="text-xs text-surface-500 mb-0.5">Ish turi</dt>
-                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.work_type_label || workTypeLabel(vacancy.work_type) }}</dd>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ vacancy.work_type_label || getWorkTypeLabel(vacancy.work_type) }}</dd>
               </div>
               <div>
                 <dt class="text-xs text-surface-500 mb-0.5">Maosh</dt>
@@ -108,7 +108,7 @@
               </div>
               <div>
                 <dt class="text-xs text-surface-500 mb-0.5">Yaratilgan</dt>
-                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ formatDate(vacancy.created_at) }}</dd>
+                <dd class="text-sm font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(vacancy.created_at) }}</dd>
               </div>
             </div>
           </AppCard>
@@ -300,7 +300,7 @@
                     <div class="flex items-center gap-2 mt-1 text-[11px] text-surface-400">
                       <span v-if="app.worker?.city">{{ app.worker.city }}</span>
                       <span v-if="app.worker?.experience_years">{{ app.worker.experience_years }} yil</span>
-                      <span>{{ formatDateShort(app.created_at) }}</span>
+                      <span>{{ formatDate(app.created_at) }}</span>
                     </div>
                     <!-- Skills compact -->
                     <div v-if="app.worker?.skills?.length" class="mt-1.5 flex flex-wrap gap-1">
@@ -349,6 +349,7 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon, CheckIcon, XMarkIcon, PhoneIcon, UserGroupIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime, formatDate, getStatusCss, getStatusLabel, getWorkTypeLabel } from '@/shared/formatters';
 
 const route = useRoute();
 const vacancy = ref(null);
@@ -367,32 +368,6 @@ const filteredApplications = computed(() => {
   return vacancy.value.applications.filter(a => a.stage === stageFilter.value);
 });
 
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDateShort(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function statusClass(status) {
-  const map = {
-    active: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
-    pending: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
-    closed: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-    expired: 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-400',
-    rejected: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-  };
-  return map[status] || 'bg-surface-100 text-surface-600';
-}
-
-function statusLabel(status) {
-  const map = { active: 'Faol', pending: 'Kutilmoqda', closed: 'Yopilgan', expired: "Muddati o'tgan", rejected: 'Rad etilgan' };
-  return map[status] || status;
-}
-
 function stageLabel(stage) {
   const map = { new: 'Yangi', reviewed: "Ko'rilgan", shortlisted: 'Tanlangan', interview: 'Intervyu', offered: 'Taklif', hired: 'Qabul', rejected: 'Rad', withdrawn: 'Bekor' };
   return map[stage] || stage;
@@ -410,11 +385,6 @@ function stageClass(stage) {
     withdrawn: 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-400',
   };
   return map[stage] || 'bg-surface-100 text-surface-600';
-}
-
-function workTypeLabel(type) {
-  const map = { full_time: "To'liq ish kuni", part_time: 'Yarim stavka', remote: 'Masofaviy', temporary: 'Vaqtinchalik' };
-  return map[type] || type || '—';
 }
 
 function experienceLabel(exp) {

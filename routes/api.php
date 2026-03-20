@@ -71,6 +71,8 @@ Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
     // Vacancies (authenticated)
     Route::get('vacancies/my', [Api\VacancyController::class, 'my']);
     Route::get('vacancies/pricing', [Api\VacancyController::class, 'pricing']);
+    Route::get('vacancies/nearby', [Api\VacancyController::class, 'nearby']);
+    Route::get('vacancies/recommended', [Api\VacancyController::class, 'recommended']);
     Route::post('vacancies/{vacancy}/activate', [Api\VacancyController::class, 'activate']);
     Route::get('vacancies/{vacancy}/candidates', [Api\VacancyController::class, 'candidates']);
     Route::post('vacancies/{vacancy}/unlock-candidates', [Api\VacancyController::class, 'unlockCandidates']);
@@ -79,8 +81,6 @@ Route::middleware(['telegram.auth', 'throttle:api'])->group(function () {
         ->middleware('throttle:vacancy-create');
     Route::put('vacancies/{vacancy}', [Api\VacancyController::class, 'update'])->name('api.vacancies.update');
     Route::delete('vacancies/{vacancy}', [Api\VacancyController::class, 'destroy'])->name('api.vacancies.destroy');
-    Route::get('/vacancies/nearby', [Api\VacancyController::class, 'nearby']);
-    Route::get('/vacancies/recommended', [Api\VacancyController::class, 'recommended']);
 
     // Applications
     Route::post('/applications', [Api\ApplicationController::class, 'store'])

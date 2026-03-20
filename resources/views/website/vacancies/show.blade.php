@@ -11,6 +11,8 @@
     <meta property="og:url" content="{{ route('vacancies.show', $vacancy) }}">
     <meta property="og:site_name" content="KadrGo">
     <meta property="og:image" content="{{ $vacancy->employer?->logo_url ?: asset('og-image.svg') }}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
     <meta property="og:locale" content="uz_UZ">
     <meta property="og:locale:alternate" content="ru_RU">
 @endsection
@@ -83,7 +85,7 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
                                 </svg>
-                                {{ $vacancy->district ? $vacancy->district . ', ' . $vacancy->city : $vacancy->city }}
+                                {{ $vacancy->location_full }}
                             </span>
                         @endif
 
@@ -261,7 +263,7 @@
                             }).addTo(map);
                             L.marker([{{ $vacancy->latitude }}, {{ $vacancy->longitude }}])
                                 .addTo(map)
-                                .bindPopup(@json($vacancy->title($lang) . '<br>' . ($vacancy->district ? $vacancy->district . ', ' . $vacancy->city : $vacancy->city)))
+                                .bindPopup(@json($vacancy->title($lang) . '<br>' . $vacancy->location_full))
                                 .openPopup();
                         };
                         document.body.appendChild(js);

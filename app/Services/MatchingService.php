@@ -209,12 +209,8 @@ class MatchingService
 
         // 2. Location (15) — city = viloyat, district = shahar/tuman
         $locScore = $this->locationScore($worker, $vacancy);
-        $workerLoc = $worker->district
-            ? "{$worker->district}, {$worker->city}"
-            : ($worker->city ?: null);
-        $vacancyLoc = $vacancy->district
-            ? "{$vacancy->district}, {$vacancy->city}"
-            : ($vacancy->city ?: null);
+        $workerLoc = $worker->location_full ?: null;
+        $vacancyLoc = $vacancy->location_full ?: null;
         $criteria[] = [
             'key' => 'location',
             'label' => 'Joylashuv',
@@ -553,7 +549,7 @@ class MatchingService
      * All matching methods (findMatchesForVacancy, getRecommendedCandidates, countRecommendedCandidates)
      * share this same base query for consistency (DRY).
      */
-    private function buildCandidateQuery(Vacancy $vacancy): \Illuminate\Database\Eloquent\Builder
+    public function buildCandidateQuery(Vacancy $vacancy): \Illuminate\Database\Eloquent\Builder
     {
         $query = WorkerProfile::query()
             ->where(function ($q) {
@@ -581,7 +577,7 @@ class MatchingService
      * - Subcategory (e.g., education-teacher): exact match + parent match
      * - Parent category (e.g., education): parent + all children (education-*)
      */
-    private function applyCategoryFilterForWorkers($query, ?string $vacancyCategory): void
+    public function applyCategoryFilterForWorkers($query, ?string $vacancyCategory): void
     {
         if (empty($vacancyCategory)) return;
 
@@ -632,7 +628,7 @@ class MatchingService
      * - remote vacancies: no location filter (scoring handles priority)
      * - on-site vacancies: only workers from same viloyat or no city set
      */
-    private function applyLocationFilterForWorkers($query, Vacancy $vacancy): void
+    public function applyLocationFilterForWorkers($query, Vacancy $vacancy): void
     {
         if (empty($vacancy->city)) return;
 
@@ -656,7 +652,7 @@ class MatchingService
      * Extract parent slug from a category slug.
      * e.g., 'it-frontend' → 'it', 'sales-shop' → 'sales', 'it' → 'it'
      */
-    private function extractParentSlug(string $slug): string
+    public function extractParentSlug(string $slug): string
     {
         $pos = strpos($slug, '-');
         return $pos !== false ? substr($slug, 0, $pos) : $slug;
@@ -795,12 +791,8 @@ class MatchingService
     private function locationDetail(WorkerProfile $worker, Vacancy $vacancy, float $score): string
     {
         // city = viloyat, district = shahar/tuman
-        $workerLoc = $worker->district
-            ? "{$worker->district}, {$worker->city}"
-            : ($worker->city ?: null);
-        $vacancyLoc = $vacancy->district
-            ? "{$vacancy->district}, {$vacancy->city}"
-            : ($vacancy->city ?: null);
+        $workerLoc = $worker->location_full ?: null;
+        $vacancyLoc = $vacancy->location_full ?: null;
 
         if ($score >= 15) {
             return "{$workerLoc} — to'liq mos";

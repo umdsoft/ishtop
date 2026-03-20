@@ -19,7 +19,7 @@
           </div>
           <div>
             <dt class="text-sm text-surface-500">Viloyat</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ worker.district ? worker.district + ', ' + worker.city : worker.city || '—' }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatLocation(worker.city, worker.district) }}</dd>
           </div>
           <div class="col-span-2">
             <dt class="text-sm text-surface-500">O'zi haqida</dt>
@@ -89,15 +89,11 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime as formatDate, formatLocation } from '@/shared/formatters';
 
 const route = useRoute();
 const worker = ref(null);
 const loading = ref(true);
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 async function fetchWorker() {
   try {

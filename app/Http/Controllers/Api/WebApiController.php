@@ -119,52 +119,29 @@ class WebApiController extends Controller
             });
         }
 
+        // Kategoriya filtri — root slug bo'lsa bolalarini ham kengaytiradi
         if ($request->filled('category')) {
             $catInput = $request->input('category');
-
             if (is_array($catInput)) {
-                // Subcategory checkboxes: category[]=slug1&category[]=slug2
-                $query->whereIn('category', $catInput);
+                $query->inCategory($catInput);
             } else {
-                // Single root category: category=slug → include all children
-                $categories = Category::active()->root()->with(['children' => fn($q) => $q->active()])->get();
-                $rootCat = $categories->firstWhere('slug', $catInput);
-                if ($rootCat && $rootCat->children->isNotEmpty()) {
-                    $childSlugs = $rootCat->children->pluck('slug')->toArray();
-                    $query->whereIn('category', array_merge([$rootCat->slug], $childSlugs));
-                } else {
-                    $query->where('category', $catInput);
-                }
+                $query->inCategory($catInput, expandRoot: true);
             }
         }
 
+        // Shahar/viloyat filtri
         if ($request->filled('city')) {
-            $cityInput = $request->input('city');
-            if (is_array($cityInput)) {
-                $query->whereIn('city', $cityInput);
-            } else {
-                $query->where('city', $cityInput);
-            }
+            $query->inCity($request->input('city'));
         } elseif ($request->filled('region')) {
-            // Region filter — include all cities within region
-            $locations = City::cachedLocations();
-            $regionCities = collect($locations['cities'])->where('region', $request->region)->pluck('name_uz')->unique();
-            $query->where(function ($q) use ($request, $regionCities) {
-                $q->where('city', $request->region)
-                  ->orWhereIn('city', $regionCities);
-            });
+            $query->inCity($request->region, expandRegion: true);
         }
 
         if ($request->filled('work_type')) {
-            $query->where('work_type', $request->work_type);
+            $query->ofWorkType($request->work_type);
         }
 
-        if ($request->filled('salary_min')) {
-            $query->where('salary_max', '>=', (int) $request->salary_min);
-        }
-
-        if ($request->filled('salary_max')) {
-            $query->where('salary_min', '<=', (int) $request->salary_max);
+        if ($request->filled('salary_min') || $request->filled('salary_max')) {
+            $query->salaryRange($request->integer('salary_min'), $request->integer('salary_max'));
         }
 
         if ($request->filled('sort')) {

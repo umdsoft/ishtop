@@ -105,13 +105,56 @@ class Vacancy extends Model
         return $query->where('status', VacancyStatus::ACTIVE)->whereNotNull('slug');
     }
 
-    public function scopeInCategory($query, string $category)
+    /**
+     * Kategoriya bo'yicha filtrlash.
+     * Array, string, yoki root slug (bolalarini kengaytirish bilan) qabul qiladi.
+     */
+    public function scopeInCategory($query, string|array $category, bool $expandRoot = false)
     {
+        if (is_array($category)) {
+            return $query->whereIn('category', $category);
+        }
+
+        if ($expandRoot) {
+            $rootCat = Category::active()->root()
+                ->with(['children' => fn($q) => $q->active()])
+                ->where('slug', $category)
+                ->first();
+
+            if ($rootCat && $rootCat->children->isNotEmpty()) {
+                $slugs = $rootCat->children->pluck('slug')->prepend($rootCat->slug)->toArray();
+                return $query->whereIn('category', $slugs);
+            }
+        }
+
         return $query->where('category', $category);
     }
 
-    public function scopeInCity($query, string $city)
+    /**
+     * Shahar/viloyat bo'yicha filtrlash.
+     * expandRegion=true bo'lsa, viloyatdagi barcha shaharlarni ham qo'shadi.
+     */
+    public function scopeInCity($query, string|array $city, bool $expandRegion = false)
     {
+        if (is_array($city)) {
+            return $query->whereIn('city', $city);
+        }
+
+        if ($expandRegion) {
+            $locations = City::cachedLocations();
+            $regionCities = collect($locations['cities'])
+                ->where('region', $city)
+                ->pluck('name_uz')
+                ->unique();
+
+            if ($regionCities->isNotEmpty()) {
+                return $query->where(function ($q) use ($city, $regionCities) {
+                    $q->where('city', $city)
+                      ->orWhereIn('city', $regionCities);
+                });
+            }
+        }
+
         return $query->where('city', $city);
     }
 
@@ -120,6 +163,11 @@ class Vacancy extends Model
         if ($min) $query->where('salary_max', '>=', $min);
         if ($max) $query->where('salary_min', '<=', $max);
         return $query;
+    }
+
+    public function scopeOfWorkType($query, string $workType)
+    {
+        return $query->where('work_type', $workType);
     }
 
     public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 10)
@@ -138,6 +186,21 @@ class Vacancy extends Model
             "MATCH(title_uz, title_ru, description_uz, description_ru) AGAINST(? IN BOOLEAN MODE)",
             [$keyword]
         );
+    }
+
+    // ── Location accessors ──
+
+    public function getLocationShortAttribute(): string
+    {
+        return $this->district ?? $this->city ?? '';
+    }
+
+    public function getLocationFullAttribute(): string
+    {
+        if ($this->district && $this->city) {
+            return "{$this->district}, {$this->city}";
+        }
+        return $this->city ?? $this->district ?? '';
     }
 
     // ── Bilingual helpers ──

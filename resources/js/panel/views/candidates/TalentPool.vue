@@ -341,6 +341,7 @@
 import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import { toast } from 'vue-sonner';
+import { formatSalary } from '@/shared/formatters';
 import {
   SparklesIcon,
   BookmarkIcon,
@@ -486,13 +487,6 @@ async function removeEntry(entry) {
 function getInitials(name) {
   if (!name) return '?';
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2);
-}
-
-function formatSalary(min, max) {
-  const fmt = (n) => new Intl.NumberFormat('uz-UZ').format(n);
-  if (min && max) return `${fmt(min)} - ${fmt(max)} so'm`;
-  if (min) return `${fmt(min)}+ so'm`;
-  return '';
 }
 
 function getScoreClasses(score) {

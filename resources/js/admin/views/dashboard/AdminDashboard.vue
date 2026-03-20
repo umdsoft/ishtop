@@ -384,17 +384,6 @@ function formatDate(d) {
   return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
-function statusClass(status) {
-  return {
-    active: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
-    pending: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
-    closed: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-    draft: 'bg-surface-100 text-surface-600 dark:bg-surface-800 dark:text-surface-400',
-    paused: 'bg-info-100 text-info-700 dark:bg-info-900/30 dark:text-info-400',
-    expired: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-  }[status] || 'bg-surface-100 text-surface-600';
-}
-
 async function approveVacancy(vacancy) {
   vacancy._loading = true;
   try {

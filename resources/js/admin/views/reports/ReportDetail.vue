@@ -50,11 +50,11 @@
           </div>
           <div>
             <dt class="text-sm text-surface-500">Yaratilgan sana</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(report.created_at) }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(report.created_at) }}</dd>
           </div>
           <div>
             <dt class="text-sm text-surface-500">Yangilangan sana</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(report.updated_at) }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(report.updated_at) }}</dd>
           </div>
         </dl>
       </AppCard>
@@ -121,15 +121,11 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon, CheckIcon, XMarkIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime } from '@/shared/formatters';
 
 const route = useRoute();
 const report = ref(null);
 const loading = ref(true);
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 function reportableType(type) {
   if (!type) return '—';

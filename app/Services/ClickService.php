@@ -42,7 +42,7 @@ class ClickService
 
     public function handlePrepare(Request $request): array
     {
-        Log::channel('daily')->info('Click prepare', $request->all());
+        Log::channel('daily')->info('Click prepare', $request->only(['merchant_trans_id', 'amount', 'action', 'sign_time']));
 
         if (!$this->verifySignature($request)) {
             return $this->response($request, -1, 'SIGN CHECK FAILED!');
@@ -89,7 +89,7 @@ class ClickService
 
     public function handleComplete(Request $request): array
     {
-        Log::channel('daily')->info('Click complete', $request->all());
+        Log::channel('daily')->info('Click complete', $request->only(['merchant_trans_id', 'merchant_prepare_id', 'amount', 'action', 'error']));
 
         if (!$this->verifySignature($request)) {
             return $this->response($request, -1, 'SIGN CHECK FAILED!');

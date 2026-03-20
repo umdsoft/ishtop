@@ -31,11 +31,12 @@ class SearchController extends Controller
         $query = Vacancy::active()
             ->with('employer:id,company_name,logo_url,verification_level,rating')
             ->when($request->q, fn($q, $v) => $q->search($v))
-            ->when($request->category, fn($q, $v) => $q->where('category', $v))
-            ->when($request->city, fn($q, $v) => $q->where('city', $v))
-            ->when($request->work_type, fn($q, $v) => $q->where('work_type', $v))
-            ->when($request->salary_min, fn($q, $v) => $q->where('salary_max', '>=', $v))
-            ->when($request->salary_max, fn($q, $v) => $q->where('salary_min', '<=', $v))
+            ->when($request->category, fn($q, $v) => $q->inCategory($v))
+            ->when($request->city, fn($q, $v) => $q->inCity($v))
+            ->when($request->work_type, fn($q, $v) => $q->ofWorkType($v))
+            ->when($request->salary_min || $request->salary_max, fn($q) =>
+                $q->salaryRange($request->integer('salary_min'), $request->integer('salary_max'))
+            )
             ->when($request->experience, fn($q, $v) => $q->where('experience_required', $v));
 
         $query = match ($request->sort) {
@@ -71,7 +72,7 @@ class SearchController extends Controller
                         ->orWhere('bio', 'like', "%{$escaped}%");
                 });
             })
-            ->when($request->city, fn($q, $v) => $q->where('city', $v))
+            ->when($request->city, fn($q, $v) => $q->inCity($v))
             ->when($request->specialty, fn($q, $v) => $q->where('specialty', 'like', '%' . str_replace(['%', '_'], ['\\%', '\\_'], $v) . '%'))
             ->when($request->experience_min, fn($q, $v) => $q->where('experience_years', '>=', $v))
             ->when($request->salary_max, fn($q, $v) => $q->where('expected_salary_min', '<=', $v))

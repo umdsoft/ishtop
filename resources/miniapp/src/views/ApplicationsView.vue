@@ -109,7 +109,7 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
               <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
             </svg>
-            {{ app.vacancy.district || app.vacancy.city }}
+            {{ formatLocationShort(app.vacancy.city, app.vacancy.district) }}
           </span>
         </div>
 
@@ -160,7 +160,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
-import { formatSalary as _formatSalary, formatDate as _formatDate, getInitial } from '@/utils/formatters'
+import { formatSalary as _formatSalary, formatDate as _formatDate, getInitial, formatLocationShort } from '@/utils/formatters'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import api from '@/utils/api'
 

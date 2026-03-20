@@ -149,60 +149,44 @@ class WebController extends Controller
             });
         }
 
-        // Category filter: supports single root slug or array of sub-slugs
+        // Kategoriya filtri — root/sub sluglarni aniqlash (Blade uchun) + query scope
         $expandedRoot = null;
         $selectedSubs = [];
         if ($request->filled('category')) {
             $catInput = $request->input('category');
             if (is_array($catInput)) {
                 $selectedSubs = $catInput;
-                // Find root category that owns these child slugs
                 foreach ($categories as $cat) {
                     if ($cat->children->pluck('slug')->intersect($catInput)->isNotEmpty()) {
                         $expandedRoot = $cat->slug;
-                        // Include root slug — existing vacancies store root slug in DB
-                        $query->whereIn('category', array_merge([$cat->slug], $catInput));
                         break;
                     }
                 }
-                // Fallback: if no root found, filter by given slugs directly
-                if (!$expandedRoot) {
-                    $query->whereIn('category', $catInput);
-                }
+                // Root slug ham qo'shiladi (DB da root slug saqlanadigan vakansiyalar uchun)
+                $slugs = $expandedRoot ? array_merge([$expandedRoot], $catInput) : $catInput;
+                $query->inCategory($slugs);
             } else {
                 $expandedRoot = $catInput;
                 $rootCat = $categories->firstWhere('slug', $catInput);
                 if ($rootCat && $rootCat->children->isNotEmpty()) {
-                    $childSlugs = $rootCat->children->pluck('slug')->toArray();
-                    $selectedSubs = $childSlugs;
-                    $query->whereIn('category', array_merge([$rootCat->slug], $childSlugs));
-                } else {
-                    $query->where('category', $catInput);
+                    $selectedSubs = $rootCat->children->pluck('slug')->toArray();
                 }
+                $query->inCategory($catInput, expandRoot: true);
             }
         }
 
         if ($request->filled('region')) {
-            $locations = City::cachedLocations();
-            $regionCities = collect($locations['cities'])->where('region', $request->region)->pluck('name_uz')->unique();
-            $query->where(function ($q) use ($request, $regionCities) {
-                $q->where('city', $request->region)
-                  ->orWhereIn('city', $regionCities);
-            });
+            $query->inCity($request->region, expandRegion: true);
         } elseif ($request->filled('city')) {
-            $query->where('city', $request->city);
+            $query->inCity($request->city);
         }
 
         if ($request->filled('work_type')) {
-            $query->where('work_type', $request->work_type);
+            $query->ofWorkType($request->work_type);
         }
 
-        if ($request->filled('salary_min')) {
-            $query->where('salary_max', '>=', (int) $request->salary_min);
-        }
-
-        if ($request->filled('salary_max')) {
-            $query->where('salary_min', '<=', (int) $request->salary_max);
+        if ($request->filled('salary_min') || $request->filled('salary_max')) {
+            $query->salaryRange($request->integer('salary_min'), $request->integer('salary_max'));
         }
 
         if ($request->filled('sort')) {

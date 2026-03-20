@@ -62,16 +62,12 @@ import { useResourceList } from '../../composables/useAdminApi';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
+import { formatDate } from '@/shared/formatters';
 
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/employers');
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 onMounted(fetchItems);
 </script>

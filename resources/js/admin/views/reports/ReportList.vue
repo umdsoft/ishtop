@@ -74,7 +74,7 @@
                   {{ statusLabel(report.status) }}
                 </span>
               </td>
-              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDate(report.created_at) }}</td>
+              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDateTime(report.created_at) }}</td>
               <td class="py-3 px-4 text-right" @click.stop>
                 <div v-if="report.status === 'pending'" class="flex items-center justify-end gap-1.5">
                   <button
@@ -119,16 +119,12 @@ import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { CheckIcon, XMarkIcon, ShieldCheckIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime } from '@/shared/formatters';
 
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/reports');
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 function reportableTypeLabel(type) {
   if (!type) return '—';

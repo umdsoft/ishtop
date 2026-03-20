@@ -19,6 +19,7 @@
         ],
         'datePosted' => $vacancy->published_at?->toIso8601String(),
         'employmentType' => $employmentType,
+        'url' => route('vacancies.show', $vacancy),
         'directApply' => true,
         'hiringOrganization' => array_filter([
             '@type' => 'Organization',
@@ -29,7 +30,7 @@
             '@type' => 'Place',
             'address' => [
                 '@type' => 'PostalAddress',
-                'addressLocality' => $vacancy->district ?? $vacancy->city ?? 'Toshkent',
+                'addressLocality' => $vacancy->location_short ?: 'Toshkent',
                 'addressCountry' => 'UZ',
             ],
         ],

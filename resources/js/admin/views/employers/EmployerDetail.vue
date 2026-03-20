@@ -27,7 +27,7 @@
           </div>
           <div>
             <dt class="text-sm text-surface-500">{{ $t('common.date') }}</dt>
-            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDate(employer.created_at) }}</dd>
+            <dd class="font-medium text-surface-900 dark:text-surface-100">{{ formatDateTime(employer.created_at) }}</dd>
           </div>
           <div class="col-span-2">
             <dt class="text-sm text-surface-500">Tavsif</dt>
@@ -80,11 +80,11 @@
               >
                 <td class="py-3 px-4 font-medium text-surface-900 dark:text-surface-100">{{ vacancy.title_uz }}</td>
                 <td class="py-3 px-4">
-                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', statusClass(vacancy.status)]">
+                  <span :class="['text-xs px-2 py-0.5 rounded-full font-medium', getStatusCss(vacancy.status)]">
                     {{ vacancy.status }}
                   </span>
                 </td>
-                <td class="py-3 px-4 text-surface-500 text-xs">{{ formatDate(vacancy.created_at) }}</td>
+                <td class="py-3 px-4 text-surface-500 text-xs">{{ formatDateTime(vacancy.created_at) }}</td>
               </tr>
             </tbody>
           </table>
@@ -102,25 +102,11 @@ import axios from 'axios';
 import { toast } from 'vue-sonner';
 import AppCard from '@panel/components/ui/AppCard.vue';
 import { ArrowLeftIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime, getStatusCss } from '@/shared/formatters';
 
 const route = useRoute();
 const employer = ref(null);
 const loading = ref(true);
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function statusClass(status) {
-  const map = {
-    active: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
-    pending: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
-    closed: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-    expired: 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-400',
-  };
-  return map[status] || 'bg-surface-100 text-surface-600';
-}
 
 async function fetchEmployer() {
   try {

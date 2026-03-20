@@ -189,7 +189,6 @@ function toggleUserMenu() {
 
 function openCommandPalette() {
   // TODO: Implement command palette
-  console.log('Open command palette');
 }
 
 function handleLogout() {

@@ -67,7 +67,7 @@
                   {{ statusLabel(payment.status) }}
                 </span>
               </td>
-              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDate(payment.created_at) }}</td>
+              <td class="py-3 px-4 text-surface-500 text-xs whitespace-nowrap">{{ formatDateTime(payment.created_at) }}</td>
             </tr>
           </tbody>
         </table>
@@ -91,16 +91,12 @@ import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { BanknotesIcon } from '@heroicons/vue/24/outline';
+import { formatDateTime } from '@/shared/formatters';
 
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/payments');
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
 
 function methodLabel(method) {
   const map = { payme: 'Payme', click: 'Click', uzum: 'Uzum', balance: 'Balans' };

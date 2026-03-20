@@ -415,7 +415,7 @@
                   <div v-if="vacancy.city" class="flex justify-between text-sm">
                     <span class="text-surface-500 dark:text-surface-400">Shahar</span>
                     <span class="font-medium text-surface-900 dark:text-surface-100">
-                      {{ vacancy.city }}{{ vacancy.district ? ', ' + vacancy.district : '' }}
+                      {{ formatLocation(vacancy.city, vacancy.district) }}
                     </span>
                   </div>
                   <div v-if="vacancy.category" class="flex justify-between text-sm">
@@ -572,6 +572,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
+import { formatLocation } from '@/shared/formatters';
 import {
   ArrowLeftIcon,
   PencilIcon,

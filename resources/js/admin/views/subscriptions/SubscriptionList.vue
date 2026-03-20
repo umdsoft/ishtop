@@ -112,16 +112,12 @@ import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { CreditCardIcon } from '@heroicons/vue/24/outline';
+import { formatDate } from '@/shared/formatters';
 
 const {
   items, total, currentPage, lastPage, loading, search, filters,
   fetchItems, goToPage, setSort, applySearch, applyFilter,
 } = useResourceList('/subscriptions');
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 function daysLeft(expiresAt) {
   if (!expiresAt) return 0;

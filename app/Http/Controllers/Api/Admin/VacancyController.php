@@ -18,7 +18,7 @@ class VacancyController extends Controller
     public function __construct(
         private MatchingService $matchingService,
     ) {}
-{
+
     public function index(Request $request): JsonResponse
     {
         $query = Vacancy::with([
@@ -32,7 +32,7 @@ class VacancyController extends Controller
         }
 
         if ($request->filled('work_type')) {
-            $query->where('work_type', $request->work_type);
+            $query->ofWorkType($request->work_type);
         }
 
         if ($request->filled('is_top')) {
@@ -40,7 +40,7 @@ class VacancyController extends Controller
         }
 
         if ($request->filled('city')) {
-            $query->where('city', $request->city);
+            $query->inCity($request->city);
         }
 
         if ($request->filled('search')) {
@@ -131,8 +131,8 @@ class VacancyController extends Controller
             'description_ru' => 'sometimes|string',
             'category' => 'sometimes|string|max:100',
             'city' => 'sometimes|string|max:100',
-            'salary_from' => 'sometimes|nullable|integer',
-            'salary_to' => 'sometimes|nullable|integer',
+            'salary_min' => 'sometimes|nullable|integer|min:0|max:2000000000',
+            'salary_max' => 'sometimes|nullable|integer|min:0|max:2000000000',
             'work_type' => 'sometimes|string',
             'is_top' => 'sometimes|boolean',
             'status' => 'sometimes|string',

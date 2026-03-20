@@ -212,6 +212,7 @@ import AppCard from '@panel/components/ui/AppCard.vue';
 import AppSearchInput from '@panel/components/ui/AppSearchInput.vue';
 import AppPagination from '@panel/components/ui/AppPagination.vue';
 import { CheckIcon, XMarkIcon, DocumentTextIcon } from '@heroicons/vue/24/outline';
+import { shortenCity, formatDate, getStatusCss as statusClass, getStatusLabel as statusLabel } from '@/shared/formatters';
 
 const route = useRoute();
 const router = useRouter();
@@ -246,38 +247,6 @@ function clearCityFilter() {
   delete filters.value.city;
   router.replace({ path: '/vacancies' });
   fetchItems();
-}
-
-function shortenCity(city) {
-  if (!city) return '—';
-  return city.replace(' viloyati', '').replace(' shahri', ' sh.');
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function statusClass(status) {
-  const map = {
-    active: 'bg-success-100 text-success-700 dark:bg-success-900/30 dark:text-success-400',
-    pending: 'bg-warning-100 text-warning-700 dark:bg-warning-900/30 dark:text-warning-400',
-    closed: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-    expired: 'bg-surface-100 text-surface-700 dark:bg-surface-800 dark:text-surface-400',
-    rejected: 'bg-danger-100 text-danger-700 dark:bg-danger-900/30 dark:text-danger-400',
-  };
-  return map[status] || 'bg-surface-100 text-surface-600';
-}
-
-function statusLabel(status) {
-  const map = {
-    active: 'Faol',
-    pending: 'Kutilmoqda',
-    closed: 'Yopilgan',
-    expired: 'Muddati o\'tgan',
-    rejected: 'Rad etilgan',
-  };
-  return map[status] || status;
 }
 
 async function approveVacancy(vacancy) {

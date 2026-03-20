@@ -126,6 +126,7 @@ import {
   UsersIcon, UserPlusIcon, UserGroupIcon, ShieldExclamationIcon,
   BriefcaseIcon, BuildingOffice2Icon,
 } from '@heroicons/vue/24/outline';
+import { formatDate } from '@/shared/formatters';
 
 const {
   items, total, currentPage, lastPage, loading, search, filters,
@@ -197,11 +198,6 @@ async function fetchStats() {
   } finally {
     statsLoading.value = false;
   }
-}
-
-function formatDate(d) {
-  if (!d) return '';
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
 async function toggleBlock(user) {

@@ -69,6 +69,19 @@ class WorkerProfile extends Model implements HasMedia
         return $query->where('city', $city);
     }
 
+    public function getLocationShortAttribute(): string
+    {
+        return $this->district ?? $this->city ?? '';
+    }
+
+    public function getLocationFullAttribute(): string
+    {
+        if ($this->district && $this->city) {
+            return "{$this->district}, {$this->city}";
+        }
+        return $this->city ?? $this->district ?? '';
+    }
+
     public function scopeNearby($query, float $lat, float $lng, int $radiusKm = 10)
     {
         $haversine = \App\Services\GeoService::haversineFormula();

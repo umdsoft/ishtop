@@ -13,11 +13,13 @@ use App\Services\GeoService;
 use App\Services\MatchingService;
 use App\Services\PaymentService;
 use App\Services\VacancyService;
+use App\Traits\HasAutoTranslation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class VacancyController extends Controller
 {
+    use HasAutoTranslation;
     public function __construct(
         private VacancyService $vacancyService,
         private PaymentService $paymentService,
@@ -30,11 +32,12 @@ class VacancyController extends Controller
     {
         $query = Vacancy::active()
             ->with('employer:id,company_name,logo_url,verification_level')
-            ->when($request->category, fn($q, $v) => is_array($v) ? $q->whereIn('category', $v) : $q->where('category', $v))
-            ->when($request->city, fn($q, $v) => is_array($v) ? $q->whereIn('city', $v) : $q->where('city', $v))
-            ->when($request->work_type, fn($q, $v) => $q->where('work_type', $v))
-            ->when($request->salary_min, fn($q, $v) => $q->where('salary_max', '>=', $v))
-            ->when($request->salary_max, fn($q, $v) => $q->where('salary_min', '<=', $v))
+            ->when($request->category, fn($q, $v) => $q->inCategory($v))
+            ->when($request->city, fn($q, $v) => $q->inCity($v))
+            ->when($request->work_type, fn($q, $v) => $q->ofWorkType($v))
+            ->when($request->salary_min || $request->salary_max, fn($q) =>
+                $q->salaryRange($request->integer('salary_min'), $request->integer('salary_max'))
+            )
             ->when($request->q, fn($q, $v) => $q->search($v));
 
         // Optional geo filter: lat + lng + radius (km) → viloyat bo'yicha filtrlash
@@ -123,52 +126,6 @@ class VacancyController extends Controller
         return response()->json(['message' => 'Deleted']);
     }
 
-    /**
-     * Auto-translate vacancy fields if only one language is provided.
-     */
-    private function autoTranslate(array $data): array
-    {
-        $from = $data['language'] ?? null;
-
-        // Determine source language from filled fields
-        if (!$from) {
-            $hasUz = !empty($data['title_uz']) || !empty($data['description_uz']);
-            $hasRu = !empty($data['title_ru']) || !empty($data['description_ru']);
-            $from = $hasRu && !$hasUz ? 'ru' : 'uz';
-        }
-
-        $to = $from === 'uz' ? 'ru' : 'uz';
-
-        // Collect fields that need translation
-        $fieldsToTranslate = [];
-        foreach (['title', 'description', 'requirements', 'responsibilities'] as $field) {
-            $srcKey = "{$field}_{$from}";
-            $dstKey = "{$field}_{$to}";
-            if (!empty($data[$srcKey]) && empty($data[$dstKey])) {
-                $fieldsToTranslate[$field] = $data[$srcKey];
-            }
-        }
-
-        if (empty($fieldsToTranslate)) {
-            return $data;
-        }
-
-        try {
-            $translated = $this->aiService->translateVacancy($fieldsToTranslate, $from, $to);
-            foreach ($translated as $field => $value) {
-                $dstKey = "{$field}_{$to}";
-                if (!empty($value)) {
-                    $data[$dstKey] = $value;
-                }
-            }
-        } catch (\Throwable $e) {
-            // Translation failed — proceed without it
-            \Log::warning('Auto-translate failed: ' . $e->getMessage());
-        }
-
-        return $data;
-    }
-
     public function activate(Request $request, Vacancy $vacancy): JsonResponse
     {
         $this->authorize('activate', $vacancy);
@@ -250,7 +207,7 @@ class VacancyController extends Controller
 
         $vacancies = $this->geoService
             ->nearbyVacancies($request->lat, $request->lng, $request->radius ?? 10)
-            ->when($request->category, fn($q, $v) => is_array($v) ? $q->whereIn('category', $v) : $q->where('category', $v))
+            ->when($request->category, fn($q, $v) => $q->inCategory($v))
             ->with('employer:id,company_name,logo_url')
             ->paginate(min($request->per_page ?? 20, 100));
 

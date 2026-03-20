@@ -81,19 +81,19 @@
           <!-- Description -->
           <div v-if="vacancy.description" class="bg-white rounded-xl p-5 border border-surface-100">
             <h2 class="text-lg font-semibold mb-3">{{ $t('description') }}</h2>
-            <div class="prose prose-sm max-w-none text-surface-700" v-html="vacancy.description"></div>
+            <div class="prose prose-sm max-w-none text-surface-700 whitespace-pre-line">{{ vacancy.description }}</div>
           </div>
 
           <!-- Requirements -->
           <div v-if="vacancy.requirements" class="bg-white rounded-xl p-5 border border-surface-100">
             <h2 class="text-lg font-semibold mb-3">{{ $t('requirements') }}</h2>
-            <div class="prose prose-sm max-w-none text-surface-700" v-html="vacancy.requirements"></div>
+            <div class="prose prose-sm max-w-none text-surface-700 whitespace-pre-line">{{ vacancy.requirements }}</div>
           </div>
 
           <!-- Responsibilities -->
           <div v-if="vacancy.responsibilities" class="bg-white rounded-xl p-5 border border-surface-100">
             <h2 class="text-lg font-semibold mb-3">{{ $t('responsibilities') }}</h2>
-            <div class="prose prose-sm max-w-none text-surface-700" v-html="vacancy.responsibilities"></div>
+            <div class="prose prose-sm max-w-none text-surface-700 whitespace-pre-line">{{ vacancy.responsibilities }}</div>
           </div>
 
           <!-- Map -->

@@ -86,7 +86,7 @@
           </div>
           <div class="min-w-0">
             <p class="info-label">{{ t('vacancy.location') }}</p>
-            <p class="info-value truncate">{{ vacancy.district ? vacancy.district + ', ' + vacancy.city : vacancy.city || t('vacancy.no_city') }}</p>
+            <p class="info-value truncate">{{ formatLocation(vacancy.city, vacancy.district) || t('vacancy.no_city') }}</p>
           </div>
         </div>
         <div v-if="vacancy.work_type" class="info-cell">
@@ -314,7 +314,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useReferenceStore } from '@/stores/reference'
 import { useTelegram } from '@/composables/useTelegram'
 import { useLocale } from '@/composables/useLocale'
-import { formatSalary as _formatSalary, formatNumber, formatDate, getInitial } from '@/utils/formatters'
+import { formatSalary as _formatSalary, formatNumber, formatDate, getInitial, formatLocation } from '@/utils/formatters'
 import LoadingSpinner from '@/components/LoadingSpinner.vue'
 import VacancyCandidates from '@/components/VacancyCandidates.vue'
 import VacancyCompanyCard from '@/components/VacancyCompanyCard.vue'

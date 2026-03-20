@@ -79,8 +79,8 @@
             <InfoItem label="Email" :value="user.email" />
             <InfoItem label="Telegram ID" :value="user.telegram_id" />
             <InfoItem label="Til" :value="langLabel(user.language)" />
-            <InfoItem label="Ro'yxatdan o'tgan" :value="formatDate(user.created_at)" />
-            <InfoItem label="Oxirgi faollik" :value="formatDate(user.last_active_at)" />
+            <InfoItem label="Ro'yxatdan o'tgan" :value="formatDateTime(user.created_at)" />
+            <InfoItem label="Oxirgi faollik" :value="formatDateTime(user.last_active_at)" />
             <InfoItem label="Balans" :value="formatCurrency(user.balance)" />
             <InfoItem label="Referral kodi" :value="user.referral_code" />
           </dl>
@@ -127,7 +127,7 @@
       <AppCard v-if="user.worker_profile" title="Ishchi profili">
         <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
           <InfoItem label="To'liq ism" :value="user.worker_profile.full_name" />
-          <InfoItem label="Tug'ilgan sana" :value="formatDateShort(user.worker_profile.birth_date)" />
+          <InfoItem label="Tug'ilgan sana" :value="formatDate(user.worker_profile.birth_date)" />
           <InfoItem label="Jinsi" :value="genderLabel(user.worker_profile.gender)" />
           <InfoItem label="Viloyat" :value="user.worker_profile.city" />
           <InfoItem label="Shahar/Tuman" :value="user.worker_profile.district" />
@@ -247,6 +247,7 @@ import {
   BuildingOfficeIcon,
   ChevronRightIcon,
 } from '@heroicons/vue/24/outline';
+import { formatDateTime, formatDate } from '@/shared/formatters';
 
 const route = useRoute();
 const user = ref(null);
@@ -270,16 +271,6 @@ const StatRow = (props) => {
   ]);
 };
 StatRow.props = ['label', 'value'];
-
-function formatDate(d) {
-  if (!d) return null;
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
-}
-
-function formatDateShort(d) {
-  if (!d) return null;
-  return new Date(d).toLocaleDateString('uz-UZ', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
 
 function formatCurrency(n) {
   if (n == null) return null;

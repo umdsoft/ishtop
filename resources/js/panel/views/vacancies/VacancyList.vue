@@ -318,6 +318,7 @@ import { ref, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import { toast } from 'vue-sonner';
 import axios from 'axios';
+import { formatSalary, formatDate, getStatusVariant, getStatusLabel, getWorkTypeLabel } from '@/shared/formatters';
 import {
   PlusIcon,
   EyeIcon,
@@ -477,59 +478,6 @@ async function toggleVacancyStatus(vacancy) {
       toast.error(`Statusni ${action}da xatolik`);
     }
   }
-}
-
-function getStatusVariant(status) {
-  const variants = {
-    active: 'success',
-    pending: 'warning',
-    paused: 'info',
-    closed: 'default',
-    expired: 'default',
-    draft: 'default',
-  };
-  return variants[status] || 'default';
-}
-
-function getStatusLabel(status) {
-  const labels = {
-    active: 'Faol',
-    pending: 'Kutilmoqda',
-    paused: 'To\'xtatilgan',
-    closed: 'Yopilgan',
-    expired: 'Muddati tugagan',
-    draft: 'Qoralama',
-  };
-  return labels[status] || status;
-}
-
-function getWorkTypeLabel(type) {
-  const labels = {
-    full_time: 'To\'liq ish kuni',
-    part_time: 'Yarim ish kuni',
-    remote: 'Masofaviy',
-    freelance: 'Freelance',
-  };
-  return labels[type] || type || '—';
-}
-
-function formatSalary(min, max, type) {
-  if (type === 'negotiable' || (!min && !max)) return 'Kelishiladi';
-
-  const fmt = (num) => new Intl.NumberFormat('uz-UZ').format(num);
-
-  if (min && max) return `${fmt(min)} - ${fmt(max)} so'm`;
-  if (min) return `${fmt(min)}+ so'm`;
-  return `${fmt(max)} so'm gacha`;
-}
-
-function formatDate(date) {
-  if (!date) return '—';
-  return new Date(date).toLocaleDateString('uz-UZ', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
 }
 
 function getPlanLabel(plan) {
