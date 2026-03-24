@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Spatie\Permission\Models\Role;
 
@@ -29,7 +30,7 @@ class AdminSeeder extends Seeder
                 'first_name' => 'Admin',
                 'last_name' => '',
                 'email' => config('app.admin_email', env('ADMIN_EMAIL', 'admin@kadrgo.uz')),
-                'password' => $password,
+                'password' => Hash::make($password),
                 'phone' => config('app.admin_phone', env('ADMIN_PHONE', '')),
                 'is_verified' => true,
             ]

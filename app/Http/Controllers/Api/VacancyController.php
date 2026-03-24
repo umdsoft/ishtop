@@ -16,6 +16,7 @@ use App\Services\VacancyService;
 use App\Traits\HasAutoTranslation;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class VacancyController extends Controller
 {
@@ -42,6 +43,11 @@ class VacancyController extends Controller
 
         // Optional geo filter: lat + lng + radius (km) → viloyat bo'yicha filtrlash
         if ($request->filled(['lat', 'lng'])) {
+            $request->validate([
+                'lat' => 'numeric|between:-90,90',
+                'lng' => 'numeric|between:-180,180',
+                'radius' => 'nullable|integer|min:1|max:200',
+            ]);
             $lat = (float) $request->lat;
             $lng = (float) $request->lng;
             $radius = min((int) ($request->radius ?? 100), 200);
@@ -160,13 +166,15 @@ class VacancyController extends Controller
         $method = $request->input('method');
         $amount = config('kadrgo.pricing.vacancy');
 
-        $payment = $this->paymentService->create($user, [
-            'type' => 'vacancy_post',
-            'amount' => $amount,
-            'method' => $method,
-            'payable_type' => Vacancy::class,
-            'payable_id' => $vacancy->id,
-        ]);
+        $payment = DB::transaction(function () use ($user, $amount, $method, $vacancy) {
+            return $this->paymentService->create($user, [
+                'type' => 'vacancy_post',
+                'amount' => $amount,
+                'method' => $method,
+                'payable_type' => Vacancy::class,
+                'payable_id' => $vacancy->id,
+            ]);
+        });
 
         // Balance payment — instant activation
         if ($method === 'balance') {
