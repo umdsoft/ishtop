@@ -13,8 +13,8 @@ use SergiX44\Nutgram\Telegram\Types\WebApp\WebAppInfo;
 
 class BroadcastLaunchCountdown extends Command
 {
-    protected $signature = 'bot:broadcast-launch {--test : Send only to first user for testing}';
-    protected $description = 'Send launch countdown message with profile CTA to all verified users';
+    protected $signature = 'bot:broadcast-launch {--test : Send only to first user for testing} {--all : Send to all users with telegram_id, including unverified and blocked}';
+    protected $description = 'Send launch countdown message with profile CTA to users';
 
     public function handle(Nutgram $bot): int
     {
@@ -24,9 +24,11 @@ class BroadcastLaunchCountdown extends Command
             ->where('city', '!=', '')
             ->count();
 
-        $query = User::where('is_verified', true)
-            ->where('is_blocked', false)
-            ->whereNotNull('telegram_id');
+        $query = User::whereNotNull('telegram_id');
+
+        if (!$this->option('all')) {
+            $query->where('is_verified', true)->where('is_blocked', false);
+        }
 
         if ($this->option('test')) {
             $query->limit(1);
