@@ -206,26 +206,52 @@ class TelegramNotificationService
             return;
         }
 
-        $lang = $user->language?->value ?? 'uz';
-        $score = round($matchScore);
+        $lang  = $user->language?->value ?? 'uz';
+        $score = (int) round($matchScore);
 
-        $title = $lang === 'ru' ? 'Подходящая вакансия' : 'Sizga mos vakansiya';
-        $message = $lang === 'ru'
-            ? "Вакансия \"{{$vacancy->title()}\" подходит вам на {$score}%"
-            : "\"{{$vacancy->title()}\" vakansiyasi sizga {$score}% mos keladi";
+        // Determine location proximity for contextual title
+        $workerDistrict  = $worker->district ? mb_strtolower(trim($worker->district)) : null;
+        $workerRegion    = $worker->city     ? mb_strtolower(trim($worker->city))     : null;
+        $vacancyDistrict = $vacancy->district ? mb_strtolower(trim($vacancy->district)) : null;
+        $vacancyRegion   = $vacancy->city     ? mb_strtolower(trim($vacancy->city))     : null;
 
+        $isSameDistrict = $vacancyDistrict && $workerDistrict && $vacancyDistrict === $workerDistrict;
+        $isSameRegion   = $vacancyRegion   && $workerRegion   && $vacancyRegion   === $workerRegion;
+
+        if ($isSameDistrict) {
+            $title = $lang === 'ru'
+                ? '📍 Новая вакансия в вашем районе!'
+                : '📍 Sizning hududingizda yangi vakansiya!';
+            $message = $lang === 'ru'
+                ? "*\"{$vacancy->title('ru')}\"*"
+                : "*\"{$vacancy->title('uz')}\"*";
+        } elseif ($isSameRegion) {
+            $title = $lang === 'ru'
+                ? '📍 Новая вакансия в вашей области!'
+                : '📍 Viloyatingizda yangi vakansiya!';
+            $message = $lang === 'ru'
+                ? "*\"{$vacancy->title('ru')}\"*"
+                : "*\"{$vacancy->title('uz')}\"*";
+        } else {
+            $title = $lang === 'ru' ? 'Подходящая вакансия' : 'Sizga mos vakansiya';
+            $message = $lang === 'ru'
+                ? "*\"{$vacancy->title('ru')}\"* — sizga {$score}% mos"
+                : "*\"{$vacancy->title('uz')}\"* — sizga {$score}% mos";
+        }
+
+        // Salary
         $salary = '';
         if ($vacancy->salary_type === 'negotiable') {
             $salary = $lang === 'ru' ? 'Договорная' : 'Kelishiladi';
         } elseif ($vacancy->salary_min && $vacancy->salary_max) {
             $currency = $lang === 'ru' ? 'сум' : "so'm";
-            $salary = number_format($vacancy->salary_min) . ' - ' . number_format($vacancy->salary_max) . " {$currency}";
+            $salary = number_format($vacancy->salary_min) . ' – ' . number_format($vacancy->salary_max) . " {$currency}";
         }
 
-        // Location: show district (tuman) + viloyat if both available
+        // Location: district + viloyat
         $location = collect([$vacancy->district, $vacancy->city])->filter()->implode(', ') ?: '-';
 
-        $details = "\n\n🏢 " . ($vacancy->employer->company_name ?? '-');
+        $details  = "\n\n🏢 " . ($vacancy->employer->company_name ?? '-');
         $details .= "\n📍 {$location}";
         if ($salary) {
             $details .= "\n💰 {$salary}";
@@ -233,13 +259,10 @@ class TelegramNotificationService
 
         Notification::create([
             'user_id' => $user->id,
-            'type' => 'matching_vacancy',
-            'title' => $title,
-            'message' => $message,
-            'data' => [
-                'vacancy_id' => $vacancy->id,
-                'match_score' => $matchScore,
-            ],
+            'type'    => 'matching_vacancy',
+            'title'   => $title,
+            'message' => strip_tags($message),
+            'data'    => ['vacancy_id' => $vacancy->id, 'match_score' => $matchScore],
         ]);
 
         $vacancyUrl = rtrim(config('app.url'), '/') . '/miniapp/vacancies/' . $vacancy->id;
