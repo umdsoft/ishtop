@@ -42,7 +42,7 @@ class SendIncompleteVacancyReminderCommand extends Command
             }
 
             $lang = $user->language?->value ?? 'uz';
-            $this->sendTelegram($botToken, $user->telegram_id, $this->draftText($lang, $vacancy->title ?? ''));
+            $this->sendTelegram($botToken, $user->telegram_id, $this->draftText($lang, $vacancy->title($lang)));
             $sent++;
             usleep(60_000); // 60ms rate limit
         }
@@ -64,7 +64,7 @@ class SendIncompleteVacancyReminderCommand extends Command
             }
 
             $lang = $user->language?->value ?? 'uz';
-            $this->sendTelegram($botToken, $user->telegram_id, $this->pendingText($lang, $vacancy->title ?? ''));
+            $this->sendTelegram($botToken, $user->telegram_id, $this->pendingText($lang, $vacancy->title($lang)));
             $sent++;
             usleep(60_000);
         }
