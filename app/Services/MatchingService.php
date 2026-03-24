@@ -118,7 +118,7 @@ class MatchingService
     {
         $query = $this->buildCandidateQuery($vacancy)
             ->whereDoesntHave('applications', fn($q) => $q->where('vacancy_id', $vacancy->id))
-            ->select('id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'preferred_categories', 'photo_url', 'search_status', 'latitude', 'longitude');
+            ->select('id', 'user_id', 'full_name', 'city', 'district', 'specialty', 'experience_years', 'expected_salary_min', 'expected_salary_max', 'work_types', 'skills', 'preferred_categories', 'photo_url', 'search_status', 'latitude', 'longitude');
 
         $workers = $query->paginate($perPage);
 

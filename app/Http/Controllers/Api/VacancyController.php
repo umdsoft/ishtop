@@ -260,36 +260,72 @@ class VacancyController extends Controller
         $user = $request->user();
 
         if (!$vacancy->isActive()) {
-            return response()->json(['candidates' => [], 'total_count' => 0, 'locked' => true]);
+            return response()->json(['candidates' => [], 'total_count' => 0, 'locked' => false]);
+        }
+
+        $paginator = $this->matchingService->getRecommendedCandidates($vacancy, 50);
+        $workers   = $paginator->getCollection();
+
+        // No matching candidates — no payment required
+        if ($workers->isEmpty()) {
+            return response()->json([
+                'candidates'    => [],
+                'total_count'   => 0,
+                'locked'        => false,
+                'no_candidates' => true,
+            ]);
         }
 
         $isUnlocked = Payment::candidateUnlocked($vacancy->id, $user->id)->exists();
 
-        $limit = $isUnlocked ? 20 : 3;
-        $paginator = $this->matchingService->getRecommendedCandidates($vacancy, $limit);
-        $totalCount = $paginator->total();
-
-        $candidateData = $paginator->getCollection()->map(fn($worker) => [
-            'id' => $worker->id,
-            'full_name' => $worker->full_name,
-            'specialty' => $worker->specialty,
-            'city' => $worker->city,
-            'experience_years' => $worker->experience_years,
-            'photo_url' => $worker->photo_url,
-            'match_score' => $worker->match_score,
-        ]);
-
-        $response = [
-            'candidates' => $candidateData,
-            'total_count' => $totalCount,
-            'locked' => !$isUnlocked,
-        ];
-
         if (!$isUnlocked) {
-            $response['unlock_price'] = config('kadrgo.pricing.candidate_unlock');
+            // Show names and basic info — contacts hidden
+            $candidateData = $workers->map(fn($w) => [
+                'id'             => $w->id,
+                'full_name'      => $w->full_name,
+                'specialty'      => $w->specialty,
+                'city'           => $w->city,
+                'experience_years' => $w->experience_years,
+                'photo_url'      => $w->photo_url,
+                'match_score'    => $w->match_score,
+            ]);
+
+            return response()->json([
+                'candidates'   => $candidateData,
+                'total_count'  => $workers->count(),
+                'locked'       => true,
+                'unlock_price' => config('kadrgo.pricing.candidate_unlock'),
+            ]);
         }
 
-        return response()->json($response);
+        // Unlocked — load user contacts in one query (avoid N+1)
+        $userIds  = $workers->pluck('user_id')->filter()->unique()->values();
+        $contacts = \App\Models\User::whereIn('id', $userIds)
+            ->select('id', 'phone', 'email', 'username')
+            ->get()
+            ->keyBy('id');
+
+        $candidateData = $workers->map(function ($w) use ($contacts) {
+            $contact = $contacts->get($w->user_id);
+            return [
+                'id'               => $w->id,
+                'full_name'        => $w->full_name,
+                'specialty'        => $w->specialty,
+                'city'             => $w->city,
+                'experience_years' => $w->experience_years,
+                'photo_url'        => $w->photo_url,
+                'match_score'      => $w->match_score,
+                'phone'            => $contact?->phone,
+                'email'            => $contact?->email,
+                'telegram_username' => $contact?->username,
+            ];
+        });
+
+        return response()->json([
+            'candidates'  => $candidateData,
+            'total_count' => $workers->count(),
+            'locked'      => false,
+        ]);
     }
 
     public function unlockCandidates(Request $request, Vacancy $vacancy): JsonResponse
@@ -298,28 +334,38 @@ class VacancyController extends Controller
 
         $user = $request->user();
 
-        $alreadyUnlocked = Payment::candidateUnlocked($vacancy->id, $user->id)->exists();
-
-        if ($alreadyUnlocked) {
+        if (Payment::candidateUnlocked($vacancy->id, $user->id)->exists()) {
             return response()->json(['message' => 'Nomzodlar allaqachon ochilgan'], 422);
+        }
+
+        // Block payment if no matching candidates exist
+        $candidateCount = $this->matchingService->getRecommendedCandidates($vacancy, 50)
+            ->getCollection()
+            ->count();
+
+        if ($candidateCount === 0) {
+            return response()->json([
+                'message'       => 'Bu vakansiyaga mos nomzodlar topilmadi. To\'lov talab etilmaydi.',
+                'no_candidates' => true,
+            ], 422);
         }
 
         $amount = config('kadrgo.pricing.candidate_unlock');
 
         if ($user->balance < $amount) {
             return response()->json([
-                'message' => 'Balans yetarli emas. Iltimos balansni to\'ldiring.',
-                'balance' => $user->balance,
+                'message'  => 'Balans yetarli emas. Iltimos balansni to\'ldiring.',
+                'balance'  => $user->balance,
                 'required' => $amount,
             ], 422);
         }
 
         $payment = $this->paymentService->create($user, [
-            'type' => 'candidate_unlock',
-            'amount' => $amount,
-            'method' => 'balance',
+            'type'         => 'candidate_unlock',
+            'amount'       => $amount,
+            'method'       => 'balance',
             'payable_type' => Vacancy::class,
-            'payable_id' => $vacancy->id,
+            'payable_id'   => $vacancy->id,
         ]);
 
         $this->paymentService->payWithBalance($user, $payment);
@@ -327,7 +373,7 @@ class VacancyController extends Controller
         return response()->json([
             'payment' => $payment->fresh(),
             'vacancy' => $vacancy->fresh(),
-            'message' => 'Nomzodlar muvaffaqiyatli ochildi!',
+            'message' => 'Nomzodlar muvaffaqiyatli ochildi! Endi kontaktlarni ko\'rishingiz mumkin.',
         ]);
     }
 
