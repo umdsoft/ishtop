@@ -21,6 +21,9 @@ class NotifyMatchingWorkersJob implements ShouldQueue
     {
         $workers = $matchingService->findMatchesForVacancy($this->vacancy, 100);
 
+        $vacancyDistrict = $this->vacancy->district
+            ? mb_strtolower(trim($this->vacancy->district))
+            : null;
         $vacancyRegion = $this->vacancy->city
             ? mb_strtolower(trim($this->vacancy->city))
             : null;
@@ -29,11 +32,20 @@ class NotifyMatchingWorkersJob implements ShouldQueue
             try {
                 $score = $matchingService->calculateMatchScore($worker, $this->vacancy);
 
-                // Regional workers: lower threshold (25) — they are nearby and relevant
-                // Non-regional workers: standard threshold (50) — must be a strong match
-                $workerRegion = $worker->city ? mb_strtolower(trim($worker->city)) : null;
-                $isSameRegion = $vacancyRegion && $workerRegion && $vacancyRegion === $workerRegion;
-                $threshold    = $isSameRegion ? 25 : 50;
+                $workerDistrict = $worker->district ? mb_strtolower(trim($worker->district)) : null;
+                $workerRegion   = $worker->city     ? mb_strtolower(trim($worker->city))     : null;
+
+                $isSameDistrict = $vacancyDistrict && $workerDistrict && $vacancyDistrict === $workerDistrict;
+                $isSameRegion   = $vacancyRegion   && $workerRegion   && $vacancyRegion   === $workerRegion;
+
+                // Same tuman  → threshold 15 (very local, notify even with low score)
+                // Same viloyat → threshold 25
+                // Different    → threshold 50 (must be strong match)
+                $threshold = match (true) {
+                    $isSameDistrict => 15,
+                    $isSameRegion   => 25,
+                    default         => 50,
+                };
 
                 if ($score >= $threshold) {
                     $notificationService->notifyMatchingVacancy($worker, $this->vacancy, $score);

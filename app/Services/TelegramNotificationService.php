@@ -222,8 +222,11 @@ class TelegramNotificationService
             $salary = number_format($vacancy->salary_min) . ' - ' . number_format($vacancy->salary_max) . " {$currency}";
         }
 
+        // Location: show district (tuman) + viloyat if both available
+        $location = collect([$vacancy->district, $vacancy->city])->filter()->implode(', ') ?: '-';
+
         $details = "\n\n🏢 " . ($vacancy->employer->company_name ?? '-');
-        $details .= "\n📍 " . ($vacancy->city ?? '-');
+        $details .= "\n📍 {$location}";
         if ($salary) {
             $details .= "\n💰 {$salary}";
         }
@@ -239,11 +242,12 @@ class TelegramNotificationService
             ],
         ]);
 
+        $vacancyUrl = rtrim(config('app.url'), '/') . '/miniapp/vacancies/' . $vacancy->id;
+
         $text = "🔔 *{$title}*\n\n{$message}{$details}";
         $keyboard = [
             'inline_keyboard' => [
-                [['text' => $lang === 'ru' ? '👁 Подробнее' : "👁 Batafsil", 'callback_data' => 'search:view:' . $vacancy->id]],
-                [['text' => '🌐 Mini App', 'url' => "https://t.me/{$this->botUsername}/app"]],
+                [['text' => $lang === 'ru' ? '👁 Открыть вакансию' : "👁 Vakansiyani ochish", 'web_app' => ['url' => $vacancyUrl]]],
             ],
         ];
 

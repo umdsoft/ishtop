@@ -639,11 +639,14 @@ class MatchingService
 
         if ($workType === WorkType::REMOTE) return;
 
-        // Both models store region name in city — direct comparison
+        // District (tuman) match first, then viloyat fallback
         $query->where(function ($q) use ($vacancy) {
-            $q->where('city', $vacancy->city)
-              ->orWhereNull('city')
-              ->orWhere('city', '');
+            if ($vacancy->district) {
+                $q->where('district', $vacancy->district); // Same tuman
+            }
+            $q->orWhere('city', $vacancy->city)  // Same viloyat
+              ->orWhereNull('city')              // No location set (include)
+              ->orWhere('city', '');             // Empty location (include)
         });
     }
 
