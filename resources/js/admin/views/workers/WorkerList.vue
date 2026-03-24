@@ -391,7 +391,7 @@
               </td>
               <td class="py-3.5 px-5 text-center">
                 <span
-                  @click="district.vacancies_count > 0 && goToVacancies(district.name_uz)"
+                  @click="district.vacancies_count > 0 && goToVacancies(district.name_uz, true)"
                   class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold transition-all"
                   :class="district.vacancies_count > 0
                     ? 'bg-success-100 dark:bg-success-900/30 text-success-700 dark:text-success-400 hover:bg-success-200 dark:hover:bg-success-800/40 cursor-pointer hover:scale-105'
@@ -399,6 +399,25 @@
                   :title="district.vacancies_count > 0 ? `${district.name_uz} vakansiyalari` : ''"
                 >
                   {{ district.vacancies_count }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+          <!-- Undistributed vacancies row -->
+          <tbody v-if="selectedRegion.undistributed_vacancies > 0">
+            <tr class="border-b border-surface-100 dark:border-surface-800/60 bg-warning-50/40 dark:bg-warning-900/10">
+              <td class="py-3 px-5 text-surface-400 text-xs">—</td>
+              <td class="py-3 px-5" colspan="2">
+                <span class="text-sm text-warning-700 dark:text-warning-400 italic">Tuman belgilanmagan (viloyat umumiy)</span>
+              </td>
+              <td class="py-3 px-5 text-center text-surface-400">—</td>
+              <td class="py-3 px-5 text-center">
+                <span
+                  @click="goToVacancies(selectedRegion.key)"
+                  class="inline-flex items-center justify-center min-w-[2rem] px-2 py-0.5 rounded-md text-sm font-bold bg-warning-100 dark:bg-warning-900/30 text-warning-700 dark:text-warning-400 hover:bg-warning-200 cursor-pointer hover:scale-105 transition-all"
+                  :title="`${selectedRegion.name_uz} umumiy vakansiyalari`"
+                >
+                  {{ selectedRegion.undistributed_vacancies }}
                 </span>
               </td>
             </tr>
@@ -556,8 +575,9 @@ function goToWorkers(city) {
   router.push({ path: '/workers', query: { city } });
 }
 
-function goToVacancies(city) {
-  router.push({ path: '/vacancies', query: { city } });
+function goToVacancies(name, isDistrict = false) {
+  const query = isDistrict ? { district: name } : { city: name };
+  router.push({ path: '/vacancies', query });
 }
 
 async function fetchStats() {

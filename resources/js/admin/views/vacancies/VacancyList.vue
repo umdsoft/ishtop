@@ -5,11 +5,15 @@
       <span class="text-sm text-surface-500 dark:text-surface-400">Jami: {{ total }}</span>
     </div>
 
-    <!-- City filter badge -->
-    <div v-if="cityFilterLabel" class="flex items-center gap-3">
-      <span class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium">
+    <!-- Location filter badge -->
+    <div v-if="cityFilterLabel || districtFilterLabel" class="flex items-center gap-3">
+      <span v-if="cityFilterLabel" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium">
         📍 {{ cityFilterLabel }}
         <button @click="clearCityFilter" class="ml-1 hover:text-brand-900 dark:hover:text-brand-200">&times;</button>
+      </span>
+      <span v-if="districtFilterLabel" class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-brand-100 dark:bg-brand-900/30 text-brand-700 dark:text-brand-400 text-sm font-medium">
+        📍 {{ districtFilterLabel }}
+        <button @click="clearDistrictFilter" class="ml-1 hover:text-brand-900 dark:hover:text-brand-200">&times;</button>
       </span>
     </div>
 
@@ -235,16 +239,30 @@ function setSort(field) {
   _setSort(field);
 }
 
-// Apply city filter from query param
+// Apply city/district filter from query param
 const cityFilterLabel = ref(null);
+const districtFilterLabel = ref(null);
+
 if (route.query.city) {
   cityFilterLabel.value = route.query.city;
   filters.value.city = route.query.city;
 }
 
+if (route.query.district) {
+  districtFilterLabel.value = route.query.district;
+  filters.value.district = route.query.district;
+}
+
 function clearCityFilter() {
   cityFilterLabel.value = null;
   delete filters.value.city;
+  router.replace({ path: '/vacancies' });
+  fetchItems();
+}
+
+function clearDistrictFilter() {
+  districtFilterLabel.value = null;
+  delete filters.value.district;
   router.replace({ path: '/vacancies' });
   fetchItems();
 }

@@ -43,6 +43,10 @@ class VacancyController extends Controller
             $query->inCity($request->city);
         }
 
+        if ($request->filled('district')) {
+            $query->where('district', $request->district);
+        }
+
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {

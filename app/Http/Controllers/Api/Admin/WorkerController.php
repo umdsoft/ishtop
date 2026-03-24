@@ -104,6 +104,7 @@ class WorkerController extends Controller
 
         $vacancyRegionCounts = [];
         $vacancyDistrictCounts = [];
+        $vacancyUndistributedCounts = []; // vacancies with region but no specific district
 
         foreach ($vacancyRows as $row) {
             $resolved = $this->resolveLocation($row->city, $row->district, $regionKeys, $cityNameToRegion, $normalizedCityLookup);
@@ -117,6 +118,8 @@ class WorkerController extends Controller
             if ($district) {
                 $vacancyDistrictCounts[$region] ??= [];
                 $vacancyDistrictCounts[$region][$district] = ($vacancyDistrictCounts[$region][$district] ?? 0) + 1;
+            } else {
+                $vacancyUndistributedCounts[$region] = ($vacancyUndistributedCounts[$region] ?? 0) + 1;
             }
         }
 
@@ -129,7 +132,7 @@ class WorkerController extends Controller
         // ── Build region data ──
         $regionData = $regions->map(function ($region) use (
             $allCities, $workerRegionCounts, $workerDistrictCounts,
-            $vacancyRegionCounts, $vacancyDistrictCounts
+            $vacancyRegionCounts, $vacancyDistrictCounts, $vacancyUndistributedCounts
         ) {
             $key = $region['key'];
             $regionCities = $allCities->where('region', $key)->values();
@@ -154,6 +157,7 @@ class WorkerController extends Controller
                 'name_ru' => $region['name_ru'],
                 'workers_count' => $workerRegionCounts[$key] ?? 0,
                 'vacancies_count' => $vacancyRegionCounts[$key] ?? 0,
+                'undistributed_vacancies' => $vacancyUndistributedCounts[$key] ?? 0,
                 'districts_count' => $regionCities->count(),
                 'districts' => $districts,
             ];
